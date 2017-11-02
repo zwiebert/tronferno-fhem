@@ -277,30 +277,6 @@ sub fsb_print($) {
 #
 ### end ###
 
-$tx_data = "";
-
-#for ($i=0; $i < 10; ++$i)
-{
-    ## get or create the data for central unit
-    my $fsb = fsb_getByDevID($C{'centralUnitID'});
-
-    ## build command
-    FSB_PUT_CMD($fsb, fer_cmd_UP);
-    FSB_PUT_GRP($fsb, fer_grp_G2);
-    FSB_PUT_MEMB($fsb, fer_memb_M2);
-    fsb_doToggle($fsb);
-
-    ## print command
-    fsb_print($fsb);
-
-    ## print checksum
-    print "cs: " . calc_checksum($fsb, 0) . "\n";
-    
-    ## print the string to send via SIGNALduino
-    print "set sduino raw " . $p_string . ($tx_data = cmd2dString(@$fsb)) . "\n\n";
-}
-
-
 
 #########################################################
 ### sniff device ID from string received via SIGNALduino
@@ -393,6 +369,31 @@ sub rx_get_devID($)
 ###########################################################################
 ### try it out
 #
+
+# build a command and convert it to SIGNALduino string to send via copy and paste to FHEM telnet console
+$tx_data = "";
+#for ($i=0; $i < 10; ++$i)
+{
+    ## get or create the data for central unit
+    my $fsb = fsb_getByDevID($C{'centralUnitID'});
+
+    ## build command
+    FSB_PUT_CMD($fsb, fer_cmd_UP);
+    FSB_PUT_GRP($fsb, fer_grp_G2);
+    FSB_PUT_MEMB($fsb, fer_memb_M2);
+    fsb_doToggle($fsb);
+
+    ## print command
+    fsb_print($fsb);
+
+    ## print checksum
+    #print "cs: " . calc_checksum($fsb, 0) . "\n";
+    
+    ## print the string to send via SIGNALduino
+    print "SIGNALduino: set sduino raw " . $p_string . ($tx_data = cmd2dString(@$fsb)) . "\n\n";
+}
+
+
 
 print rx_get_devID($tx_data) . " <-- get devID from tx data\n";
 # a received string from SIGNALduino logfile
