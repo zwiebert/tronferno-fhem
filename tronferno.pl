@@ -219,7 +219,7 @@ sub FSB_MODEL_IS_SUNSENS($) {
 }
 sub FSB_MODEL_IS_STANDARD($) {
     my ($fsb) = @_;
-    return ($$fsb[0] & 0xf0) == 0x20;
+    return ($$fsb[0] & 0xf0) == 0x10;
 }
 
 sub FSB_GET_CMD($) {
