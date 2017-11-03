@@ -2,9 +2,9 @@
 
 
 #  experimental code to generate and parse SIGNALduino strings for Fernotron
-#
-#
-#
+# 
+#  - extract central unit ID from once received Sd string 
+#  - send any command to any group and member paired with that central unit
 
 
 
@@ -15,7 +15,7 @@ use enum;  # apt install libenum-perl
 #use strict;
 
 
-
+my $fhem_system = '/opt/fhem/fhem.pl localhost:7072 ';
 
 
 
@@ -106,10 +106,10 @@ sub calc_checksum($$) {
     return (0xff & $cs);
 }
 #
-sub cmd2dString(@) {
-    my (@cmd) = @_;    
+sub cmd2dString($) {
+    my ($fsb) = @_;    
     my $r = "D=$d_stp_string$d_pre_string";   
-    foreach my $b (@cmd, calc_checksum(\@cmd, 0)) {
+    foreach my $b (@$fsb, calc_checksum($fsb, 0)) {
 	$r .= byte2dString($b);
     }
    return $r . ';;';
@@ -209,6 +209,19 @@ sub FSB_MODEL_IS_CENTRAL($) {
     my ($fsb) = @_;
     return ($$fsb[0] & 0xf0) == 0x80;
 }
+sub FSB_MODEL_IS_RECEIVER($) {
+    my ($fsb) = @_;
+    return ($$fsb[0] & 0xf0) == 0x90;
+}
+sub FSB_MODEL_IS_SUNSENS($) {
+    my ($fsb) = @_;
+    return ($$fsb[0] & 0xf0) == 0x20;
+}
+sub FSB_MODEL_IS_STANDARD($) {
+    my ($fsb) = @_;
+    return ($$fsb[0] & 0xf0) == 0x20;
+}
+
 sub FSB_GET_CMD($) {
     my ($fsb) = @_;
     return ($$fsb[fer_dat_GRP_and_CMD] & 0x0f);
@@ -268,9 +281,9 @@ sub fsb_doToggle($) {
 }
 #
 #
-sub fsb_print($) {
+sub fsb2string($) {
     my ($fsb) = @_;
-    printf "cmd: 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x\n", $$fsb[0], $$fsb[1],   $$fsb[2],  $$fsb[3],  $$fsb[4]; 
+    return sprintf "0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x", $$fsb[0], $$fsb[1],   $$fsb[2],  $$fsb[3],  $$fsb[4]; 
 
 }
 #
@@ -354,15 +367,92 @@ sub rx_get_devID($)
 		$devID[$i/2] = $b;
 	    }
 	}
-	
-	printf ("devID: 0x%02x%02x%02x\n", $devID[0],  $devID[1],  $devID[2]); 
+       	return $devID[0] << 16 |  $devID[1] << 8 |  $devID[2];
+
     }
- return 0; 
+    return 0;
 }
 #
 ### end ###
 
 
+###########################################################################
+### send commands to fhem
+#
+#
+my %map_fcmd = (
+    "up" => fer_cmd_UP,
+    "down" => fer_cmd_DOWN,
+    "stop" => fer_cmd_STOP,
+    "set" => fer_cmd_SET,
+    "sun-down" => fer_cmd_SunDOWN,
+    );
+
+
+sub cmd2sdCMD($) {
+    my ($fsb) = @_;
+     return "set sduino raw " . $p_string . cmd2dString($fsb);
+}
+#
+#
+sub args2cmd($) {
+    my ($args) = @_;
+
+    my $fsb;
+
+    if (exists($$args{'a'})) {
+	my $val = $$args{'a'};
+        $fsb = fsb_getByDevID($val);
+    } else {
+        $fsb = fsb_getByDevID($C{'centralUnitID'});  # default
+    }
+    
+    if (exists($$args{'c'})) {
+	my $val = $$args{'c'};
+	if (exists($map_fcmd{$val})) {
+	    FSB_PUT_CMD($fsb, $map_fcmd{$val});
+	} else {
+	    warn "error: unknown command '$val'\n";
+            return -1; 
+	}   
+     }
+       
+    if (exists($$args{'g'})) {
+	my $val = $$args{'g'};
+	if (0 <= $val && $val <= 7) {
+	    FSB_PUT_GRP($fsb, fer_grp_Broadcast + $val);
+	} else {
+	    warn "error: invalid group '$val'\n";
+            return -1; 
+	}   
+    } else {
+        FSB_PUT_GRP($fsb, fer_grp_Broadcast); # default
+    }
+    
+    if (exists($$args{'m'})) {
+	my $val = $$args{'m'};
+	if ($val == 0) {
+	    FSB_PUT_MEMB($fsb, fer_memb_Broadcast);
+	} elsif (1 <= $val && $val <= 7) {
+	    FSB_PUT_MEMB($fsb, fer_memb_M1 + $val - 1);
+	} else {
+	    warn "error: invalid member '$val'\n";
+            return -1; 
+	}   
+    } elsif (FSB_MODEL_IS_RECEIVER($fsb)) {
+	FSB_PUT_MEMB($fsb, fer_memb_RecAddress);
+    } elsif (FSB_MODEL_IS_SUNSENS($fsb)) {
+	FSB_PUT_MEMB($fsb, fer_memb_SUN);
+    } elsif (FSB_MODEL_IS_STANDARD($fsb)) {
+	FSB_PUT_MEMB($fsb, fer_memb_SINGLE);
+   } else {
+	FSB_PUT_MEMB($fsb, fer_memb_Broadcast); # default
+    }
+
+    
+    fsb_doToggle($fsb);
+    return $fsb;   
+}
 
 
 
@@ -370,35 +460,50 @@ sub rx_get_devID($)
 ### try it out
 #
 
-# build a command and convert it to SIGNALduino string to send via copy and paste to FHEM telnet console
-$tx_data = "";
-#for ($i=0; $i < 10; ++$i)
-{
-    ## get or create the data for central unit
-    my $fsb = fsb_getByDevID($C{'centralUnitID'});
+# grab device ID the orignal Fernotron central unit from SIGNALduino log file
+#
 
-    ## build command
-    FSB_PUT_CMD($fsb, fer_cmd_UP);
-    FSB_PUT_GRP($fsb, fer_grp_G2);
-    FSB_PUT_MEMB($fsb, fer_memb_M2);
-    fsb_doToggle($fsb);
+# copy and paste data here
+my $rx_data = "MU;P0=395;P1=-401;P2=-3206;P3=798;P4=-804;D=01010101010102313131313131310431040231313131313131040431020404310431043104310402040431043104310404310204310404313104043104020431040431310404043102313131313104040431040231313131310404040431020404313131313131313102040431313131313104040204043104043104043131;CP=0;O;";
+#
 
-    ## print command
-    fsb_print($fsb);
+# now extract device ID from this data
+my $devID = rx_get_devID($rx_data);
+printf "extracted device ID: 0x%x\n", $devID;
 
-    ## print checksum
-    #print "cs: " . calc_checksum($fsb, 0) . "\n";
-    
-    ## print the string to send via SIGNALduino
-    print "SIGNALduino: set sduino raw " . $p_string . ($tx_data = cmd2dString(@$fsb)) . "\n\n";
+# ... and make it the dafault value for sending commands
+$C{'centralUnitID'} = $devID;
+
+
+
+
+
+# build a command and send it via FHEM/SIGNALduino
+
+
+my %args = (
+    'command' => 'send',
+   # 'a' => 0x801234,  # optional device ID
+    'g' => 2,    # group number
+    'm' => 2,    # number in group
+    'c' => 'up', # command: up, down, stop ... (defined in %map_fcmd)
+    );
+
+
+my $fsb = args2cmd(\%args);
+if ($fsb != -1) {
+    print "generated fernotron command: " . fsb2string($fsb) . "\n";
+
+    my $tx_data = cmd2dString($fsb);
+    my $tx_cmd = "set sduino raw $p_string$tx_data";
+    my $sys_cmd = "$fhem_system '$tx_cmd'";
+
+    print "generated FHEM system command: $sys_cmd\n";
+
+    # now send the command to fhem  
+    system $sys_cmd; ## <<<----------------------------------------------
 }
 
-
-
-print rx_get_devID($tx_data) . " <-- get devID from tx data\n";
-# a received string from SIGNALduino logfile
-my $rx_data = "MU;P0=395;P1=-401;P2=-3206;P3=798;P4=-804;D=01010101010102313131313131310431040231313131313131040431020404310431043104310402040431043104310404310204310404313104043104020431040431310404043102313131313104040431040231313131310404040431020404313131313131313102040431313131313104040204043104043104043131;CP=0;O;";
-print rx_get_devID($rx_data) . " <-- get devID from rx data\n";
 
 #
 ### end ###
