@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+package tronferno;
 
 
 #  experimental code to generate and parse SIGNALduino strings for Fernotron
@@ -322,7 +322,7 @@ sub find_stop($) {
 		      next outer;
 		  }
 	      }
-	      print "debug: found stop: $s1 @ $i\n";
+	   #   print "debug: found stop: $s1 @ $i\n";
               return $i; 
           }
       }
@@ -454,65 +454,3 @@ sub args2cmd($) {
     return $fsb;   
 }
 
-
-
-###########################################################################
-### try it out
-#
-
-# grab device ID the orignal Fernotron central unit from SIGNALduino log file
-#
-
-# copy and paste data here
-my $rx_data = "MU;P0=395;P1=-401;P2=-3206;P3=798;P4=-804;D=01010101010102313131313131310431040231313131313131040431020404310431043104310402040431043104310404310204310404313104043104020431040431310404043102313131313104040431040231313131310404040431020404313131313131313102040431313131313104040204043104043104043131;CP=0;O;";
-
-$rx_data = 
-'MU;P0=-409;P1=388;P2=-294;P3=-3210;P4=789;P5=-811;D=01212121212121213424040404040401540151340404040404040151540131540401540401540401513154040154040154015401315401515154015404015131540151515401540154013404040151540154040151340404015154015401540131515404015154040404013151540401515404015151315404040151540154;CP=1;O;'
-;
-
-
-# now extract device ID from this data
-my $devID = rx_get_devID($rx_data);
-
-if ($devID != -1) {
-printf "extracted device ID: 0x%x\n", $devID;
-
-# ... and make it the dafault value for sending commands
-$C{'centralUnitID'} = $devID;
-} else {
-    warn "error:$devID: errors in input string. try another one\n";
-    die;
-}
-
-
-
-
-# build a command and send it via FHEM/SIGNALduino
-
-
-my %args = (
-    'command' => 'send',
-   # 'a' => 0x801234,  # optional device ID
-    'g' => 2,    # group number
-    'm' => 2,    # number in group
-    'c' => 'up', # command: up, down, stop ... (defined in %map_fcmd)
-    );
-
-
-my $fsb = args2cmd(\%args);
-if ($fsb != -1) {
-    print "generated fernotron command: " . fsb2string($fsb) . "\n";
-
-    my $tx_data = cmd2dString($fsb);
-    my $tx_cmd = "set sduino raw $p_string$tx_data";
-    my $sys_cmd = "$fhem_system '$tx_cmd'";
-
-    print "generated FHEM system command: $sys_cmd\n";
-
-    # now send the command to fhem  
-    system $sys_cmd; ## <<<----------------------------------------------
-}
-
-
-#
-### end ###
