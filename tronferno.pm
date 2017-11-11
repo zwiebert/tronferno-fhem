@@ -15,7 +15,7 @@ use enum;  # apt install libenum-perl
 #use strict;
 
 
-my $fhem_system = '/opt/fhem/fhem.pl localhost:7072 ';
+our $fhem_system = '/opt/fhem/fhem.pl localhost:7072 ';
 
 
 
@@ -28,7 +28,7 @@ my $fhem_system = '/opt/fhem/fhem.pl localhost:7072 ';
 # DT1_OFF,        #P3  -4 * 200us =  -800us
 # DT0_ON,         #P4  +4 * 200us =  +800us
 
-my $p_string = "SR;;R=1;;P0=400;;P1=-400;;P2=-3200;;P3=-800;;P4=800;;";
+our $p_string = "SR;;R=1;;P0=400;;P1=-400;;P2=-3200;;P3=-800;;P4=800;;";
 
 #                   1 2 3 4 5 6 7
 my $d_pre_string = "01010101010101";  # preamble
@@ -386,6 +386,7 @@ my %map_fcmd = (
     "stop" => fer_cmd_STOP,
     "set" => fer_cmd_SET,
     "sun-down" => fer_cmd_SunDOWN,
+    "sun-inst" => fer_cmd_SunINST,
     );
 
 
