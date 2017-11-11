@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #  experimental code
-#  
+#  TODO: maybe store toggle counter in environment variable
 #
 
 use Getopt::Long;
