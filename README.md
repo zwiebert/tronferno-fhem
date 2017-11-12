@@ -27,7 +27,7 @@ commands: --scan, --send, --help
 
   --scan            scan the current FHEM logfile for received Fernotron commands
     -f FILE         use this fhem log file insted of default
-    -v=N            set verbose level of SIGNALduino (must be at least 4 to receive commands)
+    -v=N            set verbose level of SIGNALduino. Must be at least level 4 to make it work.
 ```
 
 
