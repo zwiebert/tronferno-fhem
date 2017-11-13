@@ -37,3 +37,38 @@ commands: --scan, --send, --help
    ./fhemft.pl --send -a=90abcd --send -c=close            # closes motor 0abcd
    ./fhemft.pl --scan -n=sduino -v=4                       # after that press stop button on controller
 ```
+
+
+```
+
+$ ./fhemft.pl --scan -v=4
+/opt/fhem/fhem.pl localhost:7072  'attr sduino verbose 4'
+id=80abcd, tgl=11, memb=1, grp=3, cmd=3,  
+id=80abcd, tgl=12, memb=1, grp=3, cmd=3,  
+id=80abcd, tgl=13, memb=1, grp=3, cmd=3,  
+id=80abcd, tgl=14, memb=1, grp=3, cmd=3,  
+id=80abcd, tgl=15, memb=1, grp=3, cmd=3,  
+id=80abcd, tgl=1, memb=1, grp=3, cmd=3,  
+id=80abcd, tgl=2, memb=1, grp=3, cmd=3,  
+id=80abcd, tgl=3, memb=1, grp=3, cmd=3,  
+id=80abcd, tgl=4, memb=1, grp=3, cmd=3,  
+id=80abcd, tgl=5, memb=1, grp=3, cmd=3,  
+error
+id=80abcd, tgl=7, memb=1, grp=3, cmd=5,  
+id=80abcd, tgl=7, memb=1, grp=3, cmd=5,  
+id=80abcd, tgl=7, memb=1, grp=3, cmd=5,  
+id=80abcd, tgl=7, memb=1, grp=3, cmd=5,  
+id=80abcd, tgl=7, memb=1, grp=3, cmd=5,  
+id=80abcd, tgl=7, memb=1, grp=3, cmd=5,  
+id=80abcd, tgl=7, memb=1, grp=3, cmd=5,  
+id=80abcd, tgl=7, memb=1, grp=3, cmd=5,  
+id=80abcd, tgl=9, memb=1, grp=3, cmd=4,  
+id=80abcd, tgl=9, memb=1, grp=3, cmd=4,  
+id=80abcd, tgl=9, memb=1, grp=3, cmd=4,  
+id=80abcd, tgl=9, memb=1, grp=3, cmd=4,  
+id=80abcd, tgl=9, memb=1, grp=3, cmd=4,  
+id=80abcd, tgl=9, memb=1, grp=3, cmd=4,  
+id=80abcd, tgl=9, memb=1, grp=3, cmd=4,  
+id=80abcd, tgl=9, memb=1, grp=3, cmd=4,  
+^C
+```
