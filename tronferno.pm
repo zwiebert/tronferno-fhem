@@ -11,12 +11,14 @@ package tronferno;
 use warnings;
 use warnings "all";
 
-use enum;  # apt install libenum-perl
+use enum;			# apt install libenum-perl
 #use strict;
 
 
 our $fhem_system = '/opt/fhem/fhem.pl localhost:7072 ';
+our $p_string = "SR;;R=1;;P0=400;;P1=-400;;P2=-3200;;P3=-800;;P4=800;;";
 
+my $debug = 0;
 
 
 ###############################################
@@ -28,7 +30,20 @@ our $fhem_system = '/opt/fhem/fhem.pl localhost:7072 ';
 # DT1_OFF,        #P3  -4 * 200us =  -800us
 # DT0_ON,         #P4  +4 * 200us =  +800us
 
-our $p_string = "SR;;R=1;;P0=400;;P1=-400;;P2=-3200;;P3=-800;;P4=800;;";
+my %rf_timings = (
+    'P0.min' => 350,
+    'P0.max' => 450,
+    'P1.min' => -450,
+    'P1.max' => -350,
+    'P2.min' => -3500,
+    'P2.max' => -2500,
+    'P3.min' => -900,
+    'P3.max' => -700,
+    'P4.min' => 700,
+    'P4.max' => 900,
+    );
+
+
 
 #                   1 2 3 4 5 6 7
 my $d_pre_string = "01010101010101";  # preamble
@@ -46,6 +61,16 @@ my %C = (
 ## we store all 5 bytes, which is wasteful as the first 3 bits equals the hash-key.  simplifies the code a bit
 my %fsbs;
 
+
+
+
+sub dbprint($) {
+    if ($debug) {
+	my ($s) = @_;
+	print $s;
+    }
+    
+}
 
 ##########################################
 ## convert a single byte to a data string
@@ -266,7 +291,7 @@ sub fer_update_tglNibble($$) {
     } elsif ($repeats > 0) {
         $step = (FSB_GET_CMD($fsb) == fer_cmd_STOP ? 1 : 0);
     } else {
-	$step = 2;
+	$step = 1;
     }
   
   if ($step > 0) {
@@ -294,57 +319,63 @@ sub fsb2string($) {
 #########################################################
 ### sniff device ID from string received via SIGNALduino
 #
-## return the substring between D= and ;
+## translate the substring between 'D=' and ';' to our own send timings and return the result;
+# 
 sub rx_get_data($) {
     my ($s) = @_;
+#"MU;P0=395;P1=-401;P2=-3206;P3=798;P4=-804;
+    if ($s =~ /(P0=(?<P0>-?\d+);)?(P1=(?<P1>-?\d+);)?(P1=(?<P1>-?\d+);)?(P2=(?<P2>-?\d+);)?(P3=(?<P3>-?\d+);)?(P4=(?<P4>-?\d+);)?(P5=(?<P5>-?\d+);)?(P6=(?<P6>-?\d+);)?(P7=(?<P7>-?\d+);)?D=(?<data>\d+)/) {
+	my $tr_in = "", $tr_out = "";
+	my $data = $+{data};
 
-    if ($s =~ /D=(\d+)/) {
-	return "$1";
+	for (my $i=0; $i <= 7; ++$i) { # P0 ... P7 in input
+	    if(exists $+{"P$i"}) {
+		my $n =  $+{"P$i"};
+		dbprint "P$i=$n\n";
+		for (my $k=0; $k <= 4; ++$k) { # P0 .. P4 in output
+		    if ($rf_timings{"P$k.min"} <= $n && $n <= $rf_timings{"P$k.max"}) {
+			$tr_in .= $i;
+			$tr_out .= $k;
+			dbprint "$i -> $k\n";
+		    }
+		}
+	    }	    
+	}
+
+	dbprint "$data\n";	
+	eval "\$data =~ tr/$tr_in/$tr_out/";
+	dbprint "$data\n";	
+
+	return $data;
     }
+    
     return "";
 }
 #
 #
-## find position of first stop bit (next bit starts first data word)
+## return position of first stop bit (next bit starts first data word)
 sub find_stop($) {
     my ($s) = @_;
-    my $o = 22;
-    my $max_i = length($s) - $o*3;
-    
-      outer: for (my $i=0; $i <= $max_i; ++$i) {
-	  my $s1 = substr($s, $i, 2);
-	  my $s2 = substr($s, $i + $o, 2);
-	  my $s3 = substr($s, $i + $o*2, 2);
-	  my $s4 = substr($s, $i + $o*3, 2);
-	  if ($s1 eq $s2 && $s2 eq $s3 && $s3 eq $s4) {
-	      for (my $k=$i+2; $k < 20; $k++) {
-		  if (substr($s, $k, 2) eq $s1 || substr($s, $k + $o, 2) eq $s1 || substr($s, $k + $o*2, 2) eq $s1 || substr($s, $k + $o*3, 2) eq $s1) {
-		      next outer;
-		  }
-	      }
-	   #   print "debug: found stop: $s1 @ $i\n";
-              return $i; 
-          }
-      }
-   return -1;
+    return index($s, $d_stp_string);
 }
+
+#
 #
 #
 ## extract devID
-sub rx_get_devID($)
-{
-    my ($sendData) = @_;
-    my $rx_data =   rx_get_data($sendData);
-    my $stop_idx =   find_stop($rx_data);
-    if ($stop_idx > 0) {
-	my $word_idx = $stop_idx + 2;
-	my $bit1 = substr($rx_data, $word_idx + 18, 2);
-	my $bit0 = substr($rx_data, $word_idx + 22 + 18, 2);
-	my @devID;
-	
-        for (my $i=0; $i < 6; $i += 2) {
-	    my $word0 = substr($rx_data, $word_idx + 22*$i, 22);
-	    my $word1 = substr($rx_data, $word_idx + 22*($i+1), 22);
+sub rx_sd2sd_word($$) {
+    my ($sd, $word_idx) = @_;
+    my $word = substr($sd, ($word_idx * 22)+2, 20);
+    return $word;
+}
+
+sub rx_sd2byte($$) {
+    my ($word0, $word1) = @_;
+    dbprint "word0: $word0\n";
+    dbprint "word1: $word1\n";
+    
+   my $bit0 = $d_dt0_string, $bit1 = $d_dt1_string;
+ 	    
 	    if (!(substr($word0,0,16) eq substr($word1,0,16))) {
 		return -1; # error
 	    } elsif (0 && !(substr($word0, 18, 2) eq $bit1 && substr($word1, 18, 2) eq $bit0)) {
@@ -353,7 +384,7 @@ sub rx_get_devID($)
 		my $b = 0;
 		for (my $k=0; $k < 8; ++$k) {
 		    my $bit = substr($word0, $k*2, 2);
-		    #print "$bit\n";
+		    #dbprint "$bit\n";
 		    if ($bit eq $bit0) {
 		        # nothing
 		    } elsif ($bit eq $bit1) {
@@ -362,16 +393,83 @@ sub rx_get_devID($)
 			print "error\n";
 			return -3;
 		    }
-		   # print "0: $bit0, 1: $bit1, ok\n";
+		   # dbprint "0: $bit0, 1: $bit1, ok\n";
 		}
-		$devID[$i/2] = $b;
+		return $b;
+	    }
+
+    return -1;
+}
+
+sub rx_sd2bytes ($) {
+    my ($sendData) = @_;
+    my $rx_data =   rx_get_data($sendData);
+    my $stop_idx =   find_stop($rx_data);
+ 
+   if ($stop_idx > 0) {
+        $rx_data = substr($rx_data, $stop_idx);
+
+	my @bytes;
+	my $word_count = int(length ($rx_data) / 22);
+
+	dbprint("word_count=$word_count\n");
+	
+        for (my $i=0; $i < $word_count - 1; $i += 2) {
+	    my $word0 = rx_sd2sd_word($rx_data, $i);
+	    my $word1 =  rx_sd2sd_word($rx_data, $i+1);
+
+            my $b = rx_sd2byte($word0, $word1);
+	    if ($b >= 0) {
+		$bytes[$i/2] = $b;
+	    } else {
+		return 0;
 	    }
 	}
-       	return $devID[0] << 16 |  $devID[1] << 8 |  $devID[2];
+
+	if ($debug) {
+	print "extracted bytes: ";
+	foreach my $b (@bytes) {
+	    printf "0x%02x, ", $b;
+	}
+	print "\n";
+	}
+       	return @bytes;
+	
 
     }
     return 0;
+    
 }
+sub rx_get_devID(@)
+{
+    my (@devID) = @_;
+    return $devID[fer_dat_ADDR_2] << 16 |  $devID[fer_dat_ADDR_1] << 8 |  $devID[fer_dat_ADDR_0];
+}
+
+sub rx_get_ferCmd(@)
+{
+    my (@devID) = @_;
+    return ($devID[fer_dat_GRP_and_CMD] & 0x0f);
+}
+sub rx_get_ferGrp(@)
+{
+    my (@devID) = @_;
+    return ($devID[fer_dat_GRP_and_CMD] & 0xf0) >> 4;
+}
+
+sub rx_get_ferMemb(@)
+{
+    my (@devID) = @_;
+    return ($devID[fer_dat_TGL_and_MEMB] & 0x0f);
+}
+sub rx_get_ferTgl(@)
+{
+    my (@devID) = @_;
+    return ($devID[fer_dat_TGL_and_MEMB] & 0xf0) >> 4;
+}
+
+
+
 #
 ### end ###
 
@@ -386,7 +484,6 @@ my %map_fcmd = (
     "stop" => fer_cmd_STOP,
     "set" => fer_cmd_SET,
     "sun-down" => fer_cmd_SunDOWN,
-    "sun-inst" => fer_cmd_SunINST,
     );
 
 
@@ -454,4 +551,3 @@ sub args2cmd($) {
     fsb_doToggle($fsb);
     return $fsb;   
 }
-

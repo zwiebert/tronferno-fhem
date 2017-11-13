@@ -1,7 +1,7 @@
 # tronferno-fhem
 experimental code for Fernotron and FHEM
 
-## What it currenty does
+## What it currently does
 
 
 ### Sending and receiving vie SIGNALduino

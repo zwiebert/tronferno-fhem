@@ -77,6 +77,7 @@ if ($opt_help eq 1) {
 #
 if ($opt_scan_log eq 1) {
 
+    # find current logfile name
     if ($logfile eq "") {
 	my @lt =  localtime();
 	my $month = $lt[4] + 1;
@@ -84,6 +85,7 @@ if ($opt_scan_log eq 1) {
 	$logfile = "/opt/fhem/log/fhem-$year-$month.log";
     }
 
+    # change SIGNALduino verbose level
     if ($opt_sd_verbose ne -1) {
 	my $sd_cmd = "attr $opt_n verbose $opt_sd_verbose";
 	my $sys_cmd = "$tronferno::fhem_system '$sd_cmd'";
@@ -91,6 +93,7 @@ if ($opt_scan_log eq 1) {
 	system $sys_cmd;
     }
     
+    # open logfile tail
     $file=File::Tail->new(name=>$logfile, maxinterval=>1,  tail=> 0);
 
     print "Now press a button on your Fernotron controller device! Press Ctrl-C if you are done\n";
@@ -98,11 +101,30 @@ if ($opt_scan_log eq 1) {
     
     while (defined(my $line=$file->read)) {
 	if ($line =~ /sduino\/msg READ:\s+\x02(M[US];.+)\x03/) {
-	    #print "$1\n";
-	    my $devID = tronferno::rx_get_devID($1);
-	    if ($devID > 0) {
+	    my @bytes = tronferno::rx_sd2bytes($line);
+	    
+	    if ($#bytes >= 4) {
+
+                   printf "id=%6x, tgl=%d, memb=%d, grp=%d, cmd=%d,  \n",
+	tronferno::rx_get_devID(@bytes),
+        tronferno::rx_get_ferTgl(@bytes),
+        (tronferno::rx_get_ferMemb(@bytes) == 0 ? 0 : (tronferno::rx_get_ferMemb(@bytes) - 7)),
+        tronferno::rx_get_ferGrp(@bytes),
+	tronferno::rx_get_ferCmd(@bytes);
+    
+	
+	
+	    
+           } 
+
+	    if ($#bytes >= 2) {
+		#print "$1\n";
+		my $devID = tronferno::rx_get_devID(@bytes);
+	       if ($devID > 0) {
 		printf("fernotron-device-id=%x (hex)\n", $devID);
+	      }
 	    }
+	    
 	}
 	
     }
