@@ -1,5 +1,7 @@
-## *experimental* FHEM modules Tronferno and Fernotron
-#  FHEM module to control Fernotron devices via SIGNALduino hardware
+######################################
+## *experimental* FHEM module Fernotron
+# FHEM module to control Fernotron devices via SIGNALduino hardware
+# Author: Bert Winkelmann <tf.zwiebert@online.de>
 #
 # - rename and copy or softlink this file to /opt/fhem/FHEM/10_Fernotron.pm
 # - add "Fernotron" to /opt/fhem/FHEM/SIGNALduino.pm liket this:
