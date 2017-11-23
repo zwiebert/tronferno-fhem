@@ -20,7 +20,7 @@
 #
 #
 # Bugs:
-#  - TCP connection only works if another client is also connected to tronferno-mcu (serial terminal)
+#  - this needs the latest firmware of tronferno-mcu (workaround: keep another TCP client connected at the same time. or change TCP code to keep connection open for a while)
 #  - ...
 
 use strict;
