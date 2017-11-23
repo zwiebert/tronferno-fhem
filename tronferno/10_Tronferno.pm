@@ -38,7 +38,7 @@ package main {
 
         $hash->{DefFn} = 'Tronferno::Tronferno_Define';
 
-        $hash->{AttrList} = 'mcuaddr groupNumber memberNumber';
+        $hash->{AttrList} = 'mcuaddr groupNumber memberNumber controllerId';
         $hash->{SetFn}    = "Tronferno::Tronferno_Set";
         $hash->{STATE}    = 'disconnected';
 
@@ -50,13 +50,12 @@ package main {
 
         $hash->{DefFn} = 'Fernotron::Fernotron_Define';
 
-        $hash->{AttrList} = 'mcuaddr groupNumber memberNumber';
+        $hash->{AttrList} = 'mcuaddr groupNumber memberNumber controllerId';
         $hash->{SetFn}    = "Fernotron::Fernotron_Set";
         $hash->{STATE}    = 'disconnected';
     }
 
 }
-
 
 package Tronferno {
 
@@ -127,7 +126,8 @@ package Tronferno {
 #
 package Fernotron {
 
-    our $p_string = "SR;;R=1;;P0=400;;P1=-400;;P2=-3200;;P3=-800;;P4=800;;";
+  our $p_string = "SR;;R=1;;P0=400;;P1=-400;;P2=-3200;;P3=-800;;P4=800;;";
+  my $def_cu = '801234';
 
     sub Fernotron_Define($$) {
         my ($hash, $def) = @_;
@@ -140,18 +140,17 @@ package Fernotron {
 
     sub Fernotron_transmit($$$) {
         my ($hash, $command, $c) = @_;
-        my $io   = $main::modules->{sduiono};
         my $name = $hash->{NAME};
-        print $io->{NAME} . "<--debug\n" if $io;
         my $args = {
             command => $command,
-            a       => main::AttrVal($name, 'controllerId', 0x80495d),
+            a       => hex(main::AttrVal($name, 'controllerId', $def_cu)),
             g       => main::AttrVal($name, 'groupNumber', 0),
             m       => main::AttrVal($name, 'memberNumber', 0),
             c       => $c,
         };
         my $fsb = args2cmd($args);
         if ($fsb != -1) {
+	     print "$name: send messasge: " . fsb2string($fsb) . "\n";
             my $tx_data = cmd2dString($fsb);     # print "debug: $p_string$tx_data\n";
             my $msg     = "$p_string$tx_data";
             $msg =~ s/;;/;/g;
@@ -188,7 +187,6 @@ package Fernotron {
 
         return undef;
     }
-
 
     #  experimental code to generate and parse SIGNALduino strings for Fernotron
     #
