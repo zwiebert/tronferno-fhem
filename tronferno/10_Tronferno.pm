@@ -16,6 +16,7 @@ use warnings;
 use 5.14.0;
 
 use IO::Socket;
+
 #use IO::Select;
 
 package Tronferno {
@@ -88,18 +89,6 @@ package main {
         $hash->{AttrList} = 'mcuaddr groupNumber memberNumber controllerId';
         $hash->{SetFn}    = "Tronferno::Tronferno_Set";
     }
-
-    # initialize as Fernotron if the file is named 10_Fernotron.pm
-    sub Fernotron_Initialize($) {
-        my ($hash) = @_;
-
-        $hash->{DefFn} = 'Fernotron::Fernotron_Define';
-
-        $hash->{AttrList} = 'groupNumber memberNumber controllerId';
-        $hash->{SetFn}    = "Fernotron::Fernotron_Set";
-    }
-
 }
 
-  
 1;
