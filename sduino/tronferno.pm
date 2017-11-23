@@ -5,11 +5,10 @@ package tronferno;
 #  - extract central unit ID from once received Sd string
 #  - send any command to any group and member paired with that central unit
 
-
 use warnings;
 use warnings "all";
 use Storable;
-
+use strict;
 use enum;    # apt install libenum-perl
 
 #use strict;
@@ -128,67 +127,63 @@ sub cmd2dString($) {
 }
 ### end ###
 
-use enum (
-    fer_dat_ADDR_2, fer_dat_ADDR_1, fer_dat_ADDR_0,    ## sender or receiver address
-    fer_dat_TGL_and_MEMB,                              # key-press counter + some ID of the sender (like Member number, Type of sender, ...)
-    fer_dat_GRP_and_CMD                                # Group-ID of sender + the command code (0...0xF)
-);
+my ($fer_dat_ADDR_2, $fer_dat_ADDR_1, $fer_dat_ADDR_0,    ## sender or receiver address
+    $fer_dat_TGL_and_MEMB,                                # key-press counter + some ID of the sender (like Member number, Type of sender, ...)
+    $fer_dat_GRP_and_CMD                                  # Group-ID of sender + the command code (0...0xF)
+) = qw(0 1 2 3 4);
 
 # values of low nibble in data[fer_dat_GRP_and_CMD].
 ###/ Command Codes
-use enum (
-    fer_cmd_None,
-    fer_cmd_1,
-    fer_cmd_2,
-    fer_cmd_STOP,
-    fer_cmd_UP,
-    fer_cmd_DOWN,
-    fer_cmd_SunDOWN,
-    fer_cmd_SunUP,
-    fer_cmd_SunINST,
-    fer_cmd_EndPosUP,
-    fer_cmd_endPosDOWN,
-    fer_cmd_0xb,
-    fer_cmd_0xc,
-    fer_cmd_SET,
-    fer_cmd_0xe,
-    fer_cmd_Program    # Sun-Test (dat_MEMB=1), Time send (dat_Memb=0), Data send (dat_MEMB=member)
-);
+my ($fer_cmd_None,
+    $fer_cmd_1,
+    $fer_cmd_2,
+    $fer_cmd_STOP,
+    $fer_cmd_UP,
+    $fer_cmd_DOWN,
+    $fer_cmd_SunDOWN,
+    $fer_cmd_SunUP,
+    $fer_cmd_SunINST,
+    $fer_cmd_EndPosUP,
+    $fer_cmd_endPosDOWN,
+    $fer_cmd_0xb,
+    $fer_cmd_0xc,
+    $fer_cmd_SET,
+    $fer_cmd_0xe,
+    $fer_cmd_Program    # Sun-Test (dat_MEMB=1), Time send (dat_Memb=0), Data send (dat_MEMB=member)
+) = qw (0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15);
 
-# values of high nibble in data[fer_dat_GRP_and_CMD].
+# values of high nibble in data[$fer_dat_GRP_and_CMD].
 ###/ Sender IDs
-use enum (
-    fer_grp_Broadcast,
-    fer_grp_G1,
-    fer_grp_G2,
-    fer_grp_G3,
-    fer_grp_G4,
-    fer_grp_G5,
-    fer_grp_G6,
-    fer_grp_G7
+my ($fer_grp_Broadcast,
+    $fer_grp_G1,
+    $fer_grp_G2,
+    $fer_grp_G3,
+    $fer_grp_G4,
+    $fer_grp_G5,
+    $fer_grp_G6,
+    $fer_grp_G7
 ## FIXME: only 3 bits used so far. Is the highest bit used for anything? */
 
-);
+) = qw (0 1 2 3 4 5 6 7);
 
-# values of low nibble in data[fer_dat_TGL_and_MEMB].
+# values of low nibble in data[$fer_dat_TGL_and_MEMB].
 ###/ Sender IDs
-use enum (
-    fer_memb_Broadcast,    # RTC data, ...
-    fer_memb_SUN,          # sent by SunSensor
-    fer_memb_SINGLE,       # sent by hand sender
-    fer_memb_P3,
-    fer_memb_P4,
-    fer_memb_P5,
-    fer_memb_P6,
-    fer_memb_RecAddress,    # fer_dat_ADDR contains address of the receiver (set function via motor code)
-    fer_memb_M1,            #8
-    fer_memb_M2,
-    fer_memb_M3,
-    fer_memb_M4,
-    fer_memb_M5,
-    fer_memb_M6,
-    fer_memb_M7,
-);
+my ($fer_memb_Broadcast,    # RTC data, ...
+    $fer_memb_SUN,          # sent by SunSensor
+    $fer_memb_SINGLE,       # sent by hand sender
+    $fer_memb_P3,
+    $fer_memb_P4,
+    $fer_memb_P5,
+    $fer_memb_P6,
+    $fer_memb_RecAddress,    # $fer_dat_ADDR contains address of the receiver (set function via motor code)
+    $fer_memb_M1,            #8
+    $fer_memb_M2,
+    $fer_memb_M3,
+    $fer_memb_M4,
+    $fer_memb_M5,
+    $fer_memb_M6,
+    $fer_memb_M7,
+) = qw (0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15);
 
 ##############################################
 ###
@@ -208,7 +203,7 @@ sub fer_tglNibble_ctUp($$) {
     if ($result < $toggle_nibble) {
         ++$result;
     }
-    
+
     return ($result > 15) ? 1 : $result;
 }
 
@@ -233,48 +228,48 @@ sub FSB_MODEL_IS_STANDARD($) {
 }
 
 sub FSB_GET_DEVID($) {
-    my ($fsb) = @_;  
-  return $$fsb[fer_dat_ADDR_2] << 16 | $$fsb[fer_dat_ADDR_1] << 8 | $$fsb[fer_dat_ADDR_0];
+    my ($fsb) = @_;
+    return $$fsb[$fer_dat_ADDR_2] << 16 | $$fsb[$fer_dat_ADDR_1] << 8 | $$fsb[$fer_dat_ADDR_0];
 }
 
 sub FSB_GET_CMD($) {
     my ($fsb) = @_;
-    return ($$fsb[fer_dat_GRP_and_CMD] & 0x0f);
+    return ($$fsb[$fer_dat_GRP_and_CMD] & 0x0f);
 }
 
 sub FSB_GET_MEMB($) {
     my ($fsb) = @_;
-    return ($$fsb[fer_dat_TGL_and_MEMB] & 0x0f);
+    return ($$fsb[$fer_dat_TGL_and_MEMB] & 0x0f);
 }
 
 sub FSB_PUT_CMD($$) {
     my ($fsb, $cmd) = @_;
-    $$fsb[fer_dat_GRP_and_CMD] = ($$fsb[fer_dat_GRP_and_CMD] & 0xf0) | ($cmd & 0x0f);
+    $$fsb[$fer_dat_GRP_and_CMD] = ($$fsb[$fer_dat_GRP_and_CMD] & 0xf0) | ($cmd & 0x0f);
 }
 
 sub FSB_PUT_MEMB($$) {
     my ($fsb, $val) = @_;
-    $$fsb[fer_dat_TGL_and_MEMB] = ($$fsb[fer_dat_TGL_and_MEMB] & 0xf0) | ($val & 0x0f);
+    $$fsb[$fer_dat_TGL_and_MEMB] = ($$fsb[$fer_dat_TGL_and_MEMB] & 0xf0) | ($val & 0x0f);
 }
 
 sub FSB_GET_TGL($) {
     my ($fsb) = @_;
-    return 0x0f & ($$fsb[fer_dat_TGL_and_MEMB] >> 4);
+    return 0x0f & ($$fsb[$fer_dat_TGL_and_MEMB] >> 4);
 }
 
 sub FSB_PUT_GRP($$) {
     my ($fsb, $val) = @_;
-    $$fsb[fer_dat_GRP_and_CMD] = (($val << 4) & 0xf0) | ($$fsb[fer_dat_GRP_and_CMD] & 0x0f);
+    $$fsb[$fer_dat_GRP_and_CMD] = (($val << 4) & 0xf0) | ($$fsb[$fer_dat_GRP_and_CMD] & 0x0f);
 }
 
 sub FSB_GET_GRP($) {
     my ($fsb) = @_;
-    return 0x0f & ($$fsb[fer_dat_GRP_and_CMD] >> 4);
+    return 0x0f & ($$fsb[$fer_dat_GRP_and_CMD] >> 4);
 }
 
 sub FSB_PUT_TGL($$) {
     my ($fsb, $val) = @_;
-    $$fsb[fer_dat_TGL_and_MEMB] = (($val << 4) & 0xf0) | ($$fsb[fer_dat_TGL_and_MEMB] & 0x0f);
+    $$fsb[$fer_dat_TGL_and_MEMB] = (($val << 4) & 0xf0) | ($$fsb[$fer_dat_TGL_and_MEMB] & 0x0f);
 }
 #
 #
@@ -287,16 +282,16 @@ sub fer_update_tglNibble($$) {
         $step = 1;
     }
     elsif ($repeats > 0) {
-        $step = (FSB_GET_CMD($fsb) == fer_cmd_STOP ? 1 : 0);
+        $step = (FSB_GET_CMD($fsb) == $fer_cmd_STOP ? 1 : 0);
     }
     else {
         $step = 1;
     }
 
     if ($step > 0) {
-	my $tgl = fer_tglNibble_ctUp(FSB_GET_TGL($fsb), $step);
-	print "tgl=$tgl\n";
-	FSB_PUT_TGL($fsb, $tgl);
+        my $tgl = fer_tglNibble_ctUp(FSB_GET_TGL($fsb), $step);
+        print "tgl=$tgl\n";
+        FSB_PUT_TGL($fsb, $tgl);
     }
 }
 #
@@ -304,24 +299,25 @@ sub fer_update_tglNibble($$) {
 #
 use File::Spec;
 my $tgl_file = '/tmp/tronferno_tgl.hash';
+
 sub fsb_doToggle($) {
     my ($fsb) = @_;
-    
+
     store {}, $tgl_file unless -e $tgl_file;
     my $hash = retrieve($tgl_file);
-    my $tgl = 0xf;
-    
-    if (exists ($hash->{FSB_GET_DEVID($fsb)})) {
-	$tgl = $hash->{FSB_GET_DEVID($fsb)};
+    my $tgl  = 0xf;
+
+    if (exists($hash->{ FSB_GET_DEVID($fsb) })) {
+        $tgl = $hash->{ FSB_GET_DEVID($fsb) };
     }
 
     FSB_PUT_TGL($fsb, $tgl);
     fer_update_tglNibble($fsb, 0);
     $tgl = FSB_GET_TGL($fsb);
-      
-    $hash->{FSB_GET_DEVID($fsb)} = $tgl;
+
+    $hash->{ FSB_GET_DEVID($fsb) } = $tgl;
     store($hash, $tgl_file);
-   
+
 }
 #
 #
@@ -347,7 +343,8 @@ sub rx_get_data($) {
         =~ /(P0=(?<P0>-?\d+);)?(P1=(?<P1>-?\d+);)?(P1=(?<P1>-?\d+);)?(P2=(?<P2>-?\d+);)?(P3=(?<P3>-?\d+);)?(P4=(?<P4>-?\d+);)?(P5=(?<P5>-?\d+);)?(P6=(?<P6>-?\d+);)?(P7=(?<P7>-?\d+);)?D=(?<data>\d+)/
         )
     {
-        my $tr_in = "", $tr_out = "";
+      my $tr_in = "";
+      my $tr_out = "";
         my $data = $+{data};
 
         for (my $i = 0; $i <= 7; ++$i) {    # P0 ... P7 in input
@@ -396,7 +393,8 @@ sub rx_sd2byte($$) {
     dbprint "word0: $word0\n";
     dbprint "word1: $word1\n";
 
-    my $bit0 = $d_dt0_string, $bit1 = $d_dt1_string;
+    my $bit0 = $d_dt0_string;
+    my $bit1 = $d_dt1_string;
 
     if (!(substr($word0, 0, 16) eq substr($word1, 0, 16))) {
         return -1;    # error
@@ -472,27 +470,27 @@ sub rx_sd2bytes ($) {
 
 sub rx_get_devID($) {
     my ($bytes) = @_;
-    return $$bytes[fer_dat_ADDR_2] << 16 | $$bytes[fer_dat_ADDR_1] << 8 | $$bytes[fer_dat_ADDR_0];
+    return $$bytes[$fer_dat_ADDR_2] << 16 | $$bytes[$fer_dat_ADDR_1] << 8 | $$bytes[$fer_dat_ADDR_0];
 }
 
 sub rx_get_ferCmd($) {
     my ($bytes) = @_;
-    return ($$bytes[fer_dat_GRP_and_CMD] & 0x0f);
+    return ($$bytes[$fer_dat_GRP_and_CMD] & 0x0f);
 }
 
 sub rx_get_ferGrp($) {
     my ($bytes) = @_;
-    return ($$bytes[fer_dat_GRP_and_CMD] & 0xf0) >> 4;
+    return ($$bytes[$fer_dat_GRP_and_CMD] & 0xf0) >> 4;
 }
 
 sub rx_get_ferMemb($) {
     my ($bytes) = @_;
-    return ($$bytes[fer_dat_TGL_and_MEMB] & 0x0f);
+    return ($$bytes[$fer_dat_TGL_and_MEMB] & 0x0f);
 }
 
 sub rx_get_ferTgl($) {
     my ($bytes) = @_;
-    return ($$bytes[fer_dat_TGL_and_MEMB] & 0xf0) >> 4;
+    return ($$bytes[$fer_dat_TGL_and_MEMB] & 0xf0) >> 4;
 }
 
 #
@@ -503,12 +501,12 @@ sub rx_get_ferTgl($) {
 #
 #
 my %map_fcmd = (
-    "up"       => fer_cmd_UP,
-    "down"     => fer_cmd_DOWN,
-    "stop"     => fer_cmd_STOP,
-    "set"      => fer_cmd_SET,
-    "sun-down" => fer_cmd_SunDOWN,
-    "sun-inst" => fer_cmd_SunInst,
+    "up"       => $fer_cmd_UP,
+    "down"     => $fer_cmd_DOWN,
+    "stop"     => $fer_cmd_STOP,
+    "set"      => $fer_cmd_SET,
+    "sun-down" => $fer_cmd_SunDOWN,
+    "sun-inst" => $fer_cmd_SunINST,
 );
 
 sub cmd2sdCMD($) {
@@ -544,7 +542,7 @@ sub args2cmd($) {
     if (exists($$args{'g'})) {
         my $val = $$args{'g'};
         if (0 <= $val && $val <= 7) {
-            FSB_PUT_GRP($fsb, fer_grp_Broadcast + $val);
+            FSB_PUT_GRP($fsb, $fer_grp_Broadcast + $val);
         }
         else {
             warn "error: invalid group '$val'\n";
@@ -552,16 +550,16 @@ sub args2cmd($) {
         }
     }
     else {
-        FSB_PUT_GRP($fsb, fer_grp_Broadcast);    # default
+        FSB_PUT_GRP($fsb, $fer_grp_Broadcast);    # default
     }
 
     if (exists($$args{'m'})) {
         my $val = $$args{'m'};
         if ($val == 0) {
-            FSB_PUT_MEMB($fsb, fer_memb_Broadcast);
+            FSB_PUT_MEMB($fsb, $fer_memb_Broadcast);
         }
         elsif (1 <= $val && $val <= 7) {
-            FSB_PUT_MEMB($fsb, fer_memb_M1 + $val - 1);
+            FSB_PUT_MEMB($fsb, $fer_memb_M1 + $val - 1);
         }
         else {
             warn "error: invalid member '$val'\n";
@@ -569,18 +567,18 @@ sub args2cmd($) {
         }
     }
     elsif (FSB_MODEL_IS_RECEIVER($fsb)) {
-        FSB_PUT_MEMB($fsb, fer_memb_RecAddress);
+        FSB_PUT_MEMB($fsb, $fer_memb_RecAddress);
     }
     elsif (FSB_MODEL_IS_SUNSENS($fsb)) {
-        FSB_PUT_MEMB($fsb, fer_memb_SUN);
+        FSB_PUT_MEMB($fsb, $fer_memb_SUN);
     }
     elsif (FSB_MODEL_IS_STANDARD($fsb)) {
-        FSB_PUT_MEMB($fsb, fer_memb_SINGLE);
+        FSB_PUT_MEMB($fsb, $fer_memb_SINGLE);
     }
     else {
-        FSB_PUT_MEMB($fsb, fer_memb_Broadcast);    # default
+        FSB_PUT_MEMB($fsb, $fer_memb_Broadcast);    # default
     }
-    
+
     fsb_doToggle($fsb);
     return $fsb;
 }
