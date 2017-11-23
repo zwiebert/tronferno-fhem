@@ -3,11 +3,13 @@ experimental code for Fernotron and FHEM
 
 ## What it currently does
 
-### Experimental FHEM module  (10_Tronferno.pm)
+### Experimental FHEM modules  (10_Tronferno.pm and 10_Fernotron.pm)
 
-* modules works for both SIGNALduino and Tronferno-MCU depnding on its file name (see comment in the file)
+* Fhem module Fernotron  works with SIGNALduino.  Module Tronferno works with Tronferno-MUC hardware
 
-* How to configure in FHEM (after installation is done)
+* how to install: see comment in module file
+
+* How to configure in FHEM:
 
 From web-interface or telnet add a device for each shutter and configure the attributes.  Or edit fhem.cfg directly.
 
