@@ -80,7 +80,6 @@ package Tronferno {
 
 package main {
 
-    # initialize as Tronferno if the file is named 10_Tronferno.pm
     sub Tronferno_Initialize($) {
         my ($hash) = @_;
 
@@ -92,3 +91,7 @@ package main {
 }
 
 1;
+
+# Local Variables:
+# compile-command: "perl -w ./10_Tronferno.pm"
+# End:

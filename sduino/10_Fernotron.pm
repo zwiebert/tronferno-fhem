@@ -18,7 +18,6 @@ use 5.14.0;
 
 package Fernotron;
 
-our $p_string = "SR;;R=1;;P0=400;;P1=-400;;P2=-3200;;P3=-800;;P4=800;;";
 my $def_cu = '801234';
 
 #  experimental code to generate and parse SIGNALduino strings for Fernotron
@@ -37,7 +36,7 @@ my $debug = 0;
 # DT1_OFF,        #P3  -4 * 200us =  -800us
 # DT0_ON,         #P4  +4 * 200us =  +800us
 
-my %rf_timings = (
+my $rf_timings = {
     'P0.min' => 350,
     'P0.max' => 450,
     'P1.min' => -450,
@@ -48,7 +47,9 @@ my %rf_timings = (
     'P3.max' => -700,
     'P4.min' => 700,
     'P4.max' => 900,
-);
+};
+
+my $p_string = "SR;;R=1;;P0=400;;P1=-400;;P2=-3200;;P3=-800;;P4=800;;";
 
 #                   1 2 3 4 5 6 7
 my $d_pre_string = "01010101010101";    # preamble
@@ -57,13 +58,12 @@ my $d_dt0_string = "41";                # data bit 0 (/..long..\short)
 my $d_dt1_string = "03";                # data bit 1 (/short\..long..)
 
 ## global configuration
-my %C = (
-    'centralUnitID' => 0x8012ab,
-
-);
+my $C = {
+    'centralUnitID' => 0x8012ab,        # FIXME:-bw/23-Nov-17
+};
 
 ## we store all 5 bytes, which is wasteful as the first 3 bits equals the hash-key.  simplifies the code a bit
-my %fsbs;
+my $fsbs = {};
 
 sub dbprint($) {
     if ($debug) {
@@ -200,11 +200,11 @@ my ($fer_memb_Broadcast,    # RTC data, ...
 #
 sub fsb_getByDevID($) {
     my ($devID) = @_;
-    if (!exists($fsbs{$devID})) {
-        $fsbs{$devID} = [ (($devID >> 16) & 0xff), (($devID >> 8) & 0xff), ($devID & 0xff), 0x00, 0x00 ];
+    if (!exists($fsbs->{$devID})) {
+        $fsbs->{$devID} = [ (($devID >> 16) & 0xff), (($devID >> 8) & 0xff), ($devID & 0xff), 0x00, 0x00 ];
     }
 
-    return $fsbs{$devID};
+    return $fsbs->{$devID};
 }
 
 sub fer_tglNibble_ctUp($$) {
@@ -357,7 +357,7 @@ sub rx_get_data($) {
                 my $n = $+{"P$i"};
                 dbprint "P$i=$n\n";
                 for (my $k = 0; $k <= 4; ++$k) {    # P0 .. P4 in output
-                    if ($rf_timings{"P$k.min"} <= $n && $n <= $rf_timings{"P$k.max"}) {
+                    if ($rf_timings->{"P$k.min"} <= $n && $n <= $rf_timings->{"P$k.max"}) {
                         $tr_in  .= $i;
                         $tr_out .= $k;
                         dbprint "$i -> $k\n";
@@ -530,7 +530,7 @@ sub args2cmd($) {
         $fsb = fsb_getByDevID($val);
     }
     else {
-        $fsb = fsb_getByDevID($C{'centralUnitID'});    # default
+        $fsb = fsb_getByDevID($C->{'centralUnitID'});    # default
     }
 
     if (exists($$args{'c'})) {
@@ -637,7 +637,6 @@ sub Fernotron_Set($$@) {
 
 package main {
 
-    # initialize as Fernotron if the file is named 10_Fernotron.pm
     sub Fernotron_Initialize($) {
         my ($hash) = @_;
 
@@ -650,3 +649,7 @@ package main {
 }
 
 1;
+
+# Local Variables:
+# compile-command: "perl -w ./10_Fernotron.pm"
+# End:
