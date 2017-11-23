@@ -3,8 +3,41 @@ experimental code for Fernotron and FHEM
 
 ## What it currently does
 
+### FHEM experimental module
 
-### Sending and receiving vie SIGNALduino
+* modules for both SIGNALduino and Tronferno-MCU
+
+* configuration in FHEM
+
+in  fhem.cfg it looks like this:
+
+```
+...
+define ftroll22 Fernotron                       shutter 2/2 pm for SIGNALduino
+attr ftroll22 controllerId 0x80abcd             scan your ID(s) with the fhemft.pl script
+attr ftroll22 groupNumber 2                     group number
+attr ftroll22 memberNumber 2                    member number
+attr ftroll22 webCmd down:stop:up
+define ftroll21 Fernotron                       shutter 2/1
+attr ftroll21 controllerId 0x80abcd
+attr ftroll21 groupNumber 2
+attr ftroll21 memberNumber 1
+attr ftroll21 webCmd down:stop:up
+...
+define roll22 Tronferno                         shutter 2/2  for Fernotron-MCU
+attr roll22 groupNumber 2
+attr roll22 mcuaddr 192.168.1.61               IP4 address of tronferno-mcu hardware
+attr roll22 memberNumber 2
+attr roll22 webCmd down:stop:up
+define roll25 Tronferno                         shutter 2/5
+attr roll25 groupNumber 2
+attr roll25 mcuaddr 192.168.1.61
+attr roll25 memberNumber 5
+attr roll25 webCmd down:stop:up
+```
+
+
+### Sending and receiving vie SIGNALduino using a perl script (fhemft.pl)
 
 * works from command line and runs fhem.pl directly with the message passed by command line
 * can scan the FHEM/SIGNALduino logfile for Fernotron commands
