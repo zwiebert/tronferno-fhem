@@ -40,8 +40,6 @@ package main {
 
         $hash->{AttrList} = 'mcuaddr groupNumber memberNumber controllerId';
         $hash->{SetFn}    = "Tronferno::Tronferno_Set";
-        $hash->{STATE}    = 'disconnected';
-
     }
 
     # initialize as Fernotron if the file is named 10_Fernotron.pm
@@ -52,7 +50,6 @@ package main {
 
         $hash->{AttrList} = 'groupNumber memberNumber controllerId';
         $hash->{SetFn}    = "Fernotron::Fernotron_Set";
-        $hash->{STATE}    = 'disconnected';
     }
 
 }
