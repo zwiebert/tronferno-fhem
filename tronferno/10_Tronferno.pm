@@ -86,31 +86,26 @@ package Tronferno {
         return "$cmd g=$g m=$m c=$c;";
     }
 
+    my $map_tcmd = {
+        up         => 'up',
+        down       => 'down',
+        stop       => 'stop',
+        set        => 'set',
+        'sun-down' => 'sun-down',
+        'sun-inst' => 'sun-inst',
+    };
+
     sub Tronferno_Set($$@) {
         my ($hash, $name, $cmd, @args) = @_;
 
         return "\"set $name\" needs at least one argument" unless (defined($cmd));
 
-        if ($cmd eq 'on' or $cmd eq 'up') {
-            my $req = Tronferno_build_cmd($name, 'send', 'up');
+        if (exists $map_tcmd->{$cmd}) {
+            my $req = Tronferno_build_cmd($name, 'send', $map_tcmd->{$cmd});
             Tronferno_transmit($name, $req);
-        }
-        elsif ($cmd eq 'off' or $cmd eq 'down') {
-            my $req = Tronferno_build_cmd($name, 'send', 'down');
-            Tronferno_transmit($name, $req);
-        }
-        elsif ($cmd eq 'stop') {
-            my $req = Tronferno_build_cmd($name, 'send', 'stop');
-            Tronferno_transmit($name, $req);
-        }
-        elsif ($cmd eq 'timer') {
-        }
-        elsif ($cmd eq 'config') {
-        }
-        elsif ($cmd eq 'send') {
         }
         else {
-            return "unknown argument $cmd choose one of up down stop";
+            return "unknown argument $cmd choose one of " . join(' ', keys(%$map_tcmd));
         }
 
         return undef;
@@ -123,67 +118,8 @@ package Tronferno {
 #
 package Fernotron {
 
-  our $p_string = "SR;;R=1;;P0=400;;P1=-400;;P2=-3200;;P3=-800;;P4=800;;";
-  my $def_cu = '801234';
-
-    sub Fernotron_Define($$) {
-        my ($hash, $def) = @_;
-        my $name = $hash->{NAME};
-
-        print("call define\n");
-        main::AssignIoPort($hash);
-
-    }
-
-    sub Fernotron_transmit($$$) {
-        my ($hash, $command, $c) = @_;
-        my $name = $hash->{NAME};
-        my $args = {
-            command => $command,
-            a       => hex(main::AttrVal($name, 'controllerId', $def_cu)),
-            g       => main::AttrVal($name, 'groupNumber', 0),
-            m       => main::AttrVal($name, 'memberNumber', 0),
-            c       => $c,
-        };
-        my $fsb = args2cmd($args);
-        if ($fsb != -1) {
-	     print "$name: send messasge: " . fsb2string($fsb) . "\n";
-            my $tx_data = cmd2dString($fsb);     # print "debug: $p_string$tx_data\n";
-            my $msg     = "$p_string$tx_data";
-            $msg =~ s/;;/;/g;
-            main::IOWrite($hash, 'raw', $msg);
-        }
-        else { print "no fsb\n"; }
-    }
-
-    sub Fernotron_Set($$@) {
-        my ($hash, $name, $cmd, @args) = @_;
-        return "\"set $name\" needs at least one argument" unless (defined($cmd));
-
-        main::AssignIoPort($hash);               # if undef $hash->{IODev};
-        my $io = $hash->{IODev} or return '"no io device"';
-
-        if ($cmd eq 'on' or $cmd eq 'up') {
-            Fernotron_transmit($hash, 'send', 'up');
-        }
-        elsif ($cmd eq 'off' or $cmd eq 'down') {
-            Fernotron_transmit($hash, 'send', 'up');
-        }
-        elsif ($cmd eq 'stop') {
-            Fernotron_transmit($hash, 'send', 'stop');
-        }
-        elsif ($cmd eq 'timer') {
-        }
-        elsif ($cmd eq 'config') {
-        }
-        elsif ($cmd eq 'send') {
-        }
-        else {
-            return "unknown argument $cmd choose one of up down stop";
-        }
-
-        return undef;
-    }
+    our $p_string = "SR;;R=1;;P0=400;;P1=-400;;P2=-3200;;P3=-800;;P4=800;;";
+    my $def_cu = '801234';
 
     #  experimental code to generate and parse SIGNALduino strings for Fernotron
     #
@@ -669,14 +605,14 @@ package Fernotron {
 ### send commands to fhem
     #
     #
-    my %map_fcmd = (
+    my $map_fcmd = {
         "up"       => $fer_cmd_UP,
         "down"     => $fer_cmd_DOWN,
         "stop"     => $fer_cmd_STOP,
         "set"      => $fer_cmd_SET,
         "sun-down" => $fer_cmd_SunDOWN,
         "sun-inst" => $fer_cmd_SunINST,
-    );
+    };
 
     sub cmd2sdCMD($) {
         my ($fsb) = @_;
@@ -699,8 +635,8 @@ package Fernotron {
 
         if (exists($$args{'c'})) {
             my $val = $$args{'c'};
-            if (exists($map_fcmd{$val})) {
-                FSB_PUT_CMD($fsb, $map_fcmd{$val});
+            if (exists($map_fcmd->{$val})) {
+                FSB_PUT_CMD($fsb, $map_fcmd->{$val});
             }
             else {
                 warn "error: unknown command '$val'\n";
@@ -752,6 +688,53 @@ package Fernotron {
         return $fsb;
     }
 
+#} package Fernotron {
+
+    sub Fernotron_Define($$) {
+        my ($hash, $def) = @_;
+        my $name = $hash->{NAME};
+
+        print("call define\n");
+        main::AssignIoPort($hash);
+
+    }
+
+    sub Fernotron_transmit($$$) {
+        my ($hash, $command, $c) = @_;
+        my $name = $hash->{NAME};
+        my $args = {
+            command => $command,
+            a       => hex(main::AttrVal($name, 'controllerId', $def_cu)),
+            g       => main::AttrVal($name, 'groupNumber', 0),
+            m       => main::AttrVal($name, 'memberNumber', 0),
+            c       => $c,
+        };
+        my $fsb = args2cmd($args);
+        if ($fsb != -1) {
+            print "$name: send messasge: " . fsb2string($fsb) . "\n";
+            my $tx_data = cmd2dString($fsb);     # print "debug: $p_string$tx_data\n";
+            my $msg     = "$p_string$tx_data";
+            $msg =~ s/;;/;/g;
+            main::IOWrite($hash, 'raw', $msg);
+        }
+        else { print "no fsb\n"; }
+    }
+
+    sub Fernotron_Set($$@) {
+        my ($hash, $name, $cmd, @args) = @_;
+        return "\"set $name\" needs at least one argument" unless (defined($cmd));
+
+        main::AssignIoPort($hash);               # if undef $hash->{IODev};
+        my $io = $hash->{IODev} or return '"no io device"';
+
+        if (exists $map_fcmd->{$cmd}) {
+            Fernotron_transmit($hash, 'send', $cmd);
+        }
+        else {
+            return "unknown argument $cmd choose one of " . join(' ', keys(%$map_fcmd));
+        }
+        return undef;
+    }
 }
 
 1;
