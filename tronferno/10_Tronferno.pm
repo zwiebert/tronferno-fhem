@@ -50,7 +50,7 @@ package main {
 
         $hash->{DefFn} = 'Fernotron::Fernotron_Define';
 
-        $hash->{AttrList} = 'mcuaddr groupNumber memberNumber controllerId';
+        $hash->{AttrList} = 'groupNumber memberNumber controllerId';
         $hash->{SetFn}    = "Fernotron::Fernotron_Set";
         $hash->{STATE}    = 'disconnected';
     }
