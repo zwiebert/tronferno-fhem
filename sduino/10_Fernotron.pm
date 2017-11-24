@@ -594,10 +594,42 @@ sub args2cmd($) {
 sub Fernotron_Define($$) {
     my ($hash, $def) = @_;
     my $name = $hash->{NAME};
+    
+    my @a = split("[ \t][ \t]*", $def);
+    my ($a, $g, $m) = (undef, 0, 0);
+    my $u = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N]';
 
-    print("call define\n");
+    return $u if ($#a < 2);
+    
+    shift (@a); shift (@a);
+    foreach my $o (@a) {
+      my ($key, $value) = split('=', $o);
+  
+        if ($key eq 'a') {
+            $a = hex($value);
+        }
+        elsif ($key eq 'g') {
+            $g = int($value);
+        }
+        elsif ($key eq 'm') {
+            $m = int($value);
+        }
+        else {
+            return "$name: unknown argument $o in define";    #FIXME add usage text
+        }
+    }
+
+    if ($a == undef) {
+      return "$name: missing argument 'a'";
+    }
+    #FIXME-bw/24-Nov-17: validate options
+    $hash->{helper}{ferid_a} = $a;
+    $hash->{helper}{ferid_g} = $g;
+    $hash->{helper}{ferid_m} = $m;
+
     main::AssignIoPort($hash);
 
+    return undef;
 }
 
 sub Fernotron_transmit($$$) {
@@ -605,10 +637,10 @@ sub Fernotron_transmit($$$) {
     my $name = $hash->{NAME};
     my $args = {
         command => $command,
-        a       => hex(main::AttrVal($name, 'controllerId', $def_cu)),
-        g       => main::AttrVal($name, 'groupNumber', 0),
-        m       => main::AttrVal($name, 'memberNumber', 0),
-        c       => $c,
+         a       => $hash->{helper}{ferid_a},
+         g       => $hash->{helper}{ferid_g},
+         m       => $hash->{helper}{ferid_m},
+         c       => $c,
     };
     my $fsb = args2cmd($args);
     if ($fsb != -1) {
@@ -628,6 +660,14 @@ sub Fernotron_Set($$@) {
     main::AssignIoPort($hash);               # if undef $hash->{IODev};
     my $io = $hash->{IODev} or return '"no io device"';
 
+    if ($cmd eq '?') {
+        my $res = "unknown argument $cmd choose one of ";
+        foreach my $key (keys %$map_fcmd) {
+            $res .= " $key:noArg";
+        }
+        return $res;
+    }
+
     if (exists $map_fcmd->{$cmd}) {
         Fernotron_transmit($hash, 'send', $cmd);
     }
@@ -643,8 +683,6 @@ package main {
         my ($hash) = @_;
 
         $hash->{DefFn} = 'Fernotron::Fernotron_Define';
-
-        $hash->{AttrList} = 'groupNumber memberNumber controllerId';
         $hash->{SetFn}    = "Fernotron::Fernotron_Set";
     }
 
@@ -655,3 +693,5 @@ package main {
 # Local Variables:
 # compile-command: "perl -w ./10_Fernotron.pm"
 # End:
+
+
