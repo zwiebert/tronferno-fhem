@@ -13,13 +13,14 @@ Gerät definieren
 
 Ein Gerät kann einen einzige Rolladen aber  auch eine ganze Gruppe ansprechen.  Dies wird durch die verwendete ID und Gruppen und Empfängernummer bestimmt.
 
-
-Attribute
----------
-
-* controllerID - sechstellige hexadezimale Zahl.  10xxxx=Handsender, 20xxxx=Sonnensensor, 80xxxx=Zentraleinheit, 90xxxx=Empfänger
-* groupNumber  - Gruppennummer einer Zentralheinheit: Zahl wischen 0 und 7.  0 steht für alle Gruppen.
-* memberNumber - Empfängernummer in einer Gruppe: 0-7. 0 für alle Empfänger.
+            define <MeinRolladen> Fernotron a=ID [g=GN] [m=MN]
+			
+		
+			ID : Die Geräte ID. Eine  sechstellige hexadezimale Zahl.  10xxxx=Handsender, 20xxxx=Sonnensensor, 80xxxx=Zentraleinheit, 90xxxx=Empfänger
+			GN : Gruppennummer (1-7) oder 0 (default) für alle Gruppen
+			MN : Empfängernummer (1-) oder 0 (default) für alle Empfänger
+			
+'g' und 'n' sind nur sinnvoll, wenn als ID eine Zentraleinheit angegeben wurde 
 
 
 Verschiedene Methoden der Adressierung
@@ -64,29 +65,20 @@ Beispiele
            Shell-Ausgabe: id=80abcd,  ....  (ID notieren)
 
 * Eingaben im FHEM Webinterface 
-
-          Kommando-Feld: define Rolladen_11 Fernotron    (Enter)
-          attr Feld: controllerId: 80abcd    (Enter)
-		  attr Feld: groupNumber: 1   (Enter)
-		  attr Feld: memberNumber: 1  (Enter)
+ 
+          Kommando-Feld: define Rolladen_11 Fernotron a=80abcd g=1 m=1  (Enter)
 		  attr Feld: webCmd: down:stop:up  (Enter)
 		  Save config
 		  
           ...
 		  
-          Kommando-Feld: define Rolladen_42 Fernotron    (Enter)
-          attr Feld: controllerId: 80abcd    (Enter)
-		  attr Feld: groupNumber: 4   (Enter)
-		  attr Feld: memberNumber: 2  (Enter)
-		  attr Feld: webCmd: down:stop:up  (Enter)
+          Kommando-Feld: define Rolladen_42 Fernotron a=80abcd g=4 m=2  (Enter)
+  		  attr Feld: webCmd: down:stop:up  (Enter)
 		  Save config
 		  
 		  ...
 		  
-          Kommando-Feld: define Rolladen_Alle Fernotron    (Enter)
-          attr Feld: controllerId: 80abcd    (Enter)
-		  attr Feld: groupNumber: 0   (Enter)
-		  attr Feld: memberNumber: 0  (Enter)
+          Kommando-Feld: define Rolladen_Alle Fernotron  a=80abcd  (Enter)
 		  attr Feld: webCmd: down:stop:up  (Enter)
 		  Save config
 		  
@@ -95,8 +87,7 @@ Beispiele
 
 * Eingaben im FHEM Webinterface 
 
-          Kommando-Feld: define Rolladen_Bad  Fernotron    (Enter)
-          attr Feld: controllerId: 100001    (Enter)
+          Kommando-Feld: define Rolladen_Bad a=100001 Fernotron    (Enter)
 		  attr Feld: webCmd: down:stop:up  (Enter)
 		  Save config
 
@@ -106,8 +97,7 @@ Beispiele
 		  
 		  up oder down anklicken. Motor sollte reagieren.
 		  
-		  Kommando-Feld: define Rolladen_Kueche  Fernotron    (Enter)
-          attr Feld: controllerId: 100002    (Enter)
+		  Kommando-Feld: define Rolladen_Kueche  Fernotron a=100002   (Enter)
 		  attr Feld: webCmd: down:stop:up  (Enter)
 		  Save config
 		  
@@ -122,8 +112,7 @@ Beispiele
 
 * Eingaben im FHEM Webinterface 
 
-          Kommando-Feld: define Rolladen_Bad  Fernotron    (Enter)
-          attr Feld: controllerId: 90D1234    (Enter)
+          Kommando-Feld: define Rolladen_Bad  Fernotron a=90D1234   (Enter)
 		  attr Feld: webCmd: down:stop:up  (Enter)
 		  Save config
 		  
