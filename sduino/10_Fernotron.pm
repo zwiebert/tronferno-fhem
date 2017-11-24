@@ -3,7 +3,7 @@
 # FHEM module to control Fernotron devices via SIGNALduino hardware
 # Author: Bert Winkelmann <tf.zwiebert@online.de>
 #
-# - rename and copy or softlink this file to /opt/fhem/FHEM/10_Fernotron.pm
+# - copy or softlink this file to /opt/fhem/FHEM/10_Fernotron.pm
 # - add "Fernotron" to /opt/fhem/FHEM/SIGNALduino.pm liket this:
 #---------------8<-------------------------
 # Supported Clients per default
@@ -594,17 +594,18 @@ sub args2cmd($) {
 sub Fernotron_Define($$) {
     my ($hash, $def) = @_;
     my $name = $hash->{NAME};
-    
+
     my @a = split("[ \t][ \t]*", $def);
     my ($a, $g, $m) = (undef, 0, 0);
     my $u = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N]';
 
     return $u if ($#a < 2);
-    
-    shift (@a); shift (@a);
+
+    shift(@a);
+    shift(@a);
     foreach my $o (@a) {
-      my ($key, $value) = split('=', $o);
-  
+        my ($key, $value) = split('=', $o);
+
         if ($key eq 'a') {
             $a = hex($value);
         }
@@ -620,8 +621,9 @@ sub Fernotron_Define($$) {
     }
 
     if ($a == undef) {
-      return "$name: missing argument 'a'";
+        return "$name: missing argument 'a'";
     }
+
     #FIXME-bw/24-Nov-17: validate options
     $hash->{helper}{ferid_a} = $a;
     $hash->{helper}{ferid_g} = $g;
@@ -637,10 +639,10 @@ sub Fernotron_transmit($$$) {
     my $name = $hash->{NAME};
     my $args = {
         command => $command,
-         a       => $hash->{helper}{ferid_a},
-         g       => $hash->{helper}{ferid_g},
-         m       => $hash->{helper}{ferid_m},
-         c       => $c,
+        a       => $hash->{helper}{ferid_a},
+        g       => $hash->{helper}{ferid_g},
+        m       => $hash->{helper}{ferid_m},
+        c       => $c,
     };
     my $fsb = args2cmd($args);
     if ($fsb != -1) {
@@ -683,15 +685,184 @@ package main {
         my ($hash) = @_;
 
         $hash->{DefFn} = 'Fernotron::Fernotron_Define';
-        $hash->{SetFn}    = "Fernotron::Fernotron_Set";
+        $hash->{SetFn} = "Fernotron::Fernotron_Set";
     }
 
 }
-
-1;
 
 # Local Variables:
 # compile-command: "perl -w ./10_Fernotron.pm"
 # End:
 
+1;
 
+=pod
+=item device
+=item summary controls shutters via Fernotron protocol
+=item summary_DE steuert Rolläden über Fernotron Protokoll
+
+=begin html
+
+<a name="Fernotron"></a>
+
+ <h3>Fernotron</h3>
+
+     <i>Fernotron</i> is a logic module to control shutters using Fernotron protocol. It generates commands wich are then send via <i>SIGNALduino</i> as raw message. <i>Fernotron</i> could also 
+turn back received raw messages into commands.  But Fernotron protocol is unidirectional, so there is not much to receive.
+
+
+<h4>Basics</h4>
+
+Each device has is using an uniq ID number. A receiver remembers the ID of a controller. That way they are linked together. Each receiver can 'member one central controller unit (incl the group and member numbers), one sun sensor and a few plain controllers.
+
+h4>Defining Devices</h4>
+
+Each device may control a single shutter, but could also control an entire group.  This depends on the ID and the group and member numbers.
+
+<code>
+    define <my_shutter> Fernotron a=ID [g=GN] [m=MN]
+			
+		
+    ID : the device ID. A six digit hexadecimal number. 10xxxx=plain controller, 20xxxx=sun sensor, 80xxxx=central controller unit, 90xxxx=receiver
+    GN : group number (1-7) or 0 (default) for all groups
+    MN : member number  (1-7) or  0 (default) for all group members
+</code>
+			
+'g' or  'n' are only useful combined with an ID of the central controller type. 
+
+
+<h4>Different Kinds of Adressing</h4>
+
+<ol>
+<li> Scanning physical controllers and use their IDs. Example: Using the  ID of a  2411 controller to access shutters via group and member numbers.</li>
+
+<li> Make up IDs and pair them with shutters. Example: Pair shutter 1 with ID 100001, shutter  2 with 100002, ...</li>
+
+<li> Receiver IDs: RF controlled shutters may have a 5 digit code printed on or on a small cable sticker. Prefix a 9 with it and you get an ID.</li>
+</ol>
+
+<h4>Making Groups</h4>
+
+<ol>
+<li>groups and members are the same like in 2411. Groups are adressed using the 0 as wildcard.  (g=1 m=0 or g=0 m=1 or g=0 m=0) </li>
+
+<li> Like with plain controllers. Example: a (virtual) plain controller paired with each shutter of the entire floor.</li>
+
+<li> not possible with reeiver IDs</li>
+</ol>
+
+
+<h4>Kommandos</h4>
+
+<ul>
+<li>up</li>
+<li>down</li>
+<li>stop</li>
+<li>set  - make receiver ready to pair</li>
+<li>sun-down - move down until sun position (but only, if sun automatic is enabled)</li>
+<li>sun-inst - set the current position as sun position</li>
+</ul>
+
+<h4>Examples</h4>
+<ol>
+  <li><ul>
+<li>first scan the ID using fhemft.pl (FIXME)</li>
+<li><code>define rollo42 Fernotron a=80808 g=4 m=2</code></li>
+</ul></li>
+
+  <li><ul>
+<li><code>define rollo1 Fernotron a=100001 </code></li>
+</ul></li>
+
+  <li><ul>
+<li><code>define rollo_0d123 Fernotron a=90d123</code></li>
+<li>enable set mode on the receiver</li>
+<li>press stop for rollo_0d123</li>
+</ul></li>
+</ol>
+=end html
+
+
+=begin html_DE
+
+<a name="Fernotron"></a>
+
+ <h3>Fernotron</h3>
+
+     <i>Fernotron</i> ist ein logisches Modul zur Steuerung von Fernotron Rolläden.  Die erzeugten Kommandos werden über <i>SIGNALduino</i> als Raw gesendet. <i>Fernotron</i> kann außerdem empfangene Raw Nachrichten wieder in Kommandos umwandeln, was aber bei einem unidirektionalem Protokoll nicht sehr viel Nutzen bringt. 
+
+
+<h4>Grundlagen</h4>
+
+Jedes Gerät eine ID-Nummer ab Werk fest einprogrammiert. Empfänger und Sender werden gekoppelt, indem sich der Empfänger die ID des Senders merkt. Jeder Empfänger kann sich je eine ID einer Zentraleinheit (inklusive Gruppe und Empfängernummer), eines Sonnensensors und mehrerer Handsender merken.
+
+
+<h4>Gerät definieren</h4>
+
+Ein Gerät kann einen einzige Rolladen aber  auch eine ganze Gruppe ansprechen.  Dies wird durch die verwendete ID und Gruppen und Empfängernummer bestimmt.
+
+<code>
+    define <MeinRolladen> Fernotron a=ID [g=GN] [m=MN]
+			
+		
+    ID : Die Geräte ID. Eine  sechstellige hexadezimale Zahl.  10xxxx=Handsender, 20xxxx=Sonnensensor, 80xxxx=Zentraleinheit, 90xxxx=Empfänger
+    GN : Gruppennummer (1-7) oder 0 (default) für alle Gruppen
+    MN : Empfängernummer (1-) oder 0 (default) für alle Empfänger
+</code>
+			
+'g' und 'n' sind nur sinnvoll, wenn als ID eine Zentraleinheit angegeben wurde 
+
+
+<h4>Verschiedene Methoden der Adressierung</h4>
+
+<ol>
+<li> Die IDs vorhandener Sende-Geräte einscannen und dann benutzen. Beispiel: Die ID der 2411 benutzen um dann über Gruppen und Empfängernummern die Rolläden anzusprechen.</li>
+
+<li> Ausgedachte IDs mit Motoren zu koppeln.  Beispiel: Rolladen Nr 1 mit 100001, Nr 2 mit 100002, ...</li>
+
+<li> Empfänger IDs: Funkmotoren haben 5 stellige "Funk-Codes" aufgedruckt, eigentlich gedacht zur Inbetriebnahme. Es muss eine 9 davorgestellt werden um die ID zu erhalten.</li>
+</ol>
+
+<h4>Gruppenbildung</h4>
+
+<ol>
+<li>Gruppen und Empfäger entsprechen der 2411. Gruppenbildung durch die 0 als Joker.  (g=1 m=0 oder g=0 m=1) </li>
+
+<li> Wie bei realen Handsendern. Beispiel: Ein (virtueller) Handsender wird bei allen Motoren einer Etage angemeldet.</li>
+
+<li> nicht möglich</li>
+</ol>
+
+
+<h4>Kommandos</h4>
+
+<ul>
+<li>up - öffnen</li>
+<li>down - schließen</li>
+<li>stop - anhalten</li>
+<li>set  - Setzfunktion aktivieren</li>
+<li>sun-down - Herunterfahren bis Sonnenposition (nur bei aktiverter Sonnenautomatik)</li>
+<li>sun-inst - aktuelle Position als Sonnenposition speichern</li>
+</ul>
+
+<h4>Beispiele</h4>
+<ol>
+  <li><ul>
+<li>first scanne die ID mit fhemft.pl (FIXME)</li>
+<li><code>define rollo42 Fernotron a=80808 g=4 m=2</code></li>
+</ul></li>
+
+  <li><ul>
+<li><code>define rollo1 Fernotron a=100001 </code></li>
+</ul></li>
+
+  <li><ul>
+<li><code>define rollo_0d123 Fernotron a=90d123</code></li>
+<li>aktivere Set-Modus des gewünschten Motors</li>
+<li><code>set rollo_0d123 stop</code></li>
+</ul></li>
+</ol>
+
+=end html_DE
+
+=cut
