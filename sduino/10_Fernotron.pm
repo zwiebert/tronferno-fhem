@@ -719,16 +719,16 @@ h4>Defining Devices</h4>
 
 Each device may control a single shutter, but could also control an entire group.  This depends on the ID and the group and member numbers.
 
-<code>
-    define <my_shutter> Fernotron a=ID [g=GN] [m=MN]
-			
+<p><code>
+    define <my_shutter> Fernotron a=ID [g=GN] [m=MN]<br>
+</code>			
 		
-    ID : the device ID. A six digit hexadecimal number. 10xxxx=plain controller, 20xxxx=sun sensor, 80xxxx=central controller unit, 90xxxx=receiver
-    GN : group number (1-7) or 0 (default) for all groups
-    MN : member number  (1-7) or  0 (default) for all group members
-</code>
+  <p>  ID : the device ID. A six digit hexadecimal number. 10xxxx=plain controller, 20xxxx=sun sensor, 80xxxx=central controller unit, 90xxxx=receiver<br>
+    GN : group number (1-7) or 0 (default) for all groups<br>
+    MN : member number  (1-7) or  0 (default) for all group members<br>
+
 			
-'g' or  'n' are only useful combined with an ID of the central controller type. 
+<p>'g' or  'n' are only useful combined with an ID of the central controller type. 
 
 
 <h4>Different Kinds of Adressing</h4>
@@ -766,7 +766,7 @@ Each device may control a single shutter, but could also control an entire group
 <h4>Examples</h4>
 <ol>
   <li><ul>
-<li>first scan the ID using fhemft.pl (FIXME)</li>
+<li>first scan the ID of the 2411 using fhemft.pl (FIXME)</li>
 <li><code>define rollo42 Fernotron a=80808 g=4 m=2</code></li>
 </ul></li>
 
@@ -801,16 +801,16 @@ Jedes Gerät eine ID-Nummer ab Werk fest einprogrammiert. Empfänger und Sender 
 
 Ein Gerät kann einen einzige Rolladen aber  auch eine ganze Gruppe ansprechen.  Dies wird durch die verwendete ID und Gruppen und Empfängernummer bestimmt.
 
-<code>
-    define <MeinRolladen> Fernotron a=ID [g=GN] [m=MN]
-			
-		
-    ID : Die Geräte ID. Eine  sechstellige hexadezimale Zahl.  10xxxx=Handsender, 20xxxx=Sonnensensor, 80xxxx=Zentraleinheit, 90xxxx=Empfänger
-    GN : Gruppennummer (1-7) oder 0 (default) für alle Gruppen
-    MN : Empfängernummer (1-) oder 0 (default) für alle Empfänger
+<p><code>
+    define <MeinRolladen> Fernotron a=ID [g=GN] [m=MN]<br>
 </code>
 			
-'g' und 'n' sind nur sinnvoll, wenn als ID eine Zentraleinheit angegeben wurde 
+		
+<p>    ID : Die Geräte ID. Eine  sechstellige hexadezimale Zahl.  10xxxx=Handsender, 20xxxx=Sonnensensor, 80xxxx=Zentraleinheit, 90xxxx=Empfänger<br>
+    GN : Gruppennummer (1-7) oder 0 (default) für alle Gruppen<br>
+    MN : Empfängernummer (1-) oder 0 (default) für alle Empfänger<br>
+			
+<p>'g' und 'n' sind nur sinnvoll, wenn als ID eine Zentraleinheit angegeben wurde 
 
 
 <h4>Verschiedene Methoden der Adressierung</h4>
@@ -848,8 +848,8 @@ Ein Gerät kann einen einzige Rolladen aber  auch eine ganze Gruppe ansprechen. 
 <h4>Beispiele</h4>
 <ol>
   <li><ul>
-<li>first scanne die ID mit fhemft.pl (FIXME)</li>
-<li><code>define rollo42 Fernotron a=80808 g=4 m=2</code></li>
+<li>scanne die ID der 2411 mit fhemft.pl (FIXME)</li>
+<li><code>define rollo42 Fernotron a=80abcd g=4 m=2</code></li>
 </ul></li>
 
   <li><ul>
