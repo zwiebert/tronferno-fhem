@@ -2,12 +2,6 @@ FHEM Modul Fernotron - Benutzung
 ================================
 
 
-Grundlagen
-----------
-
-Jedes Gerät eine ID-Nummer ab Werk fest einprogrammiert. Empfänger und Sender werden gekoppelt, indem sich der Empfänger die ID des Senders merkt. Jeder Empfänger kann sich je eine ID einer Zentraleinheit (inklusive Gruppe und Empfängernummer), eines Sonnensensors und mehrerer Handsender merken.
-
-
 Modul installieren
 ------------------
 
@@ -31,6 +25,12 @@ nun attr drücken.
 			 
 Hinterher den Befehl rereadcfg ausführen.
 
+
+
+Grundlagen
+----------
+
+Jedes Gerät hat eine ID-Nummer ab Werk fest einprogrammiert. Empfänger und Sender werden gekoppelt, indem sich der Empfänger die ID des Senders merkt. Jeder Empfänger kann sich je eine ID einer Zentraleinheit (inklusive Gruppe und Empfängernummer), eines Sonnensensors und mehrerer Handsender merken.
 
 
 
