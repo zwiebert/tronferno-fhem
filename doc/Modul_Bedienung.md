@@ -5,7 +5,7 @@ FHEM Modul Fernotron - Benutzung
 Modul installieren
 ------------------
 
-* Das Modul 10_Fernotron.pm muss in den FEM Modul-Ordner (/opt/fhem/FHEM/) kopiert werden.
+* Das Modul 10_Fernotron.pm muss in den FHEM Modul-Ordner (/opt/fhem/FHEM/) kopiert werden.
 
 * Ein Gerät vom Typ SIGNALduino muss definiert sein und natürlich die SIGNALduino Hardware angeschlossen sein.
 
@@ -15,10 +15,10 @@ Modul installieren
 
              :Fernotron:IT:CUL_TCM97001:SD_RSL:OREGON:CUL_TX:SD_AS:Hideki:SD_WS07:SD_WS09: :SD_WS:RFXX10REC:Dooya:SOMFY:SD_UT:SD_WS_Maverick:FLAMINGO:CUL_WS:Revolt: :FS10:CUL_FHTTK:Siro:FHT:FS20:SIGNALduino_un:
 			 
-nun attr drücken.
+nun attr drücken oder Enter Taste.
 
 
-* Alternativ kann man das ganze als Kommando zu fhem.cfg hinzufügen:
+* Alternativ kann man das ganze als Kommando zu fhem.cfg hinzufügen (dort direkt unter "define sduino"):
 
              attr sduino Clients :Fernotron:IT:CUL_TCM97001:SD_RSL:OREGON:CUL_TX:SD_AS:Hideki:SD_WS07:SD_WS09: :SD_WS:RFXX10REC:Dooya:SOMFY:SD_UT:SD_WS_Maverick:FLAMINGO:CUL_WS:Revolt: :FS10:CUL_FHTTK:Siro:FHT:FS20:SIGNALduino_un:
 			 
@@ -30,35 +30,7 @@ Hinterher den Befehl rereadcfg ausführen.
 Grundlagen
 ----------
 
-Jedes Gerät hat eine ID-Nummer ab Werk fest einprogrammiert. Empfänger und Sender werden gekoppelt, indem sich der Empfänger die ID des Senders merkt. Jeder Empfänger kann sich je eine ID einer Zentraleinheit (inklusive Gruppe und Empfängernummer), eines Sonnensensors und mehrerer Handsender merken.
-
-
-
-Modul installieren
-------------------
-
-* Das Modul 10_Fernotron.pm muss in den FEM Modul-Ordner (/opt/fhem/FHEM/) kopiert werden.
-
-* Ein Gerät vom Typ SIGNALduino muss definiert sein und natürlich die SIGNALduino Hardware angeschlossen sein.
-
-* Fernotron zur Liste der Klienten des SIGNALduino Geräts hinzufügen. Angenommen das Gerät heißt 'sduino'. Das Gerät im Webinterface öffnen und den Wert unter Internals.Clients kopieren.
-
-  Unter attr.Clients eingeben:  :Fernotron   und dahinter den kopierten Wert pasten.  Das sieht dann in etwa so aus:
-
-             :Fernotron:IT:CUL_TCM97001:SD_RSL:OREGON:CUL_TX:SD_AS:Hideki:SD_WS07:SD_WS09: :SD_WS:RFXX10REC:Dooya:SOMFY:SD_UT:SD_WS_Maverick:FLAMINGO:CUL_WS:Revolt: :FS10:CUL_FHTTK:Siro:FHT:FS20:SIGNALduino_un:
-			 
-nun attr drücken.
-
-
-* Alternativ kann man das ganze als Kommando zu fhem.cfg hinzufügen:
-
-             attr sduino Clients :Fernotron:IT:CUL_TCM97001:SD_RSL:OREGON:CUL_TX:SD_AS:Hideki:SD_WS07:SD_WS09: :SD_WS:RFXX10REC:Dooya:SOMFY:SD_UT:SD_WS_Maverick:FLAMINGO:CUL_WS:Revolt: :FS10:CUL_FHTTK:Siro:FHT:FS20:SIGNALduino_un:
-			 
-			 
-Hinterher den Befehl rereadcfg ausführen.
-
-
-
+Original-Fernotron-Geräte habe eine ID-Nummer ab Werk fest einprogrammiert. Empfänger und Sender werden gekoppelt, indem sich der Empfänger die ID des Senders merkt. Jeder Empfänger kann sich je eine ID einer Zentraleinheit (inklusive Gruppe und Empfängernummer), eines Sonnensensors und mehrerer Handsender merken.
 
 Gerät definieren
 ----------------
@@ -72,7 +44,7 @@ Ein Gerät kann einen einzige Rolladen aber  auch eine ganze Gruppe ansprechen. 
 			GN : Gruppennummer (1-7) oder 0 (default) für alle Gruppen
 			MN : Empfängernummer (1-) oder 0 (default) für alle Empfänger
 			
-'g' und 'n' sind nur sinnvoll, wenn als ID eine Zentraleinheit angegeben wurde 
+'g' und 'm' sind nur sinnvoll, wenn als ID eine Zentraleinheit angegeben wurde 
 
 
 Verschiedene Methoden der Adressierung
