@@ -44,7 +44,7 @@ Ein Gerät kann einen einzige Rolladen aber  auch eine ganze Gruppe ansprechen. 
 			GN : Gruppennummer (1-7) oder 0 (default) für alle Gruppen
 			MN : Empfängernummer (1-) oder 0 (default) für alle Empfänger
 			
-'g' und 'n' sind nur sinnvoll, wenn als ID eine Zentraleinheit angegeben wurde 
+'g' und 'm' sind nur sinnvoll, wenn als ID eine Zentraleinheit angegeben wurde 
 
 
 Verschiedene Methoden der Adressierung
