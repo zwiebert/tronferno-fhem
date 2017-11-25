@@ -5,14 +5,8 @@
 ##
 ## - copy or softlink this file to /opt/fhem/FHEM/10_Fernotron.pm
 ##
-## - add "Fernotron" as client to SIGNALduino:
-##          copy old list form Internals.Clients
-##          insert 'Fernotron:' right before the last entry SIGNALduino_un:
-##         attr sduino Clients (paste the list here)
-##   example:
-##         attr sduino Clients   :FS10:CUL_FHTTK:Siro:FHT:FS20:Fernotron:SIGNALduino_un:
-##
-##
+## - add "Fernotron" as client to 00_SIGNALduino.pm
+
 
 use strict;
 
@@ -21,22 +15,33 @@ use 5.14.0;
 package main {
 
     sub Fernotron_Initialize($) {
-        my ($hash) = @_;
+      my ($hash) = @_;
 
+      
+      $hash->{Match} = "^MU;.*";
         $hash->{DefFn} = 'Fernotron::Fernotron_Define';
         $hash->{SetFn} = "Fernotron::Fernotron_Set";
+      $hash->{ParseFn} = "Fernotron::Fernotron_Parse";
     }
-
 }
 
 package Fernotron {
 
+  sub Fernotron_Parse {
+    my ($io_hash, $message) = @_;
+
+    print("-----------------------ferno----------------------------------\n");
+    log3 (undef, 0, "fernotron_parse: $message");
+    
+    return undef;
+  }
+  
     sub Fernotron_Define($$) {
         my ($hash, $def) = @_;
         my $name = $hash->{NAME};
 
         my @a = split("[ \t][ \t]*", $def);
-        my ($a, $g, $m) = (undef, 0, 0);
+        my ($a, $g, $m) = (undef, undef, undef);
         my $u = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N]';
 
         return $u if ($#a < 2);
@@ -48,25 +53,24 @@ package Fernotron {
 
             if ($key eq 'a') {
                 $a = hex($value);
-            }
-            elsif ($key eq 'g') {
+            } elsif ($key eq 'g') {
                 $g = int($value);
-            }
-            elsif ($key eq 'm') {
+		return "out of range value $g for g. expected: 0..7" unless (0 <= $g && $g <= 7);
+            } elsif ($key eq 'm') {
                 $m = int($value);
-            }
-            else {
+		return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
+            } elsif ($key eq 'scan') {
+
+            } else {
                 return "$name: unknown argument $o in define";    #FIXME add usage text
             }
         }
 
-        return "missing argument a"                          unless ($a != 0);
-        return "out of range value $g for g. expected: 0..7" unless (0 <= $g && $g <= 7);
-        return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
+        return "missing argument a"  if ($a = undef || $a == 0);
 
-        $hash->{helper}{ferid_a} = $a;
-        $hash->{helper}{ferid_g} = $g;
-        $hash->{helper}{ferid_m} = $m;
+        $hash->{helper}{ferid_a} = $a unless $a == undef;
+        $hash->{helper}{ferid_g} = $g unless $g == undef;
+        $hash->{helper}{ferid_m} = $m unless $m == undef;
 
         main::AssignIoPort($hash);
 
@@ -89,8 +93,7 @@ package Fernotron {
             my $msg = Fernotron::Drv::cmd2sdString($fsb);
             main::Log3($name, 3, "$name: raw: $msg");
             main::IOWrite($hash, 'raw', $msg);
-        }
-        else {
+        } else {
             return Fernotron::Drv::get_last_error();
         }
         return undef;
@@ -115,8 +118,7 @@ package Fernotron {
         if (Fernotron::Drv::is_command_valid($cmd)) {
             my $res = Fernotron_transmit($hash, 'send', $cmd);
             return $res unless ($res == undef);
-        }
-        else {
+        } else {
             return "unknown argument $cmd choose one of " . join(' ', Fernotron::Drv::get_commandlist());
         }
         return undef;
@@ -215,11 +217,11 @@ package Fernotron::Drv {
 ##
 ## turn one databyte into a string of: two 10-bit words and two stop bits
     sub byte2dString {
-      my $res = "";
-      foreach my $b (@_) {
-        $res .= $d_stp_string . word2dString(byte2word($b, 0)) . $d_stp_string . word2dString(byte2word($b, 1));
-      }
-      return $res;
+        my $res = "";
+        foreach my $b (@_) {
+            $res .= $d_stp_string . word2dString(byte2word($b, 0)) . $d_stp_string . word2dString(byte2word($b, 1));
+        }
+        return $res;
     }
 #### end ###
 
@@ -395,11 +397,9 @@ package Fernotron::Drv {
 
         if (!FSB_MODEL_IS_CENTRAL($fsb)) {
             $step = 1;
-        }
-        elsif ($repeats > 0) {
+        } elsif ($repeats > 0) {
             $step = (FSB_GET_CMD($fsb) == $fer_cmd_STOP ? 1 : 0);
-        }
-        else {
+        } else {
             $step = 1;
         }
 
@@ -508,11 +508,9 @@ package Fernotron::Drv {
 
         if (!(substr($word0, 0, 16) eq substr($word1, 0, 16))) {
             return -1;    # error
-        }
-        elsif (0 && !(substr($word0, 18, 2) eq $bit1 && substr($word1, 18, 2) eq $bit0)) {
+        } elsif (0 && !(substr($word0, 18, 2) eq $bit1 && substr($word1, 18, 2) eq $bit0)) {
             return -2;    # error
-        }
-        else {
+        } else {
             my $b = 0;
             for (my $k = 0; $k < 8; ++$k) {
                 my $bit = substr($word0, $k * 2, 2);
@@ -521,11 +519,9 @@ package Fernotron::Drv {
                 if ($bit eq $bit0) {
 
                     # nothing
-                }
-                elsif ($bit eq $bit1) {
+                } elsif ($bit eq $bit1) {
                     $b |= (0x1 << $k);
-                }
-                else {
+                } else {
                     dbprint "error";
                     return -3;
                 }
@@ -558,8 +554,7 @@ package Fernotron::Drv {
                 my $b = rx_sd2byte($word0, $word1);
                 if ($b >= 0) {
                     $bytes[ $i / 2 ] = $b;
-                }
-                else {
+                } else {
                     return 0;
                 }
             }
@@ -635,8 +630,7 @@ package Fernotron::Drv {
         if (exists($$args{'a'})) {
             my $val = $$args{'a'};
             $fsb = fsb_getByDevID($val);
-        }
-        else {
+        } else {
             $fsb = fsb_getByDevID($C->{'centralUnitID'});    # default
         }
 
@@ -644,8 +638,7 @@ package Fernotron::Drv {
             my $val = $$args{'c'};
             if (exists($map_fcmd->{$val})) {
                 FSB_PUT_CMD($fsb, $map_fcmd->{$val});
-            }
-            else {
+            } else {
                 $last_error = "error: unknown command '$val'\n";
                 return -1;
             }
@@ -655,13 +648,11 @@ package Fernotron::Drv {
             my $val = $$args{'g'};
             if (0 <= $val && $val <= 7) {
                 FSB_PUT_GRP($fsb, $fer_grp_Broadcast + $val);
-            }
-            else {
+            } else {
                 $last_error = "error: invalid group '$val'\n";
                 return -1;
             }
-        }
-        else {
+        } else {
             FSB_PUT_GRP($fsb, $fer_grp_Broadcast);    # default
         }
 
@@ -669,25 +660,19 @@ package Fernotron::Drv {
             my $val = $$args{'m'};
             if ($val == 0) {
                 FSB_PUT_MEMB($fsb, $fer_memb_Broadcast);
-            }
-            elsif (1 <= $val && $val <= 7) {
+            } elsif (1 <= $val && $val <= 7) {
                 FSB_PUT_MEMB($fsb, $fer_memb_M1 + $val - 1);
-            }
-            else {
+            } else {
                 $last_error = "error: invalid member '$val'\n";
                 return -1;
             }
-        }
-        elsif (FSB_MODEL_IS_RECEIVER($fsb)) {
+        } elsif (FSB_MODEL_IS_RECEIVER($fsb)) {
             FSB_PUT_MEMB($fsb, $fer_memb_RecAddress);
-        }
-        elsif (FSB_MODEL_IS_SUNSENS($fsb)) {
+        } elsif (FSB_MODEL_IS_SUNSENS($fsb)) {
             FSB_PUT_MEMB($fsb, $fer_memb_SUN);
-        }
-        elsif (FSB_MODEL_IS_STANDARD($fsb)) {
+        } elsif (FSB_MODEL_IS_STANDARD($fsb)) {
             FSB_PUT_MEMB($fsb, $fer_memb_SINGLE);
-        }
-        else {
+        } else {
             FSB_PUT_MEMB($fsb, $fer_memb_Broadcast);    # default
         }
 
