@@ -772,12 +772,12 @@ Each device may control a single shutter, but could also control an entire group
 
   <li><ul>
 <li><code>define rollo1 Fernotron a=100001 </code></li>
+<li>enable set mode on the receiver</li>
+<li>press stop for rollo1</li>
 </ul></li>
 
   <li><ul>
 <li><code>define rollo_0d123 Fernotron a=90d123</code></li>
-<li>enable set mode on the receiver</li>
-<li>press stop for rollo_0d123</li>
 </ul></li>
 </ol>
 =end html
@@ -854,12 +854,12 @@ Ein Gerät kann einen einzige Rolladen aber  auch eine ganze Gruppe ansprechen. 
 
   <li><ul>
 <li><code>define rollo1 Fernotron a=100001 </code></li>
+<li>aktivere Set-Modus des gewünschten Motors</li>
+<li><code>set rollo1 stop</code></li>
 </ul></li>
 
   <li><ul>
 <li><code>define rollo_0d123 Fernotron a=90d123</code></li>
-<li>aktivere Set-Modus des gewünschten Motors</li>
-<li><code>set rollo_0d123 stop</code></li>
 </ul></li>
 </ol>
 
