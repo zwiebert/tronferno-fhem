@@ -7,7 +7,6 @@
 ##
 ## - add "Fernotron" as client to 00_SIGNALduino.pm
 
-
 use strict;
 
 use 5.14.0;
@@ -15,35 +14,56 @@ use 5.14.0;
 package main {
 
     sub Fernotron_Initialize($) {
-      my ($hash) = @_;
+        my ($hash) = @_;
+        $hash->{Match} = "^P77#.+";
 
-      
-      $hash->{Match} = "^MU;.*";
-        $hash->{DefFn} = 'Fernotron::Fernotron_Define';
-        $hash->{SetFn} = "Fernotron::Fernotron_Set";
-      $hash->{ParseFn} = "Fernotron::Fernotron_Parse";
+        #        $hash->{Match}   = "^MU;.*";
+        $hash->{DefFn}   = 'Fernotron::Fernotron_Define';
+        $hash->{SetFn}   = "Fernotron::Fernotron_Set";
+        $hash->{ParseFn} = "Fernotron::Fernotron_Parse";
     }
 }
 
 package Fernotron {
 
-  sub Fernotron_Parse {
-    my ($io_hash, $message) = @_;
+    sub Fernotron_Parse {
+        my ($io_hash, $message) = @_;
 
-    print("-----------------------ferno----------------------------------\n");
-    log3 (undef, 0, "fernotron_parse: $message");
-    
-    return undef;
-  }
-  
+        # Die Stellen 10-15 enthalten die eindeutige Identifikation des Geräts
+        my $address = substr($message, 10, 5);
+        print("address: $address\n");
+        $address = 'Fernotron';
+        my $rawmsg = $io_hash->{RAWMSG};
+        my $fsb    = Fernotron::Drv::rx_sd2bytes($rawmsg);
+        return undef if (ref($fsb) ne 'ARRAY' || scalar(@$fsb) < 5);
+
+        my $msg = sprintf("%02x, %02x, %02x, %02x, %02x", @$fsb);
+        main::Log3($io_hash, 3, "Fernotron: message received: $msg");
+
+        if (my $hash = $main::modules{Fernotron}{defptr}{$address}) {
+
+            # Nachricht für $hash verarbeiten
+	  $hash->{received_DMSG} = $msg;
+	  $hash->{received_ID} = sprintf("%02x%02x%02x", @$fsb);
+            # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
+            return $hash->{NAME};
+        }
+
+        return undef;
+    }
+
     sub Fernotron_Define($$) {
         my ($hash, $def) = @_;
-        my $name = $hash->{NAME};
+        my @a       = split("[ \t][ \t]*", $def);
+        my $name    = $a[0];
+        my $address = $a[1];
 
-        my @a = split("[ \t][ \t]*", $def);
+        print("address: $address name: $name\n");
+
         my ($a, $g, $m) = (0, 0, 0);
         my $u = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N]';
-
+	my $scan = 0;
+	
         return $u if ($#a < 2);
 
         shift(@a);
@@ -52,29 +72,29 @@ package Fernotron {
             my ($key, $value) = split('=', $o);
 
             if ($key eq 'a') {
-	      $a = hex($value);
-	      
+                $a = hex($value);
+
             } elsif ($key eq 'g') {
                 $g = int($value);
-		return "out of range value $g for g. expected: 0..7" unless (0 <= $g && $g <= 7);
+                return "out of range value $g for g. expected: 0..7" unless (0 <= $g && $g <= 7);
             } elsif ($key eq 'm') {
                 $m = int($value);
-		return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
-            } elsif ($key eq 'scan') {
-
+                return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
+	      } elsif ($key eq 'scan') {
+		$scan = 1;
+                $main::modules{Fernotron}{defptr}{$address} = $hash;
             } else {
                 return "$name: unknown argument $o in define";    #FIXME add usage text
             }
-	  }
+        }
 
-	main::Log3 ($name, 3, "a=$a g=$g m=$m\n");
-
-        return "missing argument a"  if ($a == 0);
-
-        $hash->{helper}{ferid_a} = $a;
-        $hash->{helper}{ferid_g} = $g;
-        $hash->{helper}{ferid_m} = $m;
-
+        if ($scan eq 0) {
+            main::Log3($name, 3, "a=$a g=$g m=$m\n");
+            return "missing argument a" if ($a == 0);
+            $hash->{helper}{ferid_a} = $a;
+            $hash->{helper}{ferid_g} = $g;
+            $hash->{helper}{ferid_m} = $m;
+        }
         main::AssignIoPort($hash);
 
         return undef;
@@ -124,6 +144,9 @@ package Fernotron {
         } else {
             return "unknown argument $cmd choose one of " . join(' ', Fernotron::Drv::get_commandlist());
         }
+
+        my $sd_hash = $main::modules{'SIGNALduino'}{'defptr'}{'sduino'};
+        print $sd_hash->{NAME} . "\n";
         return undef;
     }
 
@@ -569,7 +592,7 @@ package Fernotron::Drv {
                 }
                 print "\n";
             }
-            return @bytes;
+            return \@bytes;
 
         }
         return 0;
@@ -659,9 +682,9 @@ package Fernotron::Drv {
             FSB_PUT_GRP($fsb, $fer_grp_Broadcast);    # default
         }
 
-	if (FSB_MODEL_IS_CENTRAL($fsb)) {
-	    my $val = 0;
-            $val = $$args{'m'} if exists  $$args{'m'};
+        if (FSB_MODEL_IS_CENTRAL($fsb)) {
+            my $val = 0;
+            $val = $$args{'m'} if exists $$args{'m'};
             if ($val == 0) {
                 FSB_PUT_MEMB($fsb, $fer_memb_Broadcast);
             } elsif (1 <= $val && $val <= 7) {
