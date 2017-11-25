@@ -661,7 +661,7 @@ package Fernotron::Drv {
 
 	if (FSB_MODEL_IS_CENTRAL($fsb)) {
 	    my $val = 0;
-            $val //= $$args{'m'};
+            $val = $$args{'m'} if exists  $$args{'m'};
             if ($val == 0) {
                 FSB_PUT_MEMB($fsb, $fer_memb_Broadcast);
             } elsif (1 <= $val && $val <= 7) {
