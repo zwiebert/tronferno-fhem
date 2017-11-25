@@ -9,22 +9,18 @@ Modul installieren
 
 * Ein Gerät vom Typ SIGNALduino muss definiert sein und natürlich die SIGNALduino Hardware angeschlossen sein.
 
-* Fernotron zur Liste der Klienten des SIGNALduino Geräts hinzufügen. Angenommen das Gerät heißt 'sduino'. Das Gerät im Webinterface öffnen und den Wert unter Internals.Clients kopieren.
+* Fernotron zur Liste der Klienten des SIGNALduino Geräts hinzufügen.  Am besten in der Datei FHEM/10_SIGNALduiono.pm.  Die anderen Methoden funktionieren nicht (auf Dauer). Diese etwas länger:
+```
+------------------------8<-----------------
+			."FHT:"
+			."FS20:"
+	."Fernotron"
+	   		."SIGNALduino_un:"
+------------------------>8-----------------------
+```
 
-  Unter attr.Clients eingeben:  :Fernotron   und dahinter den kopierten Wert pasten.  Das sieht dann in etwa so aus:
-
-             :Fernotron:IT:CUL_TCM97001:SD_RSL:OREGON:CUL_TX:SD_AS:Hideki:SD_WS07:SD_WS09: :SD_WS:RFXX10REC:Dooya:SOMFY:SD_UT:SD_WS_Maverick:FLAMINGO:CUL_WS:Revolt: :FS10:CUL_FHTTK:Siro:FHT:FS20:SIGNALduino_un:
-			 
-nun attr drücken oder Enter Taste.
-
-
-* Alternativ kann man das ganze als Kommando zu fhem.cfg hinzufügen (dort direkt unter "define sduino"):
-
-             attr sduino Clients :Fernotron:IT:CUL_TCM97001:SD_RSL:OREGON:CUL_TX:SD_AS:Hideki:SD_WS07:SD_WS09: :SD_WS:RFXX10REC:Dooya:SOMFY:SD_UT:SD_WS_Maverick:FLAMINGO:CUL_WS:Revolt: :FS10:CUL_FHTTK:Siro:FHT:FS20:SIGNALduino_un:
-			 
-			 
-Hinterher den Befehl ```rereadcfg``` ausführen.
-
+ 
+Hinterher den Befehl: reload 00_SIGNALduiono
 
 
 Grundlagen
