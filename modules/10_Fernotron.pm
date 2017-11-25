@@ -85,7 +85,7 @@ package Fernotron {
         };
         my $fsb = Fernotron::Drv::args2cmd($args);
         if ($fsb != -1) {
-            main::Log3($name, 1, "$name: send messasge: " . Fernotron::Drv::fsb2string($fsb));
+            main::Log3($name, 1, "$name: send: " . Fernotron::Drv::fsb2string($fsb));
             my $msg = Fernotron::Drv::cmd2sdString($fsb);
             main::Log3($name, 3, "$name: raw: $msg");
             main::IOWrite($hash, 'raw', $msg);
@@ -214,9 +214,12 @@ package Fernotron::Drv {
     }
 ##
 ## turn one databyte into a string of: two 10-bit words and two stop bits
-    sub byte2dString($) {
-        my ($b) = @_;
-        return $d_stp_string . word2dString(byte2word($b, 0)) . $d_stp_string . word2dString(byte2word($b, 1));
+    sub byte2dString {
+      my $res = "";
+      foreach my $b (@_) {
+        $res .= $d_stp_string . word2dString(byte2word($b, 0)) . $d_stp_string . word2dString(byte2word($b, 1));
+      }
+      return $res;
     }
 #### end ###
 
@@ -232,21 +235,10 @@ package Fernotron::Drv {
         return (0xff & $cs);
     }
 ##
-    sub cmd2dString($) {
-        my ($fsb) = @_;
-        my $r = "D=$d_stp_string$d_pre_string";
-        foreach my $b (@$fsb, calc_checksum($fsb, 0)) {
-            $r .= byte2dString($b);
-        }
-        return $r . ';';
-    }
-
     sub cmd2sdString($) {
         my ($fsb) = @_;
-        my $r = "$p_string;D=$d_stp_string$d_pre_string";
-        foreach my $b (@$fsb, calc_checksum($fsb, 0)) {
-            $r .= byte2dString($b);
-        }
+        my $r = $p_string . "D=$d_stp_string$d_pre_string";
+        $r .= byte2dString(@$fsb, calc_checksum($fsb, 0));
         return $r . ';';
     }
 
@@ -635,10 +627,6 @@ package Fernotron::Drv {
     sub get_commandlist() { return keys(%$map_fcmd); }
     sub is_command_valid($) { my ($command) = @_; dbprint($command); return exists $map_fcmd->{$command}; }
 
-    sub cmd2sdCMD($) {
-        my ($fsb) = @_;
-        return "set sduino raw " . $p_string . cmd2dString($fsb);
-    }
 ##
 ##
     sub args2cmd($) {
