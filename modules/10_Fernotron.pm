@@ -517,7 +517,7 @@ package FernotronDrv {
 #### send commands to fhem
 ##
 ##
-    my $map_fcmd = {
+    our $map_fcmd = {
         "up"       => $fer_cmd_UP,
         "down"     => $fer_cmd_DOWN,
         "stop"     => $fer_cmd_STOP,
