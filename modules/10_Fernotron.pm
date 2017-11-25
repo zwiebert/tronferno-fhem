@@ -18,6 +18,111 @@ use strict;
 
 use 5.14.0;
 
+
+package main {
+
+    sub Fernotron_Initialize($) {
+        my ($hash) = @_;
+
+        $hash->{DefFn} = 'Fernotron::Fernotron_Define';
+        $hash->{SetFn} = "Fernotron::Fernotron_Set";
+    }
+
+}
+
+
+package Fernotron {
+    sub Fernotron_Define($$) {
+        my ($hash, $def) = @_;
+        my $name = $hash->{NAME};
+
+        my @a = split("[ \t][ \t]*", $def);
+        my ($a, $g, $m) = (undef, 0, 0);
+        my $u = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N]';
+
+        return $u if ($#a < 2);
+
+        shift(@a);
+        shift(@a);
+        foreach my $o (@a) {
+            my ($key, $value) = split('=', $o);
+
+            if ($key eq 'a') {
+                $a = hex($value);
+            }
+            elsif ($key eq 'g') {
+                $g = int($value);
+            }
+            elsif ($key eq 'm') {
+                $m = int($value);
+            }
+            else {
+                return "$name: unknown argument $o in define";    #FIXME add usage text
+            }
+        }
+
+        if ($a == undef) {
+            return "$name: missing argument 'a'";
+        }
+
+        #FIXME-bw/24-Nov-17: validate options
+        $hash->{helper}{ferid_a} = $a;
+        $hash->{helper}{ferid_g} = $g;
+        $hash->{helper}{ferid_m} = $m;
+
+        main::AssignIoPort($hash);
+
+        return undef;
+    }
+
+    sub Fernotron_transmit($$$) {
+        my ($hash, $command, $c) = @_;
+        my $name = $hash->{NAME};
+        my $args = {
+            command => $command,
+            a       => $hash->{helper}{ferid_a},
+            g       => $hash->{helper}{ferid_g},
+            m       => $hash->{helper}{ferid_m},
+            c       => $c,
+        };
+        my $fsb = FernotronDrv::args2cmd($args);
+        if ($fsb != -1) {
+            print "$name: send messasge: " . FernotronDrv::fsb2string($fsb) . "\n";
+            my $msg = FernotronDrv::cmd2sdString($fsb);    # print "debug: $p_string$tx_data\n";
+            main::IOWrite($hash, 'raw', $msg);
+        }
+        else { print "no fsb\n"; }
+    }
+
+    sub Fernotron_Set($$@) {
+        my ($hash, $name, $cmd, @args) = @_;
+        return "\"set $name\" needs at least one argument" unless (defined($cmd));
+
+        main::AssignIoPort($hash);           # if undef $hash->{IODev};
+        my $io = $hash->{IODev} or return '"no io device"';
+
+        if ($cmd eq '?') {
+            my $res = "unknown argument $cmd choose one of ";
+            foreach my $key (FernotronDrv::get_commandlist()) {
+                $res .= " $key:noArg";
+            }
+            return $res;
+        }
+
+        if (FernotronDrv::is_command_valid($cmd)) {
+            Fernotron_transmit($hash, 'send', $cmd);
+        }
+        else {
+            return "unknown argument $cmd choose one of " . join(' ', FernotronDrv::get_commandlist());
+        }
+        return undef;
+    }
+
+}
+
+
+
+## generate and parse sduino raw messages
 package FernotronDrv {
 
     my $def_cu = '801234';
@@ -602,107 +707,6 @@ package FernotronDrv {
         fsb_doToggle($fsb);
         return $fsb;
     }
-}
-
-package Fernotron {
-################### FHEM ######################################
-    sub Fernotron_Define($$) {
-        my ($hash, $def) = @_;
-        my $name = $hash->{NAME};
-
-        my @a = split("[ \t][ \t]*", $def);
-        my ($a, $g, $m) = (undef, 0, 0);
-        my $u = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N]';
-
-        return $u if ($#a < 2);
-
-        shift(@a);
-        shift(@a);
-        foreach my $o (@a) {
-            my ($key, $value) = split('=', $o);
-
-            if ($key eq 'a') {
-                $a = hex($value);
-            }
-            elsif ($key eq 'g') {
-                $g = int($value);
-            }
-            elsif ($key eq 'm') {
-                $m = int($value);
-            }
-            else {
-                return "$name: unknown argument $o in define";    #FIXME add usage text
-            }
-        }
-
-        if ($a == undef) {
-            return "$name: missing argument 'a'";
-        }
-
-        #FIXME-bw/24-Nov-17: validate options
-        $hash->{helper}{ferid_a} = $a;
-        $hash->{helper}{ferid_g} = $g;
-        $hash->{helper}{ferid_m} = $m;
-
-        main::AssignIoPort($hash);
-
-        return undef;
-    }
-
-    sub Fernotron_transmit($$$) {
-        my ($hash, $command, $c) = @_;
-        my $name = $hash->{NAME};
-        my $args = {
-            command => $command,
-            a       => $hash->{helper}{ferid_a},
-            g       => $hash->{helper}{ferid_g},
-            m       => $hash->{helper}{ferid_m},
-            c       => $c,
-        };
-        my $fsb = FernotronDrv::args2cmd($args);
-        if ($fsb != -1) {
-            print "$name: send messasge: " . FernotronDrv::fsb2string($fsb) . "\n";
-            my $msg = FernotronDrv::cmd2sdString($fsb);    # print "debug: $p_string$tx_data\n";
-            main::IOWrite($hash, 'raw', $msg);
-        }
-        else { print "no fsb\n"; }
-    }
-
-    sub Fernotron_Set($$@) {
-        my ($hash, $name, $cmd, @args) = @_;
-        return "\"set $name\" needs at least one argument" unless (defined($cmd));
-
-        main::AssignIoPort($hash);           # if undef $hash->{IODev};
-        my $io = $hash->{IODev} or return '"no io device"';
-
-        if ($cmd eq '?') {
-            my $res = "unknown argument $cmd choose one of ";
-            foreach my $key (FernotronDrv::get_commandlist()) {
-                $res .= " $key:noArg";
-            }
-            return $res;
-        }
-
-        if (FernotronDrv::is_command_valid($cmd)) {
-            Fernotron_transmit($hash, 'send', $cmd);
-        }
-        else {
-            return "unknown argument $cmd choose one of " . join(' ', FernotronDrv::get_commandlist());
-        }
-        return undef;
-    }
-
-}
-
-package main {
-  
-    sub Fernotron_Initialize($) {
-        my ($hash) = @_;
-
-        $hash->{DefFn} = 'Fernotron::Fernotron_Define';
-        $hash->{SetFn} = "Fernotron::Fernotron_Set";
-    }
-
 }
 
 1;
