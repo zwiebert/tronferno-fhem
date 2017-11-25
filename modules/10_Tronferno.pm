@@ -123,6 +123,7 @@ package Tronferno {
 
 package main {
 
+  
     sub Tronferno_Initialize($) {
         my ($hash) = @_;
 
@@ -136,5 +137,5 @@ package main {
 1;
 
 # Local Variables:
-# compile-command: "perl -w ./10_Tronferno.pm"
+# compile-command: "perl -cw -MO=Lint ./10_Tronferno.pm"
 # End:

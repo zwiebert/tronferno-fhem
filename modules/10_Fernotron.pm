@@ -661,7 +661,7 @@ package Fernotron {
         };
         my $fsb = FernotronDrv::args2cmd($args);
         if ($fsb != -1) {
-            print "$name: send messasge: " . fsb2string($fsb) . "\n";
+            print "$name: send messasge: " . FernotronDrv::fsb2string($fsb) . "\n";
             my $msg = FernotronDrv::cmd2sdString($fsb);    # print "debug: $p_string$tx_data\n";
             main::IOWrite($hash, 'raw', $msg);
         }
@@ -695,7 +695,7 @@ package Fernotron {
 }
 
 package main {
-
+  
     sub Fernotron_Initialize($) {
         my ($hash) = @_;
 
