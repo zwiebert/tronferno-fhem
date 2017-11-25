@@ -15,10 +15,10 @@ Modul installieren
 
              :Fernotron:IT:CUL_TCM97001:SD_RSL:OREGON:CUL_TX:SD_AS:Hideki:SD_WS07:SD_WS09: :SD_WS:RFXX10REC:Dooya:SOMFY:SD_UT:SD_WS_Maverick:FLAMINGO:CUL_WS:Revolt: :FS10:CUL_FHTTK:Siro:FHT:FS20:SIGNALduino_un:
 			 
-nun attr drücken.
+nun attr drücken oder Enter Taste.
 
 
-* Alternativ kann man das ganze als Kommando zu fhem.cfg hinzufügen:
+* Alternativ kann man das ganze als Kommando zu fhem.cfg hinzufügen (dort direkt unter "define sduino"):
 
              attr sduino Clients :Fernotron:IT:CUL_TCM97001:SD_RSL:OREGON:CUL_TX:SD_AS:Hideki:SD_WS07:SD_WS09: :SD_WS:RFXX10REC:Dooya:SOMFY:SD_UT:SD_WS_Maverick:FLAMINGO:CUL_WS:Revolt: :FS10:CUL_FHTTK:Siro:FHT:FS20:SIGNALduino_un:
 			 
