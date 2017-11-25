@@ -30,11 +30,11 @@ package main {
 }
 
 package Fernotron {
-    
+
     sub Fernotron_Define($$) {
         my ($hash, $def) = @_;
         my $name = $hash->{NAME};
-	
+
         my @a = split("[ \t][ \t]*", $def);
         my ($a, $g, $m) = (undef, 0, 0);
         my $u = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N]';
@@ -60,9 +60,9 @@ package Fernotron {
             }
         }
 
-	return "missing argument a" unless ($a != 0);
-	return "out of range value $g for g. expected: 0..7" unless (0 <= $g && $g <= 7);
-	return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
+        return "missing argument a"                          unless ($a != 0);
+        return "out of range value $g for g. expected: 0..7" unless (0 <= $g && $g <= 7);
+        return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
 
         $hash->{helper}{ferid_a} = $a;
         $hash->{helper}{ferid_g} = $g;
@@ -85,15 +85,15 @@ package Fernotron {
         };
         my $fsb = Fernotron::Drv::args2cmd($args);
         if ($fsb != -1) {
-            main::Log3($name, 1, "$name: send messasge: " . Fernotron::Drv::fsb2string($fsb) . "\n");
+            main::Log3($name, 1, "$name: send messasge: " . Fernotron::Drv::fsb2string($fsb));
             my $msg = Fernotron::Drv::cmd2sdString($fsb);
             main::Log3($name, 3, "$name: raw: $msg");
             main::IOWrite($hash, 'raw', $msg);
         }
         else {
-	  return Fernotron::Drv::get_last_error();
-	}
-	return undef;
+            return Fernotron::Drv::get_last_error();
+        }
+        return undef;
 
     }
 
@@ -113,8 +113,8 @@ package Fernotron {
         }
 
         if (Fernotron::Drv::is_command_valid($cmd)) {
-	  my $res = Fernotron_transmit($hash, 'send', $cmd);
-	  return $res unless ($res == undef);
+            my $res = Fernotron_transmit($hash, 'send', $cmd);
+            return $res unless ($res == undef);
         }
         else {
             return "unknown argument $cmd choose one of " . join(' ', Fernotron::Drv::get_commandlist());
@@ -145,6 +145,8 @@ package Fernotron::Drv {
 ## DT1_OFF,        #P3  -4 * 200us =  -800us
 ## DT0_ON,         #P4  +4 * 200us =  +800us
 
+    my $p_string = 'SR;R=1;P0=400;P1=-400;P2=-3200;P3=-800;P4=800;';
+
     my $rf_timings = {
         'P0.min' => 350,
         'P0.max' => 450,
@@ -158,24 +160,22 @@ package Fernotron::Drv {
         'P4.max' => 900,
     };
 
-    my $p_string = 'SR;R=1;P0=400;P1=-400;P2=-3200;P3=-800;P4=800;';
-
-##                   1 2 3 4 5 6 7
+    #                    1 2 3 4 5 6 7
     my $d_pre_string = '01010101010101';    # preamble
     my $d_stp_string = '02';                # stop comes before each preamble and before each word
     my $d_dt0_string = '41';                # data bit 0 (/..long..\short)
     my $d_dt1_string = '03';                # data bit 1 (/short\..long..)
 
-### global configuration
+    # global configuration
     my $C = {
         'centralUnitID' => 0x8012ab,        # FIXME:-bw/23-Nov-17
     };
 
-### we store all 5 bytes, which is wasteful as the first 3 bits equals the hash-key.  simplifies the code a bit
+    # we store all 5 bytes, which is wasteful as the first 3 bits equals the hash-key.  simplifies the code a bit
     my $fsbs = {};
 
     sub dbprint($) {
-      main::Log3(undef, 5,  "Fernotron: $_[0]"); # global verbose level used
+        main::Log3(undef, 5, "Fernotron: $_[0]");    # global verbose level used
     }
 
 ###########################################
@@ -631,7 +631,7 @@ package Fernotron::Drv {
 
     my $last_error = "";
     sub get_last_error() { return $last_error; }
-    
+
     sub get_commandlist() { return keys(%$map_fcmd); }
     sub is_command_valid($) { my ($command) = @_; dbprint($command); return exists $map_fcmd->{$command}; }
 
