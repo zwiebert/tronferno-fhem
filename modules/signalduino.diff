@@ -1,0 +1,38 @@
+--- /home/bertw/proj/mcu/tronferno-fhem/svn_fhem_trunk/FHEM/00_SIGNALduino.pm	2017-11-23 13:18:48.743293265 +0100
++++ FHEM/00_SIGNALduino.pm	2017-11-25 21:21:29.050788731 +0100
+@@ -138,6 +138,7 @@
+ 			        	."Siro:"
+ 						."FHT:"
+ 						."FS20:"
++						."Fernotron:"
+ 			      		."SIGNALduino_un:"
+ 					; 
+ 
+@@ -1491,11 +1492,24 @@
+ 			length_min		=> 58,
+ 			length_max		=> 58,
+ 		},
+-
+-);
+-
++    "77" => ## Fernotron 
++
++		{
+ 
+ 
++			name         => 'Fernotron',
++			id           => '77',
++			one          => [1,-2],
++			zero         => [2,-1],
++			start        => [1,-8],
++			clockabs     => 400,
++			preamble     => 'P77#', # prepend to converted message
++			clientmodule => 'Fernotron', 
++#			modulematch => 'Fernotron', 
++			length_min   => '10',
++				 length_max   => '10',
++	     	},
++);
+ 
+ 
+ sub
