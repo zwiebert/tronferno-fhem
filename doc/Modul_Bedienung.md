@@ -5,7 +5,7 @@ FHEM Modul Fernotron - Benutzung
 Modul installieren
 ------------------
 
-* Das Modul 10_Fernotron.pm muss in den FEM Modul-Ordner (/opt/fhem/FHEM/) kopiert werden.
+* Das Modul 10_Fernotron.pm muss in den FHEM Modul-Ordner (/opt/fhem/FHEM/) kopiert werden.
 
 * Ein Gerät vom Typ SIGNALduino muss definiert sein und natürlich die SIGNALduino Hardware angeschlossen sein.
 
