@@ -15,7 +15,7 @@
 ##
 
 use strict;
-use warnings;
+
 use 5.14.0;
 
 package FernotronDrv {
@@ -517,14 +517,17 @@ package FernotronDrv {
 #### send commands to fhem
 ##
 ##
-    our $map_fcmd = {
+    my $map_fcmd = {
         "up"       => $fer_cmd_UP,
         "down"     => $fer_cmd_DOWN,
         "stop"     => $fer_cmd_STOP,
         "set"      => $fer_cmd_SET,
         "sun-down" => $fer_cmd_SunDOWN,
         "sun-inst" => $fer_cmd_SunINST,
-    };
+		    };
+
+    sub get_commandlist() { return keys(%$map_fcmd); }
+    sub is_command_valid($) { my ($command) = @_;  return exists $map_fcmd->{$command}; }
 
     sub cmd2sdCMD($) {
         my ($fsb) = @_;
@@ -656,10 +659,10 @@ package Fernotron {
             m       => $hash->{helper}{ferid_m},
             c       => $c,
         };
-        my $fsb = args2cmd($args);
+        my $fsb = FernotronDrv::args2cmd($args);
         if ($fsb != -1) {
             print "$name: send messasge: " . fsb2string($fsb) . "\n";
-            my $msg = cmd2sdString($fsb);    # print "debug: $p_string$tx_data\n";
+            my $msg = FernotronDrv::cmd2sdString($fsb);    # print "debug: $p_string$tx_data\n";
             main::IOWrite($hash, 'raw', $msg);
         }
         else { print "no fsb\n"; }
@@ -674,17 +677,17 @@ package Fernotron {
 
         if ($cmd eq '?') {
             my $res = "unknown argument $cmd choose one of ";
-            foreach my $key (keys %$FernotronDrv::map_fcmd) {
+            foreach my $key (FernotronDrv::get_commandlist()) {
                 $res .= " $key:noArg";
             }
             return $res;
         }
 
-        if (exists $FernotronDrv::map_fcmd->{$cmd}) {
+        if (FernotronDrv::is_command_valid($cmd)) {
             Fernotron_transmit($hash, 'send', $cmd);
         }
         else {
-            return "unknown argument $cmd choose one of " . join(' ', keys(%$FernotronDrv::map_fcmd));
+            return "unknown argument $cmd choose one of " . join(' ', FernotronDrv::get_commandlist());
         }
         return undef;
     }
@@ -876,5 +879,5 @@ Ein Gerät kann einen einzige Rolladen aber  auch eine ganze Gruppe ansprechen. 
 =cut
 
 # Local Variables:
-# compile-command: "perl -w ./10_Fernotron.pm"
+# compile-command: "perl -cw -MO=Lint ./10_Fernotron.pm"
 # End:
