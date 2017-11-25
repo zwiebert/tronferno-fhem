@@ -4,14 +4,9 @@
 # Author: Bert Winkelmann <tf.zwiebert@online.de>
 #
 # - copy or softlink this file to /opt/fhem/FHEM/10_Fernotron.pm
-# - add "Fernotron" to /opt/fhem/FHEM/SIGNALduino.pm liket this:
-#---------------8<-------------------------
-# Supported Clients per default
-#  my $clientsSIGNALduino = ":IT:"
-#                           ."Fernotron:"
-#                           ."CUL_TCM97001:"
-#--------------->8-------------------------
-# - submit command 'rereadcfg' to fhem  (maybe try 'reload 10_Fernotron' too)
+# - add "Fernotron" as client to SIGNALduino:
+#              attr sduino Clients :Fernotron: (append the old Clients here)
+# # - submit command 'rereadcfg' to fhem  (maybe try 'reload 10_Fernotron' too)
 #
 
 use strict;
