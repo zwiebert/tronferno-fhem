@@ -41,7 +41,7 @@ package Fernotron {
         my $name = $hash->{NAME};
 
         my @a = split("[ \t][ \t]*", $def);
-        my ($a, $g, $m) = (undef, undef, undef);
+        my ($a, $g, $m) = (0, 0, 0);
         my $u = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N]';
 
         return $u if ($#a < 2);
@@ -52,7 +52,8 @@ package Fernotron {
             my ($key, $value) = split('=', $o);
 
             if ($key eq 'a') {
-                $a = hex($value);
+	      $a = hex($value);
+	      
             } elsif ($key eq 'g') {
                 $g = int($value);
 		return "out of range value $g for g. expected: 0..7" unless (0 <= $g && $g <= 7);
@@ -64,13 +65,15 @@ package Fernotron {
             } else {
                 return "$name: unknown argument $o in define";    #FIXME add usage text
             }
-        }
+	  }
 
-        return "missing argument a"  if ($a = undef || $a == 0);
+	main::Log3 ($name, 3, "a=$a g=$g m=$m\n");
 
-        $hash->{helper}{ferid_a} = $a unless $a == undef;
-        $hash->{helper}{ferid_g} = $g unless $g == undef;
-        $hash->{helper}{ferid_m} = $m unless $m == undef;
+        return "missing argument a"  if ($a == 0);
+
+        $hash->{helper}{ferid_a} = $a;
+        $hash->{helper}{ferid_g} = $g;
+        $hash->{helper}{ferid_m} = $m;
 
         main::AssignIoPort($hash);
 
@@ -656,8 +659,9 @@ package Fernotron::Drv {
             FSB_PUT_GRP($fsb, $fer_grp_Broadcast);    # default
         }
 
-        if (exists($$args{'m'})) {
-            my $val = $$args{'m'};
+	if (FSB_MODEL_IS_CENTRAL($fsb)) {
+	    my $val = 0;
+            $val //= $$args{'m'};
             if ($val == 0) {
                 FSB_PUT_MEMB($fsb, $fer_memb_Broadcast);
             } elsif (1 <= $val && $val <= 7) {
