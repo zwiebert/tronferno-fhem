@@ -17,27 +17,16 @@ In  fhem.cfg it looks like this:
 
 ```
 ...
-define ftroll22 Fernotron                       shutter 2/2 pm for SIGNALduino
-attr ftroll22 controllerId 80abcd             scan your ID(s) with the fhemft.pl script
-attr ftroll22 groupNumber 2                     group number
-attr ftroll22 memberNumber 2                    member number
+define ftroll22 Fernotron a=80abcd g=2 m=2    shutter group-2 member-2 for SIGNALduino
 attr ftroll22 webCmd down:stop:up
-define ftroll21 Fernotron                       shutter 2/1
-attr ftroll21 controllerId 80abcd
-attr ftroll21 groupNumber 2
-attr ftroll21 memberNumber 1
+define ftroll21 Fernotron  a=80abcd g=2 m=1   shutter 2/1
 attr ftroll21 webCmd down:stop:up
 ...
-define roll22 Tronferno                         shutter 2/2  for Fernotron-MCU
-attr roll22 groupNumber 2
+define roll22 Tronferno g=2 m=2                shutter 2/2  for Fernotron-MCU
 attr roll22 mcuaddr 192.168.1.61               IP4 address of tronferno-mcu hardware 
-attr roll22 controllerId 80abcd              optional. The ID should be already configured in the MCU (config cu=80abcd;) 
-attr roll22 memberNumber 2
 attr roll22 webCmd down:stop:up
-define roll25 Tronferno                         shutter 2/5
-attr roll25 groupNumber 2
+define roll25 Tronferno g=2 m=5                shutter 2/5
 attr roll25 mcuaddr 192.168.1.61
-attr roll25 memberNumber 5
 attr roll25 webCmd down:stop:up
 ```
 
