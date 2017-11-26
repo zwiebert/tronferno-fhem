@@ -1,5 +1,5 @@
 --- /home/bertw/proj/mcu/tronferno-fhem/svn_fhem_trunk/FHEM/00_SIGNALduino.pm	2017-11-23 13:18:48.743293265 +0100
-+++ FHEM/00_SIGNALduino.pm	2017-11-26 07:49:53.179299076 +0100
++++ FHEM/00_SIGNALduino.pm	2017-11-26 07:52:55.118516601 +0100
 @@ -138,6 +138,7 @@
  			        	."Siro:"
  						."FHT:"
@@ -29,7 +29,7 @@
 +			name         => 'Fernotron',
 +			id           => '77',   # protocol number
 +			one          => [1,-2], # on=400us, off=800us
-+			zero         => [2,-1], # of=800us, off=400us
++			zero         => [2,-1], # on=800us, off=400us
 +			start        => [1,-8], # (on=400us, off=3200us. each 10bit word has [1,-8] in front) FIXME: is 'start' the wrong option for this?
 +			clockabs     => 400,    # 400us
 +			preamble     => 'P77#', # prepend our protocol number to converted message
