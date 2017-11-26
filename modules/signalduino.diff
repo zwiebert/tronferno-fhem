@@ -1,5 +1,5 @@
 --- /home/bertw/proj/mcu/tronferno-fhem/svn_fhem_trunk/FHEM/00_SIGNALduino.pm	2017-11-23 13:18:48.743293265 +0100
-+++ FHEM/00_SIGNALduino.pm	2017-11-26 07:52:55.118516601 +0100
++++ FHEM/00_SIGNALduino.pm	2017-11-26 07:57:10.385399329 +0100
 @@ -138,6 +138,7 @@
  			        	."Siro:"
  						."FHT:"
@@ -12,7 +12,7 @@
       "22:Siro"					=> '^P72#[A-Fa-f0-9]+',
       "23:FHT"       => "^81..(04|09|0d)..(0909a001|83098301|c409c401)..",
       "24:FS20"      => "^81..(04|0c)..0101a001", 
-+     "25:Fernotron"  => "^P77#[A-Fa-f0-9]{3}",  # only the fist of 12 10bit words (module processes the raw data)
++     "25:Fernotron"  => '^P77#.*',
       "X:SIGNALduino_un"			=> '^[u]\d+#.*',
  );
  
