@@ -5,7 +5,8 @@
 ##
 ## - copy or softlink this file to /opt/fhem/FHEM/10_Fernotron.pm
 ##
-## - add "Fernotron" as client to 00_SIGNALduino.pm
+## - patch SIGNALduino
+##    sudo patch /opt/fhem/FHEM/00_SIGNALduino.pm  ./signalduino.diff
 
 use strict;
 

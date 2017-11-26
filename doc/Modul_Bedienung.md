@@ -7,20 +7,15 @@ Modul installieren
 
 * Das Modul 10_Fernotron.pm muss in den FHEM Modul-Ordner (/opt/fhem/FHEM/) kopiert werden.
 
+* Patche SIGNALduino modul um Fernotron als Klient hinzuzufügen:
+
+               $ sudo patch /opt/fhem/FHEM/00_SIGNALduino.pm  ./signalduino.diff
+			   
+			   reload 00_SIGNALduino
+			   rereadcfg
+
+
 * Ein Gerät vom Typ SIGNALduino muss definiert sein und natürlich die SIGNALduino Hardware angeschlossen sein.
-
-* Fernotron zur Liste der Klienten des SIGNALduino Geräts hinzufügen.  Am besten in der Datei FHEM/10_SIGNALduiono.pm.  Die anderen Methoden funktionieren nicht (auf Dauer). Diese etwas länger:
-```
-------------------------8<-----------------
-			."FHT:"
-			."FS20:"
-	."Fernotron"
-	   		."SIGNALduino_un:"
------------------------->8-----------------------
-```
-
- 
-Hinterher den Befehl: reload 00_SIGNALduiono
 
 
 Grundlagen
@@ -46,11 +41,11 @@ Ein Gerät kann einen einzige Rolladen aber  auch eine ganze Gruppe ansprechen. 
 Verschiedene Methoden der Adressierung
 --------------------------------------
 
-1) Die IDs vorhandener Sende-Geräte einscannen und dann benutzen. Beispiel: Die ID der 2411 benutzen um dann über Gruppen und Empfängernummern die Rolläden anzusprechen.
+1) Virtuelle Controller mit IDs vorhandener Sende-Geräte. Bietet sich an um die Zentrale (2411) zu simulieren und die vorhandenen Gruppen und Empfängernummern zu nutzen. Es muss nur die ID der Zentrale eingescannt werden.  Scannen mit (define scanFerno Fernotron scan) und dann unter Internals.receive_ID die ID ablesen.
 
-2) Ausgedachte IDs mit Motoren zu koppeln.  Beispiel: Rolladen Nr 1 mit 100001, Nr 2 mit 100002, ...
+2) Virtuelle Controller anlegen. Die ID denkt man sich selber aus. Bietet sich an um virtuelle einfach Handsender (2431) zu erzeugen (ID: 10xxxx) um diese dann mit je einem Motoren zu koppeln. Ist wohl die technisch sauberste Lösung. Man hat dann keine virtuellen Doubles vorhandener Geräte, sondern Geräte die einem zugekauftem Controller entsprechen.
 
-3) Empfänger IDs: Funkmotoren haben 5 stellige "Funk-Codes" aufgedruckt, eigentlich gedacht zur Inbetriebnahme. Es muss eine 9 davorgestellt werden um die ID zu erhalten.
+3) Messages direkt an den Empfäger addressieren. Funkmotoren haben 5 stellige "Funk-Codes" aufgedruckt. Es muss eine 9 davorgestellt werden um die ID zu erhalten. Eine Zweckentfremdung dieser IDs, die eigentlich für die Inbetriebnahme gedacht sind.
 
 
 Gruppenbildung:
@@ -80,9 +75,9 @@ Beispiele
 
 * ID der vorhandenen 2411 scannen:
 
-           Shell-Kommando: perl fhemft.pl --scan -n=sduino -v=4 
-             -- jetzt den STOP Knopf der 2411 festhalten ---
-           Shell-Ausgabe: id=80abcd,  ....  (ID notieren)
+           define scanFerno Fernotron scan
+             -- STOP Knopf der 2411 festhalten ---
+		   ID erscheint nach Browser refresh beim Gerät scanFerno unter Internals.receive_ID 
 
 * Eingaben im FHEM Webinterface 
  
