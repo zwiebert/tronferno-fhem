@@ -127,16 +127,20 @@ package Fernotron {
     sub Fernotron_Set($$@) {
         my ($hash, $name, $cmd, @args) = @_;
         return "\"set $name\" needs at least one argument" unless (defined($cmd));
+         my $u = "unknown argument $cmd choose one of ";
 
-        main::AssignIoPort($hash);    # if undef $hash->{IODev};
+	if ($main::modules{Fernotron}{defptr}{'Fernotron'} eq $hash) {  ## receiver
+	  return $u;  # nothing to set for receiver 
+	  
+	  }
+
         my $io = $hash->{IODev} or return '"no io device"';
 
         if ($cmd eq '?') {
-            my $res = "unknown argument $cmd choose one of ";
             foreach my $key (Fernotron::Drv::get_commandlist()) {
-                $res .= " $key:noArg";
+                $u .= " $key:noArg";
             }
-            return $res;
+            return $u;
         }
 
         if (Fernotron::Drv::is_command_valid($cmd)) {
