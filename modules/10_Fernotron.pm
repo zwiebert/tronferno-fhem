@@ -30,6 +30,31 @@ package Fernotron {
     sub Fernotron_Parse {
         my ($io_hash, $message) = @_;
 
+        my ($proto, $dmsg) = split('#', $message);
+        my $address = 'Fernotron';
+        my $fsb    = Fernotron::Drv::fer_sdDmsg2Bytes($dmsg);
+       return undef if (ref($fsb) ne 'ARRAY' || scalar(@$fsb) < 5);
+
+        my $msg = sprintf("%02x, %02x, %02x, %02x, %02x", @$fsb);
+        main::Log3($io_hash, 3, "Fernotron: message received: $msg");
+
+        if (my $hash = $main::modules{Fernotron}{defptr}{$address}) {
+
+            # Nachricht für $hash verarbeiten
+            $hash->{received_Bytes} = $msg;
+            $hash->{received_HR} = sprintf("a=%02x%02x%02x, c=%s", $$fsb[0], $$fsb[1], $$fsb[2], Fernotron::Drv::get_command_name_by_number(Fernotron::Drv::FSB_GET_CMD($fsb)));
+
+            # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
+            return $hash->{NAME};
+        }
+
+        return undef;
+    }
+
+  
+    sub Fernotron_Parse_Old_RAWMSG {
+        my ($io_hash, $message) = @_;
+
         # Die Stellen 10-15 enthalten die eindeutige Identifikation des Geräts
         my $address = substr($message, 10, 5);
         print("address: $address\n");
@@ -44,8 +69,9 @@ package Fernotron {
         if (my $hash = $main::modules{Fernotron}{defptr}{$address}) {
 
             # Nachricht für $hash verarbeiten
-	  $hash->{received_DMSG} = $msg;
-	  $hash->{received_ID} = sprintf("%02x%02x%02x", @$fsb);
+            $hash->{received_DMSG} = $msg;
+            $hash->{received_ID} = sprintf("%02x%02x%02x", @$fsb);
+
             # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
             return $hash->{NAME};
         }
@@ -62,9 +88,9 @@ package Fernotron {
         print("address: $address name: $name\n");
 
         my ($a, $g, $m) = (0, 0, 0);
-        my $u = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N]';
-	my $scan = 0;
-	
+        my $u    = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N]';
+        my $scan = 0;
+
         return $u if ($#a < 2);
 
         shift(@a);
@@ -81,8 +107,8 @@ package Fernotron {
             } elsif ($key eq 'm') {
                 $m = int($value);
                 return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
-	      } elsif ($key eq 'scan') {
-		$scan = 1;
+            } elsif ($key eq 'scan') {
+                $scan = 1;
                 $main::modules{Fernotron}{defptr}{$address} = $hash;
             } else {
                 return "$name: unknown argument $o in define";    #FIXME add usage text
@@ -127,12 +153,12 @@ package Fernotron {
     sub Fernotron_Set($$@) {
         my ($hash, $name, $cmd, @args) = @_;
         return "\"set $name\" needs at least one argument" unless (defined($cmd));
-         my $u = "unknown argument $cmd choose one of ";
+        my $u = "unknown argument $cmd choose one of ";
 
-	if ($main::modules{Fernotron}{defptr}{'Fernotron'} eq $hash) {  ## receiver
-	  return $u;  # nothing to set for receiver 
-	  
-	  }
+        if ($main::modules{Fernotron}{defptr}{'Fernotron'} eq $hash) {    ## receiver
+            return $u;                                                    # nothing to set for receiver
+
+        }
 
         my $io = $hash->{IODev} or return '"no io device"';
 
@@ -471,8 +497,73 @@ package Fernotron::Drv {
 ##
 #### end ###
 
+############################################################
+#### get bytes from SIGNAduino's DMSG
+##
+##
+    # convert the bitsream represented by 8bit-byte string into 10bit-word
+    sub fer_byteHex2bitMsg($) {
+        my ($byteHex) = @_;
+        my $bitMsg = '';
+        for my $b (split(//, $byteHex)) {
+            $bitMsg .= sprintf("%04b", hex($b));
+        }
+        return $bitMsg;
+    }
+
+    sub fer_bin2word {
+        return unpack("N", pack("B32", substr("0" x 32 . reverse(shift), -32)));
+    }
+
+    # split string into sub strings of 10 chars each. truncate last substring if smaller than 10 chars
+    sub fer_bitMsg_split($) {
+        my @bitArr = unpack('(A10)*', shift);
+        $#bitArr -= 1 if length($bitArr[$#bitArr]) < 10;
+        return \@bitArr;
+    }
+
+    # make array of 10-bit strings into array of 10-bit words
+    sub fer_bitMsg2words($) {
+        my ($bitArr) = @_;
+        my @wordArr = ();
+
+        foreach my $ws (@$bitArr) {
+            push(@wordArr, fer_bin2word($ws));
+        }
+        return \@wordArr;
+    }
+
+    sub fer_words2bytes($) {
+        my ($words) = @_;
+        my @bytes = ();
+
+        for (my $i = 0; $i < scalar(@$words); $i += 2) {
+            my $w0 = $$words[$i];
+            my $w1 = $$words[ $i + 1 ];
+            my $p0 = defined($w0) && fer_get_word_parity($w0, 0);
+            my $p1 = defined($w1) && fer_get_word_parity($w1, 1);
+
+            if ($p0 ne 0) {
+                push(@bytes, $w0 & 0xff);
+
+            } elsif ($p1 ne 0) {
+                push(@bytes, $w1 & 0xff);
+            } else {
+                return \@bytes;
+            }
+        }
+        return \@bytes;
+    }
+
+    sub fer_sdDmsg2Bytes($) {
+        return fer_words2bytes(fer_bitMsg2words(fer_bitMsg_split(fer_byteHex2bitMsg(shift))));
+    }
+##
+##
+##### end ####
+
 ##########################################################
-#### sniff device ID from string received via SIGNALduino
+#### sniff device ID from RAW string received via SIGNALduino
 ##
 ### translate the substring between 'D=' and ';' to our own send timings and return the result;
 ##
@@ -565,6 +656,17 @@ package Fernotron::Drv {
         return -1;
     }
 
+    sub bh2wh($) {
+        my ($byteHex) = @_;
+        my $bitMsg = '';
+        for my $b (split(//, $byteHex)) {
+            $bitMsg .= sprintf("%b", $b);
+        }
+
+        print("bitmsg: $bitMsg\n");
+    }
+
+ 
     sub rx_sd2bytes ($) {
         my ($sendData) = @_;
         my $rx_data    = rx_get_data($sendData);
@@ -650,6 +752,7 @@ package Fernotron::Drv {
 
     sub get_commandlist() { return keys(%$map_fcmd); }
     sub is_command_valid($) { my ($command) = @_; dbprint($command); return exists $map_fcmd->{$command}; }
+    sub get_command_name_by_number($) { my ($cmd) = @_; my @res = grep { $map_fcmd->{$_} eq $cmd } keys(%$map_fcmd); return $#res >= 0 ? $res[0] : "";  }
 
 ##
 ##
