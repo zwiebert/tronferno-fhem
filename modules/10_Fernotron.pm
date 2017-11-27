@@ -279,15 +279,18 @@ package Fernotron::Drv {
 ################################################
 #### convert a byte commmand to a data string
 ##
-### calc checksum to @array,
+##
+    # calc checksum to @array,
     sub calc_checksum($$) {
         my ($cmd, $cs) = @_;
         foreach my $b (@$cmd) {
             $cs += $b;
         }
         return (0xff & $cs);
-    }
-##
+      }
+
+    
+    # convert 5-byte message into SIGNALduino raw message
     sub cmd2sdString($) {
         my ($fsb) = @_;
         return $p_string . "D=$d_stp_string$d_pre_string" . byte2dString(@$fsb, calc_checksum($fsb, 0)) . ';';
@@ -295,6 +298,8 @@ package Fernotron::Drv {
 
 #### end ###
 
+### some constants
+##
     my ($fer_dat_ADDR_2, $fer_dat_ADDR_1, $fer_dat_ADDR_0,    ## sender or receiver address
         $fer_dat_TGL_and_MEMB,                                # key-press counter + some ID of the sender (like Member number, Type of sender, ...)
         $fer_dat_GRP_and_CMD                                  # Group-ID of sender + the command code (0...0xF)
@@ -492,7 +497,7 @@ package Fernotron::Drv {
 #### end ###
 
 ############################################################
-#### get bytes from SIGNAduino's DMSG
+#### get bytes from SIGNALduino's DMSG
 ##
 ##
 
@@ -509,7 +514,7 @@ package Fernotron::Drv {
         return 0;
     }
 
-    # convert the bitsream represented by 8bit-byte string into 10bit-word
+    # convert byte string to bit string
     sub fer_byteHex2bitMsg($) {
         my ($byteHex) = @_;
         my $bitMsg = '';
@@ -519,18 +524,19 @@ package Fernotron::Drv {
         return $bitMsg;
     }
 
-    sub fer_bin2word {
+    # convert 10bit string to 10bit word
+    sub fer_bin2word($) {
         return unpack("N", pack("B32", substr("0" x 32 . reverse(shift), -32)));
     }
 
-    # split string into sub strings of 10 chars each. truncate last substring if smaller than 10 chars
+    # split long bit string to array of 10bit strings. disregard trailing bits.
     sub fer_bitMsg_split($) {
         my @bitArr = unpack('(A10)*', shift);
         $#bitArr -= 1 if length($bitArr[$#bitArr]) < 10;
         return \@bitArr;
     }
 
-    # make array of 10-bit strings into array of 10-bit words
+    # convert  array of 10bit strings to array of 10bit words
     sub fer_bitMsg2words($) {
         my ($bitArr) = @_;
         my @wordArr = ();
@@ -541,6 +547,7 @@ package Fernotron::Drv {
         return \@wordArr;
     }
 
+    # convert array of 10bit words into array of 8bit bytes
     sub fer_words2bytes($) {
         my ($words) = @_;
         my @bytes = ();
@@ -563,6 +570,7 @@ package Fernotron::Drv {
         return \@bytes;
     }
 
+    # convert decoded message from SIGNALduino dispatch to Fernotron byte message 
     sub fer_sdDmsg2Bytes($) {
         return fer_words2bytes(fer_bitMsg2words(fer_bitMsg_split(fer_byteHex2bitMsg(shift))));
     }
@@ -742,7 +750,7 @@ package Fernotron::Drv {
 #### end ###
 
 ############################################################################
-#### send commands to fhem
+#### convert a/g/m into Fernotron byte message 
 ##
 ##
     my $map_fcmd = {
@@ -768,6 +776,7 @@ package Fernotron::Drv {
 
 ##
 ##
+    # convert args into 5-Byte message (checksum will be added by caller)
     sub args2cmd($) {
         my ($args) = @_;
 
