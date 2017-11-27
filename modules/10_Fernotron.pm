@@ -18,7 +18,6 @@ package main {
         my ($hash) = @_;
         $hash->{Match} = "^P77#.+";
 
-        #        $hash->{Match}   = "^MU;.*";
         $hash->{DefFn}   = 'Fernotron::Fernotron_Define';
         $hash->{SetFn}   = "Fernotron::Fernotron_Set";
         $hash->{ParseFn} = "Fernotron::Fernotron_Parse";
@@ -55,11 +54,7 @@ package Fernotron {
 
     sub Fernotron_Parse_Old_RAWMSG {
         my ($io_hash, $message) = @_;
-
-        # Die Stellen 10-15 enthalten die eindeutige Identifikation des Geräts
-        my $address = substr($message, 10, 5);
-        print("address: $address\n");
-        $address = 'Fernotron';
+        my $address = 'Fernotron';
         my $rawmsg = $io_hash->{RAWMSG};
         my $fsb    = Fernotron::Drv::rx_sd2bytes($rawmsg);
         return undef if (ref($fsb) ne 'ARRAY' || scalar(@$fsb) < 5);
@@ -85,8 +80,6 @@ package Fernotron {
         my @a       = split("[ \t][ \t]*", $def);
         my $name    = $a[0];
         my $address = $a[1];
-
-        print("address: $address name: $name\n");
 
         my ($a, $g, $m) = (0, 0, 0);
         my $u    = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N]';
