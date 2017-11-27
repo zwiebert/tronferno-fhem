@@ -32,8 +32,9 @@ package Fernotron {
 
         my ($proto, $dmsg) = split('#', $message);
         my $address = 'Fernotron';
-        my $fsb    = Fernotron::Drv::fer_sdDmsg2Bytes($dmsg);
-       return undef if (ref($fsb) ne 'ARRAY' || scalar(@$fsb) < 5);
+        my $fsb     = Fernotron::Drv::fer_sdDmsg2Bytes($dmsg);
+        return undef if (ref($fsb) ne 'ARRAY' || scalar(@$fsb) < 5);
+	return undef unless  Fernotron::Drv::fsb_verify_by_id($fsb);
 
         my $msg = sprintf("%02x, %02x, %02x, %02x, %02x", @$fsb);
         main::Log3($io_hash, 3, "Fernotron: message received: $msg");
@@ -42,7 +43,8 @@ package Fernotron {
 
             # Nachricht für $hash verarbeiten
             $hash->{received_Bytes} = $msg;
-            $hash->{received_HR} = sprintf("a=%02x%02x%02x, c=%s", $$fsb[0], $$fsb[1], $$fsb[2], Fernotron::Drv::get_command_name_by_number(Fernotron::Drv::FSB_GET_CMD($fsb)));
+            $hash->{received_HR}
+                = sprintf("a=%02x%02x%02x, c=%s", $$fsb[0], $$fsb[1], $$fsb[2], Fernotron::Drv::get_command_name_by_number(Fernotron::Drv::FSB_GET_CMD($fsb)));
 
             # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
             return $hash->{NAME};
@@ -51,7 +53,6 @@ package Fernotron {
         return undef;
     }
 
-  
     sub Fernotron_Parse_Old_RAWMSG {
         my ($io_hash, $message) = @_;
 
@@ -501,6 +502,20 @@ package Fernotron::Drv {
 #### get bytes from SIGNAduino's DMSG
 ##
 ##
+
+    # checksum is missing, so verify if ID and MEMB match
+    sub fsb_verify_by_id($) {
+        my ($fsb) = @_;
+        my $m = FSB_GET_MEMB($fsb);
+
+        return ($m == $fer_memb_Broadcast || ($fer_memb_M1 <= $m && $m <= $fer_memb_M7)) if FSB_MODEL_IS_CENTRAL($fsb);
+        return ($m == $fer_memb_SUN)        if FSB_MODEL_IS_SUNSENS($fsb);
+        return ($m == $fer_memb_SINGLE)     if FSB_MODEL_IS_STANDARD($fsb);
+        return ($m == $fer_memb_RecAddress) if FSB_MODEL_IS_RECEIVER($fsb);
+
+        return 0;
+    }
+
     # convert the bitsream represented by 8bit-byte string into 10bit-word
     sub fer_byteHex2bitMsg($) {
         my ($byteHex) = @_;
@@ -666,7 +681,6 @@ package Fernotron::Drv {
         print("bitmsg: $bitMsg\n");
     }
 
- 
     sub rx_sd2bytes ($) {
         my ($sendData) = @_;
         my $rx_data    = rx_get_data($sendData);
@@ -752,7 +766,12 @@ package Fernotron::Drv {
 
     sub get_commandlist() { return keys(%$map_fcmd); }
     sub is_command_valid($) { my ($command) = @_; dbprint($command); return exists $map_fcmd->{$command}; }
-    sub get_command_name_by_number($) { my ($cmd) = @_; my @res = grep { $map_fcmd->{$_} eq $cmd } keys(%$map_fcmd); return $#res >= 0 ? $res[0] : "";  }
+
+    sub get_command_name_by_number($) {
+        my ($cmd) = @_;
+        my @res = grep { $map_fcmd->{$_} eq $cmd } keys(%$map_fcmd);
+        return $#res >= 0 ? $res[0] : "";
+    }
 
 ##
 ##
