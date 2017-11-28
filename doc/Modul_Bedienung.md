@@ -64,7 +64,7 @@ Kommandos
 * down - schließen
 * stop - anhalten
 * set  - Setzfunktion aktivieren
-* sun-down - Herunterfahren bis Sonnenposition (nur bei aktiverter Sonnenautomatik)
+* sun-down - Herunterfahren bis Sonnenposition (nur bei aktivierter Sonnenautomatik)
 * sun-inst - aktuelle Position als Sonnenposition speichern
 
 
@@ -77,7 +77,7 @@ Beispiele
 
            define scanFerno Fernotron scan
              -- STOP Knopf der 2411 festhalten ---
-		   ID erscheint nach Browser refresh beim Gerät scanFerno unter Internals.receive_ID 
+		   ID erscheint nach Browser refresh beim Gerät scanFerno unter Internals.receive_HR 
 
 * Eingaben im FHEM Webinterface 
  
