@@ -19,7 +19,7 @@
 #      mcuaddr - IP4 address/hostname of tronferno-mcu hardware (default: fernotron.fritz.box.)
 #
 #  device set commands
-#      down, stop, up, set, sun-inst, sun-down, sup-up 
+#      down, stop, up, set, sun-inst, sun-down, sup-up
 #
 # TODO
 # - doc
@@ -33,18 +33,6 @@ use 5.14.0;
 use IO::Socket;
 
 #use IO::Select;
-
-package main {
-
-    sub Tronferno_Initialize($) {
-        my ($hash) = @_;
-
-        $hash->{DefFn} = 'Tronferno::Tronferno_Define';
-        $hash->{SetFn}    = "Tronferno::Tronferno_Set";
-
-        $hash->{AttrList} = 'mcuaddr';
-    }
-}
 
 package Tronferno {
 
@@ -120,7 +108,7 @@ package Tronferno {
     };
 
     sub get_commandlist()   { return keys %$map_tcmd; }
-    sub is_command_valid($) { return exists $map_tcmd->{$_[0]}; }
+    sub is_command_valid($) { return exists $map_tcmd->{ $_[0] }; }
 
     sub Tronferno_Set($$@) {
         my ($hash, $name, $cmd, @args) = @_;
@@ -136,6 +124,7 @@ package Tronferno {
         } elsif (is_command_valid($cmd)) {
             my $req = Tronferno_build_cmd($hash, $name, 'send', $map_tcmd->{$cmd});
             Tronferno_transmit($name, $req);
+            main::readingsSingleUpdate($hash, 'state', $cmd, 0);
         } else {
             return "unknown argument $cmd choose one of " . join(' ', get_commandlist());
         }
@@ -143,6 +132,18 @@ package Tronferno {
         return undef;
     }
 
+}
+
+package main {
+
+    sub Tronferno_Initialize($) {
+        my ($hash) = @_;
+
+        $hash->{DefFn} = 'Tronferno::Tronferno_Define';
+        $hash->{SetFn} = "Tronferno::Tronferno_Set";
+
+        $hash->{AttrList} = 'mcuaddr';
+    }
 }
 
 1;

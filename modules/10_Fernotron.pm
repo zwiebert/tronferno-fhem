@@ -7,177 +7,13 @@
 ##
 ## - patch SIGNALduino
 ##    sudo patch /opt/fhem/FHEM/00_SIGNALduino.pm  ./signalduino.diff
+##
 
 use strict;
 
 use 5.14.0;
 
-package main {
-
-    sub Fernotron_Initialize($) {
-        my ($hash) = @_;
-        $hash->{Match} = "^P77#.+";
-
-        $hash->{DefFn}   = 'Fernotron::Fernotron_Define';
-        $hash->{SetFn}   = "Fernotron::Fernotron_Set";
-        $hash->{ParseFn} = "Fernotron::Fernotron_Parse";
-    }
-}
-
-package Fernotron {
-
-    sub Fernotron_Parse {
-        my ($io_hash, $message) = @_;
-
-        my ($proto, $dmsg) = split('#', $message);
-        my $address = 'Fernotron';
-        my $fsb     = Fernotron::Drv::fer_sdDmsg2Bytes($dmsg);
-        return undef if (ref($fsb) ne 'ARRAY' || scalar(@$fsb) < 5);
-	return undef unless  Fernotron::Drv::fsb_verify_by_id($fsb);
-
-        my $msg = sprintf("%02x, %02x, %02x, %02x, %02x", @$fsb);
-        main::Log3($io_hash, 3, "Fernotron: message received: $msg");
-
-        if (my $hash = $main::modules{Fernotron}{defptr}{$address}) {
-
-            # Nachricht für $hash verarbeiten
-            $hash->{received_Bytes} = $msg;
-            $hash->{received_HR}
-                = sprintf("a=%02x%02x%02x, c=%s", $$fsb[0], $$fsb[1], $$fsb[2], Fernotron::Drv::get_command_name_by_number(Fernotron::Drv::FSB_GET_CMD($fsb)));
-
-            # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
-            return $hash->{NAME};
-        }
-
-        return undef;
-    }
-
-    sub Fernotron_Parse_Old_RAWMSG {
-        my ($io_hash, $message) = @_;
-        my $address = 'Fernotron';
-        my $rawmsg = $io_hash->{RAWMSG};
-        my $fsb    = Fernotron::Drv::rx_sd2bytes($rawmsg);
-        return undef if (ref($fsb) ne 'ARRAY' || scalar(@$fsb) < 5);
-
-        my $msg = sprintf("%02x, %02x, %02x, %02x, %02x", @$fsb);
-        main::Log3($io_hash, 3, "Fernotron: message received: $msg");
-
-        if (my $hash = $main::modules{Fernotron}{defptr}{$address}) {
-
-            # Nachricht für $hash verarbeiten
-            $hash->{received_DMSG} = $msg;
-            $hash->{received_ID} = sprintf("%02x%02x%02x", @$fsb);
-
-            # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
-            return $hash->{NAME};
-        }
-
-        return undef;
-    }
-
-    sub Fernotron_Define($$) {
-        my ($hash, $def) = @_;
-        my @a       = split("[ \t][ \t]*", $def);
-        my $name    = $a[0];
-        my $address = $a[1];
-
-        my ($a, $g, $m) = (0, 0, 0);
-        my $u    = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N]';
-        my $scan = 0;
-
-        return $u if ($#a < 2);
-
-        shift(@a);
-        shift(@a);
-        foreach my $o (@a) {
-            my ($key, $value) = split('=', $o);
-
-            if ($key eq 'a') {
-                $a = hex($value);
-
-            } elsif ($key eq 'g') {
-                $g = int($value);
-                return "out of range value $g for g. expected: 0..7" unless (0 <= $g && $g <= 7);
-            } elsif ($key eq 'm') {
-                $m = int($value);
-                return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
-            } elsif ($key eq 'scan') {
-                $scan = 1;
-                $main::modules{Fernotron}{defptr}{$address} = $hash;
-            } else {
-                return "$name: unknown argument $o in define";    #FIXME add usage text
-            }
-        }
-
-        if ($scan eq 0) {
-            main::Log3($name, 3, "a=$a g=$g m=$m\n");
-            return "missing argument a" if ($a == 0);
-            $hash->{helper}{ferid_a} = $a;
-            $hash->{helper}{ferid_g} = $g;
-            $hash->{helper}{ferid_m} = $m;
-        }
-        main::AssignIoPort($hash);
-
-        return undef;
-    }
-
-    sub Fernotron_transmit($$$) {
-        my ($hash, $command, $c) = @_;
-        my $name = $hash->{NAME};
-        my $args = {
-            command => $command,
-            a       => $hash->{helper}{ferid_a},
-            g       => $hash->{helper}{ferid_g},
-            m       => $hash->{helper}{ferid_m},
-            c       => $c,
-        };
-        my $fsb = Fernotron::Drv::args2cmd($args);
-        if ($fsb != -1) {
-            main::Log3($name, 1, "$name: send: " . Fernotron::Drv::fsb2string($fsb));
-            my $msg = Fernotron::Drv::cmd2sdString($fsb);
-            main::Log3($name, 3, "$name: raw: $msg");
-            main::IOWrite($hash, 'raw', $msg);
-        } else {
-            return Fernotron::Drv::get_last_error();
-        }
-        return undef;
-
-    }
-
-    sub Fernotron_Set($$@) {
-        my ($hash, $name, $cmd, @args) = @_;
-        return "\"set $name\" needs at least one argument" unless (defined($cmd));
-        my $u = "unknown argument $cmd choose one of ";
-
-        if ($main::modules{Fernotron}{defptr}{'Fernotron'} eq $hash) {    ## receiver
-            return $u;                                                    # nothing to set for receiver
-
-        }
-
-        my $io = $hash->{IODev} or return '"no io device"';
-
-        if ($cmd eq '?') {
-            foreach my $key (Fernotron::Drv::get_commandlist()) {
-                $u .= " $key:noArg";
-            }
-            return $u;
-        }
-
-        if (Fernotron::Drv::is_command_valid($cmd)) {
-            my $res = Fernotron_transmit($hash, 'send', $cmd);
-            return $res unless ($res == undef);
-        } else {
-            return "unknown argument $cmd choose one of " . join(' ', Fernotron::Drv::get_commandlist());
-        }
-
-        my $sd_hash = $main::modules{'SIGNALduino'}{'defptr'}{'sduino'};
-        print $sd_hash->{NAME} . "\n";
-        return undef;
-    }
-
-}
-
-## generate and parse sduino raw messages
+## module to generate and parse sduino raw messages
 package Fernotron::Drv {
 
     my $def_cu = '801234';
@@ -198,7 +34,9 @@ package Fernotron::Drv {
 ## DT1_OFF,        #P3  -4 * 200us =  -800us
 ## DT0_ON,         #P4  +4 * 200us =  +800us
 
-    my $p_string = 'SR;R=1;P0=400;P1=-400;P2=-3200;P3=-800;P4=800;';
+    my $fmt_string = 'SR;R=%d;%sD=%s%s%s;';    # repeats, p_string, d_stp_string, d_pre_string, data
+
+    my $p_string = 'P0=400;P1=-400;P2=-3200;P3=-800;P4=800;';
 
     my $rf_timings = {
         'P0.min' => 350,
@@ -287,13 +125,14 @@ package Fernotron::Drv {
             $cs += $b;
         }
         return (0xff & $cs);
-      }
+    }
 
-    
     # convert 5-byte message into SIGNALduino raw message
-    sub cmd2sdString($) {
-        my ($fsb) = @_;
-        return $p_string . "D=$d_stp_string$d_pre_string" . byte2dString(@$fsb, calc_checksum($fsb, 0)) . ';';
+    sub cmd2sdString($$) {
+        my ($fsb, $repeats) = @_;
+        return sprintf($fmt_string, $repeats + 1, $p_string, $d_stp_string, $d_pre_string, byte2dString(@$fsb, calc_checksum($fsb, 0)));
+
+        # return $p_string . "D=$d_stp_string$d_pre_string" . byte2dString(@$fsb, calc_checksum($fsb, 0)) . ';';
     }
 
 #### end ###
@@ -570,7 +409,7 @@ package Fernotron::Drv {
         return \@bytes;
     }
 
-    # convert decoded message from SIGNALduino dispatch to Fernotron byte message 
+    # convert decoded message from SIGNALduino dispatch to Fernotron byte message
     sub fer_sdDmsg2Bytes($) {
         return fer_words2bytes(fer_bitMsg2words(fer_bitMsg_split(fer_byteHex2bitMsg(shift))));
     }
@@ -750,7 +589,7 @@ package Fernotron::Drv {
 #### end ###
 
 ############################################################################
-#### convert a/g/m into Fernotron byte message 
+#### convert a/g/m into Fernotron byte message
 ##
 ##
     my $map_fcmd = {
@@ -758,8 +597,8 @@ package Fernotron::Drv {
         "down"     => $fer_cmd_DOWN,
         "stop"     => $fer_cmd_STOP,
         "set"      => $fer_cmd_SET,
-	"sun-down" => $fer_cmd_SunDOWN,
-	"sun-up"   => $fer_cmd_SunUP,
+        "sun-down" => $fer_cmd_SunDOWN,
+        "sun-up"   => $fer_cmd_SunUP,
         "sun-inst" => $fer_cmd_SunINST,
     };
 
@@ -835,6 +674,177 @@ package Fernotron::Drv {
 
         fsb_doToggle($fsb);
         return $fsb;
+    }
+}
+
+package Fernotron {
+
+    sub Fernotron_Parse {
+        my ($io_hash, $message) = @_;
+
+        my ($proto, $dmsg) = split('#', $message);
+        my $address = 'Fernotron';
+        my $fsb     = Fernotron::Drv::fer_sdDmsg2Bytes($dmsg);
+        return undef if (ref($fsb) ne 'ARRAY' || scalar(@$fsb) < 5);
+        return undef unless Fernotron::Drv::fsb_verify_by_id($fsb);
+
+        my $msg = sprintf("%02x, %02x, %02x, %02x, %02x", @$fsb);
+        main::Log3($io_hash, 3, "Fernotron: message received: $msg");
+
+        if (my $hash = $main::modules{Fernotron}{defptr}{$address}) {
+
+            # Nachricht für $hash verarbeiten
+            $hash->{received_Bytes} = $msg;
+            $hash->{received_HR}
+                = sprintf("a=%02x%02x%02x, c=%s", $$fsb[0], $$fsb[1], $$fsb[2], Fernotron::Drv::get_command_name_by_number(Fernotron::Drv::FSB_GET_CMD($fsb)));
+
+            # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
+            return $hash->{NAME};
+        }
+
+        return undef;
+    }
+
+    sub Fernotron_Parse_Old_RAWMSG {
+        my ($io_hash, $message) = @_;
+        my $address = 'Fernotron';
+        my $rawmsg  = $io_hash->{RAWMSG};
+        my $fsb     = Fernotron::Drv::rx_sd2bytes($rawmsg);
+        return undef if (ref($fsb) ne 'ARRAY' || scalar(@$fsb) < 5);
+
+        my $msg = sprintf("%02x, %02x, %02x, %02x, %02x", @$fsb);
+        main::Log3($io_hash, 3, "Fernotron: message received: $msg");
+
+        if (my $hash = $main::modules{Fernotron}{defptr}{$address}) {
+
+            # Nachricht für $hash verarbeiten
+            $hash->{received_DMSG} = $msg;
+            $hash->{received_ID} = sprintf("%02x%02x%02x", @$fsb);
+
+            # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
+            return $hash->{NAME};
+        }
+
+        return undef;
+    }
+
+    sub Fernotron_Define($$) {
+        my ($hash, $def) = @_;
+        my @a       = split("[ \t][ \t]*", $def);
+        my $name    = $a[0];
+        my $address = $a[1];
+
+        my ($a, $g, $m) = (0, 0, 0);
+        my $u    = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N]';
+        my $scan = 0;
+
+        return $u if ($#a < 2);
+
+        shift(@a);
+        shift(@a);
+        foreach my $o (@a) {
+            my ($key, $value) = split('=', $o);
+
+            if ($key eq 'a') {
+                $a = hex($value);
+
+            } elsif ($key eq 'g') {
+                $g = int($value);
+                return "out of range value $g for g. expected: 0..7" unless (0 <= $g && $g <= 7);
+            } elsif ($key eq 'm') {
+                $m = int($value);
+                return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
+            } elsif ($key eq 'scan') {
+                $scan = 1;
+                $main::modules{Fernotron}{defptr}{$address} = $hash;
+            } else {
+                return "$name: unknown argument $o in define";    #FIXME add usage text
+            }
+        }
+
+        if ($scan eq 0) {
+            main::Log3($name, 3, "a=$a g=$g m=$m\n");
+            return "missing argument a" if ($a == 0);
+            $hash->{helper}{ferid_a} = $a;
+            $hash->{helper}{ferid_g} = $g;
+            $hash->{helper}{ferid_m} = $m;
+        }
+        main::AssignIoPort($hash);
+
+        return undef;
+    }
+
+    sub Fernotron_transmit($$$) {
+        my ($hash, $command, $c) = @_;
+        my $name = $hash->{NAME};
+        my $io   = $hash->{IODev};
+
+        return 'error: IO device not open' unless (exists($io->{NAME}) and main::ReadingsVal($io->{NAME}, 'state', '') eq 'opened');
+
+        my $args = {
+            command => $command,
+            a       => $hash->{helper}{ferid_a},
+            g       => $hash->{helper}{ferid_g},
+            m       => $hash->{helper}{ferid_m},
+            c       => $c,
+            r       => 1,
+        };
+        my $fsb = Fernotron::Drv::args2cmd($args);
+        if ($fsb != -1) {
+            main::Log3($name, 1, "$name: send: " . Fernotron::Drv::fsb2string($fsb));
+            my $msg = Fernotron::Drv::cmd2sdString($fsb, $args->{r});
+            main::Log3($name, 3, "$name: raw: $msg");
+            main::IOWrite($hash, 'raw', $msg);
+        } else {
+            return Fernotron::Drv::get_last_error();
+        }
+        return undef;
+
+    }
+
+    sub Fernotron_Set($$@) {
+        my ($hash, $name, $cmd, @args) = @_;
+        return "\"set $name\" needs at least one argument" unless (defined($cmd));
+        my $u = "unknown argument $cmd choose one of ";
+
+        if ($main::modules{Fernotron}{defptr}{'Fernotron'} eq $hash) {    ## receiver
+            return $u;                                                    # nothing to set for receiver
+
+        }
+
+        my $io = $hash->{IODev} or return '"no io device"';
+
+        if ($cmd eq '?') {
+            foreach my $key (Fernotron::Drv::get_commandlist()) {
+                $u .= " $key:noArg";
+            }
+            return $u;
+        }
+
+        if (Fernotron::Drv::is_command_valid($cmd)) {
+            my $res = Fernotron_transmit($hash, 'send', $cmd);
+            main::readingsSingleUpdate($hash, 'state', $cmd, 0) if ($res eq undef);
+            return $res unless ($res eq undef);
+        } else {
+            return "unknown argument $cmd choose one of " . join(' ', Fernotron::Drv::get_commandlist());
+        }
+
+        my $sd_hash = $main::modules{'SIGNALduino'}{'defptr'}{'sduino'};
+        print $sd_hash->{NAME} . "\n";
+        return undef;
+    }
+
+}
+
+package main {
+
+    sub Fernotron_Initialize($) {
+        my ($hash) = @_;
+        $hash->{Match} = "^P77#.+";
+
+        $hash->{DefFn}   = 'Fernotron::Fernotron_Define';
+        $hash->{SetFn}   = "Fernotron::Fernotron_Set";
+        $hash->{ParseFn} = "Fernotron::Fernotron_Parse";
     }
 }
 
