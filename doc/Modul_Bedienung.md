@@ -69,6 +69,12 @@ Kommandos
 * sun-inst - aktuelle Position als Sonnenposition speichern
 
 
+Attribute
+---------
+* repeats 0..5 - Wiederhohltes Senden des Kommandos für sicheren Empfang. 0 sendet nur 1 mal. 1 sendet doppelt, etc. (Default: 1)
+
+
+
 Beispiele
 ---------
 

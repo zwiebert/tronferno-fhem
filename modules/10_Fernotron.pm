@@ -787,7 +787,7 @@ package Fernotron {
             g       => $hash->{helper}{ferid_g},
             m       => $hash->{helper}{ferid_m},
             c       => $c,
-            r       => 1,
+            r       => int(main::AttrVal($name, 'repeats', '1')),
         };
         my $fsb = Fernotron::Drv::args2cmd($args);
         if ($fsb != -1) {
@@ -834,17 +834,34 @@ package Fernotron {
         return undef;
     }
 
+    sub Fernotron_Attr(@) {
+        my ($cmd, $name, $attrName, $attrValue) = @_;
+
+        # $cmd  - Vorgangsart - kann die Werte "del" (löschen) oder "set" (setzen) annehmen
+        # $name - Gerätename
+        # $attrName/$attrValue sind Attribut-Name und Attribut-Wert
+
+        if ($cmd eq "set") {
+            if ($attrName eq 'repeats') {
+                my $r = int($attrValue);
+                return "invalid argument '$attrValue'. Expected: 0..5" unless (0 <= $r and $r <= 5);
+            }
+        }
+        return undef;
+    }
 }
 
 package main {
 
     sub Fernotron_Initialize($) {
         my ($hash) = @_;
-        $hash->{Match} = "^P77#.+";
+        $hash->{Match}    = "^P77#.+";
+        $hash->{AttrList} = 'repeats:0,1,2,3,4,5';
 
         $hash->{DefFn}   = 'Fernotron::Fernotron_Define';
         $hash->{SetFn}   = "Fernotron::Fernotron_Set";
         $hash->{ParseFn} = "Fernotron::Fernotron_Parse";
+        $hash->{AttrFn}  = "Fernotron::Fernotron_Attr";
     }
 }
 
