@@ -5,9 +5,9 @@ FHEM Modul Fernotron - Benutzung
 Modul installieren
 ------------------
 
-* Das Modul 10_Fernotron.pm muss in den FHEM Modul-Ordner (/opt/fhem/FHEM/) kopiert werden.
+* Die Datei "10_Fernotron.pm" muss in den FHEM Modul-Ordner (/opt/fhem/FHEM/) kopiert werden.
 
-* Patche SIGNALduino modul um Fernotron als Klient hinzuzufügen:
+* Patche die Datei  "00_SIGNALduino.pm" um Fernotron als Klient dieses Moduls hinzuzufügen:
 
                $ sudo patch /opt/fhem/FHEM/00_SIGNALduino.pm  ./signalduino.diff
 			   
@@ -15,7 +15,7 @@ Modul installieren
 			   rereadcfg
 
 
-* Ein Gerät vom Typ SIGNALduino muss definiert sein und natürlich die SIGNALduino Hardware angeschlossen sein.
+* Ein Gerät vom Typ SIGNALduino muss definiert und natürlich die SIGNALduino Hardware angeschlossen sein.
 
 
 Grundlagen
@@ -65,6 +65,7 @@ Kommandos
 * stop - anhalten
 * set  - Setzfunktion aktivieren
 * sun-down - Herunterfahren bis Sonnenposition (nur bei aktivierter Sonnenautomatik)
+* sun-up - fährt wieder hoch nach sun-down
 * sun-inst - aktuelle Position als Sonnenposition speichern
 
 
@@ -123,11 +124,11 @@ Beispiele
 ### nach Methode 3)
 
           Motorcode herausfinden. Steht auf Kabel-Sticker und direkt auf dem Motor (wenn ausgebaut).
-		  Beispiel: Code 0D1234 aufgedruckt
+		  Beispiel: Code 0D123 aufgedruckt
 
 * Eingaben im FHEM Webinterface 
 
-          Kommando-Feld: define Rolladen_Bad  Fernotron a=90D1234   (Enter)
+          Kommando-Feld: define Rolladen_Bad  Fernotron a=90D123   (Enter)
 		  attr Feld: webCmd: down:stop:up  (Enter)
 		  Save config
 		  

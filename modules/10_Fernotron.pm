@@ -758,7 +758,8 @@ package Fernotron::Drv {
         "down"     => $fer_cmd_DOWN,
         "stop"     => $fer_cmd_STOP,
         "set"      => $fer_cmd_SET,
-        "sun-down" => $fer_cmd_SunDOWN,
+	"sun-down" => $fer_cmd_SunDOWN,
+	"sun-up"   => $fer_cmd_SunUP,
         "sun-inst" => $fer_cmd_SunINST,
     };
 
