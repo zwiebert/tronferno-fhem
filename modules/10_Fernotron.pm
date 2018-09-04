@@ -520,8 +520,6 @@ package Fernotron {
         my ($io_hash, $message) = @_;
 
         my ($proto, $dmsg) = split('#', $message);
-	main::Log3(undef, 0, "Fernotron:dmsg received: $dmsg");
-
         my $address = 'Fernotron';
         my $fsb     = Fernotron::Drv::fer_sdDmsg2Bytes($dmsg);
 
