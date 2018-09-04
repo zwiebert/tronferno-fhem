@@ -13,17 +13,10 @@ use strict;
 
 use 5.14.0;
 
-## module to generate and parse sduino raw messages
+
 package Fernotron::Drv {
 
     my $def_cu = '801234';
-
-##  experimental code to generate and parse SIGNALduino strings for Fernotron
-##
-##  - extract central unit ID from once received Sd string
-##  - send any command to any group and member paired with that central unit
-
-    my $debug = 0;
 
 ################################################
 ### timings
@@ -62,16 +55,18 @@ package Fernotron::Drv {
         'centralUnitID' => 0x8012ab,        # FIXME:-bw/23-Nov-17
     };
 
-    # we store all 5 bytes, which is wasteful as the first 3 bits equals the hash-key.  simplifies the code a bit
+    # the latest command for each target device is stored as array of 5 bytes
+    # example: 0x8012ab => [0x80, 0x12, 0xab, 0x12, 0x34]
+    # use: to implement rolling counter
     my $fsbs = {};
 
     sub dbprint($) {
         main::Log3(undef, 5, "Fernotron: $_[0]");    # global verbose level used
     }
 
-###########################################
-### convert a single byte to a data string
-###########################################
+########################################################
+### convert a single byte to a string of two 10bit words
+########################################################
 ##
 ##  "t if VAL contains an even number of 1 bits"
     sub is_bits_even($) {
@@ -336,11 +331,11 @@ package Fernotron::Drv {
 #### end ###
 
 ############################################################
-#### get bytes from SIGNALduino's DMSG
+#### decode command from SIGNALduino's dispatched DMSG
 ##
 ##
 
-    # checksum is missing, so verify if ID and MEMB match
+    # checksum may be truncated by older SIGNALduino versions, so verify if ID and MEMB match
     sub fsb_verify_by_id($) {
         my ($fsb) = @_;
         my $m = FSB_GET_MEMB($fsb);
@@ -353,7 +348,7 @@ package Fernotron::Drv {
         return 0;
     }
 
-    # convert byte string to bit string
+    # convert byte string to bit string (no longer needed for dev-33)
     sub fer_byteHex2bitMsg($) {
         my ($byteHex) = @_;
         my $bitMsg = '';
@@ -361,6 +356,13 @@ package Fernotron::Drv {
             $bitMsg .= sprintf("%04b", hex($b));
         }
         return $bitMsg;
+    }
+
+    # convert dmesg to just bits (by simply removing the F (floating) characters
+    sub fer_dev33dmsg2bitMsg($) {
+	my ($dmsg) = @_;
+	$dmsg =~ s/F//g;
+	return $dmsg;
     }
 
     # convert 10bit string to 10bit word
@@ -411,182 +413,15 @@ package Fernotron::Drv {
 
     # convert decoded message from SIGNALduino dispatch to Fernotron byte message
     sub fer_sdDmsg2Bytes($) {
-        return fer_words2bytes(fer_bitMsg2words(fer_bitMsg_split(fer_byteHex2bitMsg(shift))));
+	my ($dmsg) = @_;
+	
+	my $bit_msg =  (length($dmsg) < 100) ? fer_byteHex2bitMsg($dmsg) : fer_dev33dmsg2bitMsg($dmsg);
+        return fer_words2bytes(fer_bitMsg2words(fer_bitMsg_split($bit_msg)));
     }
 ##
 ##
 ##### end ####
 
-##########################################################
-#### sniff device ID from RAW string received via SIGNALduino
-##
-### translate the substring between 'D=' and ';' to our own send timings and return the result;
-##
-    sub rx_get_data($) {
-        my ($s) = @_;
-
-        #"MU;P0=395;P1=-401;P2=-3206;P3=798;P4=-804;
-        if ($s
-            =~ /(P0=(?<P0>-?\d+);)?(P1=(?<P1>-?\d+);)?(P1=(?<P1>-?\d+);)?(P2=(?<P2>-?\d+);)?(P3=(?<P3>-?\d+);)?(P4=(?<P4>-?\d+);)?(P5=(?<P5>-?\d+);)?(P6=(?<P6>-?\d+);)?(P7=(?<P7>-?\d+);)?D=(?<data>\d+)/
-            )
-        {
-            my $tr_in  = "";
-            my $tr_out = "";
-            my $data   = $+{data};
-
-            for (my $i = 0; $i <= 7; ++$i) {    # P0 ... P7 in input
-                if (exists $+{"P$i"}) {
-                    my $n = $+{"P$i"};
-                    dbprint "P$i=$n";
-                    for (my $k = 0; $k <= 4; ++$k) {    # P0 .. P4 in output
-                        if ($rf_timings->{"P$k.min"} <= $n && $n <= $rf_timings->{"P$k.max"}) {
-                            $tr_in  .= $i;
-                            $tr_out .= $k;
-                            dbprint "$i -> $k";
-                        }
-                    }
-                }
-            }
-
-            dbprint "$data";
-            eval "\$data =~ tr/$tr_in/$tr_out/";
-            dbprint "$data";
-
-            return $data;
-        }
-
-        return "";
-    }
-##
-##
-### return position of first stop bit (next bit starts first data word)
-    sub find_stop($) {
-        my ($s) = @_;
-        return index($s, $d_stp_string);
-    }
-
-##
-##
-##
-### extract devID
-    sub rx_sd2sd_word($$) {
-        my ($sd, $word_idx) = @_;
-        my $word = substr($sd, ($word_idx * 22) + 2, 20);
-        return $word;
-    }
-
-    sub rx_sd2byte($$) {
-        my ($word0, $word1) = @_;
-        dbprint "word0: $word0";
-        dbprint "word1: $word1";
-
-        my $bit0 = $d_dt0_string;
-        my $bit1 = $d_dt1_string;
-
-        if (!(substr($word0, 0, 16) eq substr($word1, 0, 16))) {
-            return -1;    # error
-        } elsif (0 && !(substr($word0, 18, 2) eq $bit1 && substr($word1, 18, 2) eq $bit0)) {
-            return -2;    # error
-        } else {
-            my $b = 0;
-            for (my $k = 0; $k < 8; ++$k) {
-                my $bit = substr($word0, $k * 2, 2);
-
-                #dbprint "$bit";
-                if ($bit eq $bit0) {
-
-                    # nothing
-                } elsif ($bit eq $bit1) {
-                    $b |= (0x1 << $k);
-                } else {
-                    dbprint "error";
-                    return -3;
-                }
-
-                # dbprint "0: $bit0, 1: $bit1, ok";
-            }
-            return $b;
-        }
-
-        return -1;
-    }
-
-    sub bh2wh($) {
-        my ($byteHex) = @_;
-        my $bitMsg = '';
-        for my $b (split(//, $byteHex)) {
-            $bitMsg .= sprintf("%b", $b);
-        }
-
-        print("bitmsg: $bitMsg\n");
-    }
-
-    sub rx_sd2bytes ($) {
-        my ($sendData) = @_;
-        my $rx_data    = rx_get_data($sendData);
-        my $stop_idx   = find_stop($rx_data);
-
-        if ($stop_idx > 0) {
-            $rx_data = substr($rx_data, $stop_idx);
-
-            my @bytes;
-            my $word_count = int(length($rx_data) / 22);
-
-            dbprint("word_count=$word_count");
-
-            for (my $i = 0; $i < $word_count - 1; $i += 2) {
-                my $word0 = rx_sd2sd_word($rx_data, $i);
-                my $word1 = rx_sd2sd_word($rx_data, $i + 1);
-
-                my $b = rx_sd2byte($word0, $word1);
-                if ($b >= 0) {
-                    $bytes[ $i / 2 ] = $b;
-                } else {
-                    return 0;
-                }
-            }
-
-            if ($debug) {
-                print "extracted bytes: ";
-                foreach my $b (@bytes) {
-                    printf "0x%02x, ", $b;
-                }
-                print "\n";
-            }
-            return \@bytes;
-
-        }
-        return 0;
-
-    }
-
-    sub rx_get_devID($) {
-        my ($bytes) = @_;
-        return $$bytes[$fer_dat_ADDR_2] << 16 | $$bytes[$fer_dat_ADDR_1] << 8 | $$bytes[$fer_dat_ADDR_0];
-    }
-
-    sub rx_get_ferCmd($) {
-        my ($bytes) = @_;
-        return ($$bytes[$fer_dat_GRP_and_CMD] & 0x0f);
-    }
-
-    sub rx_get_ferGrp($) {
-        my ($bytes) = @_;
-        return ($$bytes[$fer_dat_GRP_and_CMD] & 0xf0) >> 4;
-    }
-
-    sub rx_get_ferMemb($) {
-        my ($bytes) = @_;
-        return ($$bytes[$fer_dat_TGL_and_MEMB] & 0x0f);
-    }
-
-    sub rx_get_ferTgl($) {
-        my ($bytes) = @_;
-        return ($$bytes[$fer_dat_TGL_and_MEMB] & 0xf0) >> 4;
-    }
-
-##
-#### end ###
 
 ############################################################################
 #### convert a/g/m into Fernotron byte message
@@ -676,15 +511,21 @@ package Fernotron::Drv {
         return $fsb;
     }
 }
+ 	
 
 package Fernotron {
-
+#old: dmsg: P82#01406481232C4B294652C4712
+#dev-33: dmsg: P82#F0000000101F0000000110F1001001001F1001001010F1011101001F1011101010F1001111001F1001111010F1100010001F1100010010F010000110
     sub Fernotron_Parse {
         my ($io_hash, $message) = @_;
 
         my ($proto, $dmsg) = split('#', $message);
+	main::Log3(undef, 0, "Fernotron:dmsg received: $dmsg");
+
         my $address = 'Fernotron';
         my $fsb     = Fernotron::Drv::fer_sdDmsg2Bytes($dmsg);
+
+	
         return undef if (ref($fsb) ne 'ARRAY' || scalar(@$fsb) < 5);
         return undef unless Fernotron::Drv::fsb_verify_by_id($fsb);
 
@@ -705,28 +546,6 @@ package Fernotron {
         return undef;
     }
 
-    sub Fernotron_Parse_Old_RAWMSG {
-        my ($io_hash, $message) = @_;
-        my $address = 'Fernotron';
-        my $rawmsg  = $io_hash->{RAWMSG};
-        my $fsb     = Fernotron::Drv::rx_sd2bytes($rawmsg);
-        return undef if (ref($fsb) ne 'ARRAY' || scalar(@$fsb) < 5);
-
-        my $msg = sprintf("%02x, %02x, %02x, %02x, %02x", @$fsb);
-        main::Log3($io_hash, 3, "Fernotron: message received: $msg");
-
-        if (my $hash = $main::modules{Fernotron}{defptr}{$address}) {
-
-            # Nachricht für $hash verarbeiten
-            $hash->{received_DMSG} = $msg;
-            $hash->{received_ID} = sprintf("%02x%02x%02x", @$fsb);
-
-            # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
-            return $hash->{NAME};
-        }
-
-        return undef;
-    }
 
     sub Fernotron_Define($$) {
         my ($hash, $def) = @_;
@@ -830,7 +649,6 @@ package Fernotron {
         }
 
         my $sd_hash = $main::modules{'SIGNALduino'}{'defptr'}{'sduino'};
-        print $sd_hash->{NAME} . "\n";
         return undef;
     }
 
@@ -855,7 +673,7 @@ package main {
 
     sub Fernotron_Initialize($) {
         my ($hash) = @_;
-        $hash->{Match}    = "^P77#.+";
+        $hash->{Match}    = "^P82#.+";
         $hash->{AttrList} = 'repeats:0,1,2,3,4,5';
 
         $hash->{DefFn}   = 'Fernotron::Fernotron_Define';
@@ -880,7 +698,7 @@ package main {
 
 <i>Fernotron</i> is a logic module to control shutters using Fernotron protocol.
 It generates commands wich are then send via <i>SIGNALduino</i> as raw message. <i>Fernotron</i> could also 
-turn back received raw messages into commands.  But Fernotron protocol is unidirectional, so there is not much to receive.
+turn back received messages into commands.  But Fernotron protocol is unidirectional, so there is not much to receive.
 
 
 <h4>Basics</h4>
@@ -972,7 +790,7 @@ This depends on the ID and the group and member numbers.
 
 <i>Fernotron</i> ist ein logisches Modul zur Steuerung von Fernotron Rolläden.
 Die erzeugten Kommandos werden über <i>SIGNALduino</i> als Raw gesendet.
-<i>Fernotron</i> kann außerdem empfangene Raw Nachrichten wieder in Kommandos umwandeln, was aber bei einem unidirektionalem Protokoll nicht sehr viel Nutzen bringt.
+<i>Fernotron</i> kann außerdem empfangene Nachrichten wieder in Kommandos umwandeln, was aber bei einem unidirektionalem Protokoll nicht sehr viel Nutzen bringt.
 
 
 <h4>Grundlagen</h4>

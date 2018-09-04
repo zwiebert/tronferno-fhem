@@ -13,7 +13,7 @@
 #      g - group number: 0..7 (default: 0)
 #      m - member number: 0..7 (default: 0)
 #
-#     Example: define roll12 g=1 m=2
+#     Example: define roll12 Tronferno g=1 m=2
 #
 #  device attributes:
 #      mcuaddr - IP4 address/hostname of tronferno-mcu hardware (default: fernotron.fritz.box.)
