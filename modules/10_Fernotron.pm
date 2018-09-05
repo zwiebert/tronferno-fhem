@@ -358,7 +358,7 @@ package Fernotron::Drv {
         return $bitMsg;
     }
 
-    # convert dmesg to just bits (by simply removing the F (floating) characters
+    # convert dmsg to just bits (by simply removing the F (floating) characters
     sub fer_dev33dmsg2bitMsg($) {
 	my ($dmsg) = @_;
 	$dmsg =~ s/F//g;
@@ -646,7 +646,6 @@ package Fernotron {
             return "unknown argument $cmd choose one of " . join(' ', Fernotron::Drv::get_commandlist());
         }
 
-        my $sd_hash = $main::modules{'SIGNALduino'}{'defptr'}{'sduino'};
         return undef;
     }
 
