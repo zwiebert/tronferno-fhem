@@ -693,17 +693,20 @@ package main {
 
 <h3>Fernotron</h3>
 
-<i>Fernotron</i> is a logic module to control shutters using Fernotron protocol.
-It generates commands wich are then send via <i>SIGNALduino</i> as raw message. <i>Fernotron</i> could also 
-turn back received messages into commands.  But Fernotron protocol is unidirectional, so there is not much to receive.
+<i>Fernotron</i> is a logic module to control shutters using Fernotron protocol. 
+It generates commands wich are then send via <i>SIGNALduino</i>. <i>Fernotron</i> can also receive messages sent by other Fernotron controllers. The Fernotron shutters communicate unidirectional, so they don't sent any feedback information, like if they are currently open or close.
 
 
-<h4>Basics</h4>
 
-Each device has is using an uniq ID number.
-A receiver remembers the ID of a controller.
-That way they are linked together.
-Each receiver can 'member one central controller unit (incl the group and member numbers), one sun sensor and a few plain controllers.
+<h4>Pairing</h4>
+
+Each controller has an uniq ID number. To pair a shutter to one or more controller(s), the shutter just remembers the ID of each controller.
+
+Each receiver can rmember one central controller unit (incl the group and member numbers), one sun sensor and some plain up/stop/down switches.
+
+Shutter motors have also an ID number printed on.  If you have no easy access to the pyhsical Set-Button of the shutter motor, that ID can be used to initiate pairing/unpairing or adjust rotation direction and end-positions. 
+ 
+
 
 <h4>Defining Devices</h4>
 
@@ -748,7 +751,7 @@ This depends on the ID and the group and member numbers.
 </ol>
 
 
-<h4>Kommandos</h4>
+<h4>Commands</h4>
 
 <ul>
   <li>up</li>
@@ -762,7 +765,7 @@ This depends on the ID and the group and member numbers.
 <h4>Examples</h4>
 <ol>
   <li><ul>
-      <li>first scan the ID of the 2411 using fhemft.pl (FIXME)</li>
+      <li>first scan the ID of the 2411: <code>define scanFerno Fernotron scan</code>.  Hold down the stop button of your 2411 some time. Now open the scanFerno on the FHEM web-interface.  The ID is found under Internals:received_HR</li>
       <li><code>define rollo42 Fernotron a=80808 g=4 m=2</code></li>
   </ul></li>
 
@@ -786,15 +789,17 @@ This depends on the ID and the group and member numbers.
 <h3>Fernotron</h3>
 
 <i>Fernotron</i> ist ein logisches Modul zur Steuerung von Fernotron Rolläden.
-Die erzeugten Kommandos werden über <i>SIGNALduino</i> als Raw gesendet.
-<i>Fernotron</i> kann außerdem empfangene Nachrichten wieder in Kommandos umwandeln, was aber bei einem unidirektionalem Protokoll nicht sehr viel Nutzen bringt.
+Die erzeugten Kommandos werden über <i>SIGNALduino</i> gesendet.
+<i>Fernotron</i> kann außerdem Nachrichten empfangen die von anderen Fernotron-Kontrollern  gesendet werden. Die Rolläden kommunizieren unidirektional. Sie senden also leider keine Feedback Information wie offen/geschlossen.
 
 
-<h4>Grundlagen</h4>
+<h4>Kopplung</h4>
 
-Jedes original Gerät eine ID-Nummer ab Werk fest einprogrammiert.
-Empfänger und Sender werden gekoppelt, indem sich der Empfänger die ID des Senders merkt.
+Jeder Kontroller eine ID-Nummer ab Werk fest einprogrammiert.
+Empfänger und Sender werden gekoppelt, indem sich der Empfänger die ID eines bzw. mehrerer Sender merkt.
 Jeder Empfänger kann sich je eine ID einer Zentraleinheit (inklusive Gruppe und Empfängernummer), eines Sonnensensors und mehrerer Handsender merken.
+
+Rolladen-Motore haben ebenfalls eine ID Nummer aufgedruckt.  Wenn kein Zugang zum physischen Setz-Taster des Motors besteht, kann diese ID benutzt werden um den Koppelvorgang einzuleiten oder Einstellung der Drehrichtung und Endpunkte vorzunehmen.
 
 
 <h4>Gerät definieren</h4>
@@ -855,7 +860,7 @@ Dies wird durch die verwendete ID und Gruppen und Empfängernummer bestimmt.
 <h4>Beispiele</h4>
 <ol>
   <li><ul>
-      <li>scanne die ID der 2411 mit fhemft.pl (FIXME)</li>
+      <li>scanne die ID der 2411: <code>define scanFerno Fernotron scan</code>. Den Stop Taster der 2411 einige Sekunden drücken. Das scanFerno Gerät über die FHEM-Webseite öffnen. DIe ID der 2411 steht nun  unter Internals:received_HR.</li>
       <li><code>define rollo42 Fernotron a=80abcd g=4 m=2</code></li>
   </ul></li>
 
