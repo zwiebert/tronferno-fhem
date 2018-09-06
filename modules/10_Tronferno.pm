@@ -85,6 +85,8 @@ package Tronferno {
         $socket->autoflush(1);
         $socket->send($req . "\n");
         $socket->close();
+
+	return undef;
     }
 
     sub Tronferno_build_cmd($$$$) {
@@ -123,8 +125,9 @@ package Tronferno {
             return $res;
         } elsif (is_command_valid($cmd)) {
             my $req = Tronferno_build_cmd($hash, $name, 'send', $map_tcmd->{$cmd});
-            Tronferno_transmit($name, $req);
-            main::readingsSingleUpdate($hash, 'state', $cmd, 0);
+            my $res = Tronferno_transmit($name, $req);
+            main::readingsSingleUpdate($hash, 'state', $cmd, 0) if ($res eq undef);
+	    return $res unless ($res eq undef);
         } else {
             return "unknown argument $cmd choose one of " . join(' ', get_commandlist());
         }

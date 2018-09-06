@@ -532,10 +532,16 @@ package Fernotron {
 
         if (my $hash = $main::modules{Fernotron}{defptr}{$address}) {
 
+	    my $gm = Fernotron::Drv::FSB_MODEL_IS_CENTRAL($fsb)
+		? sprintf("g=%s m=%s ", Fernotron::Drv::FSB_GET_GRP($fsb),
+			  Fernotron::Drv::FSB_GET_MEMB($fsb) - 7)
+		: "";
             # Nachricht für $hash verarbeiten
             $hash->{received_Bytes} = $msg;
             $hash->{received_HR}
-                = sprintf("a=%02x%02x%02x, c=%s", $$fsb[0], $$fsb[1], $$fsb[2], Fernotron::Drv::get_command_name_by_number(Fernotron::Drv::FSB_GET_CMD($fsb)));
+	    = sprintf("a=%02x%02x%02x %sc=%s", $$fsb[0], $$fsb[1], $$fsb[2],
+		      $gm,
+		      Fernotron::Drv::get_command_name_by_number(Fernotron::Drv::FSB_GET_CMD($fsb)));
 
             # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
             return $hash->{NAME};
@@ -727,13 +733,22 @@ This depends on the ID and the group and member numbers.
 <p>
   'g' or  'n' are only useful combined with an ID of the central controller type. 
 
+<p>
+  Its also posssible to define a device which scans the commands sent by  other controllers
+
+<p>
+<code>
+  define scanFerno Fernotron scan<br>
+</code>
+
+
 <h4>Different Kinds of Adressing</h4>
 
 <ol>
   <li> Scanning physical controllers and use their IDs.
     Example: Using the  ID of a  2411 controller to access shutters via group and member numbers.</li>
 
-  <li> Make up IDs and pair them with shutters.
+  <li> Making up IDs and pair them with shutters.
     Example: Pair shutter 1 with ID 100001, shutter  2 with 100002, ...</li>
 
 <li> Receiver IDs: RF controlled shutters may have a 5 digit code printed on or on a small cable sticker.
@@ -820,6 +835,14 @@ Dies wird durch die verwendete ID und Gruppen und Empfängernummer bestimmt.
 			
 <p>
   'g' und 'n' sind nur sinnvoll, wenn als ID eine Zentraleinheit angegeben wurde 
+
+<p>
+  Gerät zum scannen von Kommandos welche von anderen Controllern gesendet werden zu empfangen:
+
+<p>
+<code>
+  define scanFerno Fernotron scan<br>
+</code>
 
 
 <h4>Verschiedene Methoden der Adressierung</h4>
