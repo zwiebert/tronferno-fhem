@@ -45,7 +45,7 @@ package Tronferno {
         my $address = $a[1];
 
         my ($a, $g, $m) = (0, 0, 0);
-        my $u = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N]';
+        my $u = 'wrong syntax: define <name> Tronferno a=ID [g=N] [m=N]';
 
         return $u if ($#a < 2);
 
@@ -126,8 +126,8 @@ package Tronferno {
         } elsif (is_command_valid($cmd)) {
             my $req = Tronferno_build_cmd($hash, $name, 'send', $map_tcmd->{$cmd});
             my $res = Tronferno_transmit($name, $req);
-            main::readingsSingleUpdate($hash, 'state', $cmd, 0) if ($res eq undef);
-	    return $res unless ($res eq undef);
+            main::readingsSingleUpdate($hash, 'state', $cmd, 0) unless ($res);
+	    return $res if ($res);
         } else {
             return "unknown argument $cmd choose one of " . join(' ', get_commandlist());
         }

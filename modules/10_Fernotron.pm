@@ -594,7 +594,7 @@ package Fernotron {
         }
 
         if ($scan eq 0) {
-            main::Log3($name, 3, "a=$a g=$g m=$m\n");
+            main::Log3($name, 3, "Fernotron ($name): a=$a g=$g m=$m\n");
             return "missing argument a" if ($a == 0);
             $hash->{helper}{ferid_a} = $a;
             $hash->{helper}{ferid_g} = $g;
@@ -664,8 +664,8 @@ sub Fernotron_Undef($$) {
 
         if (Fernotron::Drv::is_command_valid($cmd)) {
             my $res = Fernotron_transmit($hash, 'send', $cmd);
-            main::readingsSingleUpdate($hash, 'state', $cmd, 0) if ($res eq undef);
-            return $res unless ($res eq undef);
+            main::readingsSingleUpdate($hash, 'state', $cmd, 0) unless ($res);
+            return $res if ($res);
         } else {
             return "unknown argument $cmd choose one of " . join(' ', Fernotron::Drv::get_commandlist());
         }
