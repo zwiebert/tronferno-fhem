@@ -73,6 +73,10 @@ package Tronferno {
 
 	main::AssignIoPort($hash, 'tfmcu');
 
+	my $def_match = "$a,$g,$m";
+	$main::modules{Fernotron}{defptr}{$def_match} = $hash;
+	#main::Log3($hash, 0, "def_match: $def_match");
+
         return undef;
     }
 
@@ -125,7 +129,6 @@ package Tronferno {
         } elsif (is_command_valid($cmd)) {
             my $req = Tronferno_build_cmd($hash, $name, 'send', $map_tcmd->{$cmd});
             my $res = Tronferno_transmit($hash, $name, $req);
-            main::readingsSingleUpdate($hash, 'state', $cmd, 0) unless ($res);
 	    return $res if ($res);
         } else {
             return "unknown argument $cmd choose one of " . join(' ', get_commandlist());
@@ -133,6 +136,45 @@ package Tronferno {
 
         return undef;
     }
+
+    sub Tronferno_Parse {
+	my ($io_hash, $message) = @_;
+	my $name = $io_hash->{NAME};
+	my ($a, $g, $m, $p) = (0, 0, 0, 0);
+	
+	if ($message =~ /^TFMCU#U:position:\s*(.+);$/) {
+	    foreach my $arg (split(/\s+/, $1)) {
+		my ($key, $value) = split('=', $arg);
+
+		if ($key eq 'a') {
+		    $a = hex($value);
+
+		} elsif ($key eq 'g') {
+		    $g = int($value);
+		    return "out of range value $g for g. expected: 0..7" unless (0 <= $g && $g <= 7);
+		} elsif ($key eq 'm') {
+		    $m = int($value);
+		    return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
+		} elsif ($key eq 'p') {
+		    $p = $value;
+		    return "out of range value $p for p. expected: 0..100" unless (0 <= $p && $m <= 100);
+		}			
+	    }
+	    my $def_match = "0,$g,$m";
+	    #main::Log3($io_hash, 3, "def_match: $def_match");
+	    
+	    my $hash = $main::modules{Fernotron}{defptr}{$def_match}; #FIXME: add support for $a different than zero
+	    
+	    if ($hash) {
+		main::readingsSingleUpdate($hash, 'state',  $p, 0);
+		# Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
+		return $hash->{NAME};
+	    }
+	    
+	}
+	return undef;
+    }
+
 
 }
 
@@ -143,6 +185,7 @@ package main {
 
         $hash->{DefFn} = 'Tronferno::Tronferno_Define';
         $hash->{SetFn} = "Tronferno::Tronferno_Set";
+        $hash->{ParseFn} = "Tronferno::Tronferno_Parse";
 
         $hash->{AttrList} = 'mcuaddr';
 	$hash->{Match} = '^TFMCU#.+';

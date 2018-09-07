@@ -78,7 +78,13 @@ sub TronfernoMCU_Read($)
   return if(!defined($buf));
   
   main::Log3 $name, 5, "TronfernoMCU ($name) - received: $buf"; 
-  
+
+  foreach my $line (split(/^/m, $buf)) {
+      if ($line =~ /^U:position:\s*(.+);$/) {
+	  main::Log3 $name, 4, "TronfernoMCU ($name): position_update: $1";
+	  main::Dispatch($hash, "TFMCU#$line");
+      }
+  }
   #
   # do something with $buf, e.g. generate readings, send answers via main::DevIo_SimpleWrite(), ...
   #
