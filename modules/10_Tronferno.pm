@@ -2,10 +2,10 @@
 ## *experimental* FHEM module Tronferno
 #  FHEM module to control Fernotron devices via Tronferno-MCU ESP8266 hardware
 #
-#  written by Bert Winkelmann <tf.zwiebert@online.de>
+#  Author:  Bert Winkelmann <tf.zwiebert@online.de>
 #
 #
-# - copy or softink this file to /opt/fhem/FHEM/10_Tronferno.pm
+# - copy or softlink this file to /opt/fhem/FHEM/10_Tronferno.pm
 # - do 'reload 10_Tronferno'
 #
 #  device arguments

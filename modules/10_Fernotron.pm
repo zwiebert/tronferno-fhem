@@ -6,7 +6,7 @@
 ## - copy or softlink this file to /opt/fhem/FHEM/10_Fernotron.pm
 ##
 ## - patch SIGNALduino
-##    sudo patch /opt/fhem/FHEM/00_SIGNALduino.pm  ./signalduino.diff
+##    sudo patch /opt/fhem/FHEM/00_SIGNALduino.pm  <./signalduino.diff
 ##
 
 use strict;
@@ -519,8 +519,14 @@ package Fernotron {
     sub Fernotron_Parse {
         my ($io_hash, $message) = @_;
 
+      my $hash = $main::modules{Fernotron}{defptr}{Fernotron};
+
+      if (!$hash) {
+#	return undef; # no autocreate
+	return "UNDEFINED scanFerno Fernotron scan";  #FIXME: may autocreate scanner device for neighbor's shutter controls ... really bad idea?
+      }
+
         my ($proto, $dmsg) = split('#', $message);
-        my $address = 'Fernotron';
         my $fsb     = Fernotron::Drv::fer_sdDmsg2Bytes($dmsg);
 
 	
@@ -530,12 +536,16 @@ package Fernotron {
         my $msg = sprintf("%02x, %02x, %02x, %02x, %02x", @$fsb);
         main::Log3($io_hash, 3, "Fernotron: message received: $msg");
 
-        if (my $hash = $main::modules{Fernotron}{defptr}{$address}) {
 
-	    my $gm = Fernotron::Drv::FSB_MODEL_IS_CENTRAL($fsb)
-		? sprintf("g=%s m=%s ", Fernotron::Drv::FSB_GET_GRP($fsb),
-			  Fernotron::Drv::FSB_GET_MEMB($fsb) - 7)
-		: "";
+      my $gm = "";
+      if (Fernotron::Drv::FSB_MODEL_IS_CENTRAL($fsb)) {
+	my $m =  Fernotron::Drv::FSB_GET_MEMB($fsb);
+	if ($m > 0) {
+	  $m -= 7;
+	}
+	my $g = Fernotron::Drv::FSB_GET_GRP($fsb);
+	$gm = "g=$g m=$m ";
+      }
             # Nachricht für $hash verarbeiten
             $hash->{received_Bytes} = $msg;
             $hash->{received_HR}
@@ -543,12 +553,10 @@ package Fernotron {
 		      $gm,
 		      Fernotron::Drv::get_command_name_by_number(Fernotron::Drv::FSB_GET_CMD($fsb)));
 
+      main::readingsSingleUpdate($hash, 'state',  $hash->{received_HR}, 0); #FIXME: is this ok?
             # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
             return $hash->{NAME};
         }
-
-        return undef;
-    }
 
 
     sub Fernotron_Define($$) {
@@ -579,7 +587,7 @@ package Fernotron {
                 return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
             } elsif ($key eq 'scan') {
                 $scan = 1;
-                $main::modules{Fernotron}{defptr}{$address} = $hash;
+      $main::modules{Fernotron}{defptr}{Fernotron} = $hash;
             } else {
                 return "$name: unknown argument $o in define";    #FIXME add usage text
             }
@@ -596,6 +604,16 @@ package Fernotron {
 
         return undef;
     }
+
+sub Fernotron_Undef($$) {
+  my ($hash, $name) = @_;
+
+  if ($main::modules{Fernotron}{defptr}{Fernotron} == $hash) {
+    undef($main::modules{Fernotron}{defptr}{Fernotron});
+  }
+
+  return undef;
+}
 
     sub Fernotron_transmit($$$) {
         my ($hash, $command, $c) = @_;
@@ -630,12 +648,12 @@ package Fernotron {
         return "\"set $name\" needs at least one argument" unless (defined($cmd));
         my $u = "unknown argument $cmd choose one of ";
 
-        if ($main::modules{Fernotron}{defptr}{'Fernotron'} eq $hash) {    ## receiver
+  if ($main::modules{Fernotron}{defptr}{Fernotron} eq $hash) { ## receiver
             return $u;                                                    # nothing to set for receiver
 
         }
 
-        my $io = $hash->{IODev} or return '"no io device"';
+  my $io = $hash->{IODev} or return 'error: no io device';
 
         if ($cmd eq '?') {
             foreach my $key (Fernotron::Drv::get_commandlist()) {
@@ -680,9 +698,15 @@ package main {
         $hash->{AttrList} = 'repeats:0,1,2,3,4,5';
 
         $hash->{DefFn}   = 'Fernotron::Fernotron_Define';
+      $hash->{UndefFn} = 'Fernotron::Fernotron_Undef';
         $hash->{SetFn}   = "Fernotron::Fernotron_Set";
         $hash->{ParseFn} = "Fernotron::Fernotron_Parse";
         $hash->{AttrFn}  = "Fernotron::Fernotron_Attr";
+
+      $hash->{AutoCreate} = {'scanFerno'  => {noAutocreatedFilelog => 1
+						}
+			    };
+      
     }
 }
 
