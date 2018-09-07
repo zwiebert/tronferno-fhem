@@ -132,7 +132,18 @@ sub TronfernoMCU_Callback($)
     
     return undef; 
 }
-    
+
+    sub TronfernoMCU_Write ($$)
+{
+	my ( $hash, $message, $address) = @_;
+     my $name = $hash->{NAME};
+
+	main::Log3 $name, 5, "TronfernoMCU ($name): $message: $address";	
+
+	main::DevIo_SimpleWrite($hash, $address, 2);
+
+	return undef;
+}
 }
 
 package main {
@@ -145,11 +156,14 @@ package main {
         $hash->{DefFn} = 'TronfernoMCU::TronfernoMCU_Define';
         $hash->{ReadFn} = 'TronfernoMCU::TronfernoMCU_Read';
         $hash->{ReadyFn} = 'TronfernoMCU::TronfernoMCU_Ready';
-#        $hash->{WriteFn} = 'TronfernoMCU::TronfernoMCU_Write';
+        $hash->{WriteFn} = 'TronfernoMCU::TronfernoMCU_Write';
         $hash->{UndefFn} = 'TronfernoMCU::TronfernoMCU_Undef';
 #        $hash->{ShutdownFn} = 'TronfernoMCU::TronfernoMCU_Shutdown';
 
-#        $hash->{AttrList} = '';
+	#        $hash->{AttrList} = '';
+
+	$hash->{Clients} = 'Tronferno';
+	$hash->{MatchList} = { '1:Tronferno' => '^TFMCU#.+' };
     }
 }
 

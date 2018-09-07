@@ -71,20 +71,19 @@ package Tronferno {
         $hash->{helper}{ferid_g} = $g;
         $hash->{helper}{ferid_m} = $m;
 
+	main::AssignIoPort($hash, 'tfmcu');
+
         return undef;
     }
 
-    sub Tronferno_transmit($$) {
-        my ($name, $req) = @_;
-        my $socket = IO::Socket::INET->new(
-            Proto    => 'tcp',
-            PeerPort => 7777,
-            PeerAddr => main::AttrVal($name, 'mcuaddr', $def_mcuaddr),
-        ) or return "\"no socket\"";
+    sub Tronferno_transmit($$$) {
+        my ($hash, $name, $req) = @_;
+        my $io   = $hash->{IODev};
 
-        $socket->autoflush(1);
-        $socket->send($req . "\n");
-        $socket->close();
+	return 'error: IO device not open' unless (exists($io->{NAME}) and main::ReadingsVal($io->{NAME}, 'state', '') eq 'opened');
+
+	
+	main::IOWrite($hash, 'mcu', $req);
 
 	return undef;
     }
@@ -125,7 +124,7 @@ package Tronferno {
             return $res;
         } elsif (is_command_valid($cmd)) {
             my $req = Tronferno_build_cmd($hash, $name, 'send', $map_tcmd->{$cmd});
-            my $res = Tronferno_transmit($name, $req);
+            my $res = Tronferno_transmit($hash, $name, $req);
             main::readingsSingleUpdate($hash, 'state', $cmd, 0) unless ($res);
 	    return $res if ($res);
         } else {
@@ -146,6 +145,7 @@ package main {
         $hash->{SetFn} = "Tronferno::Tronferno_Set";
 
         $hash->{AttrList} = 'mcuaddr';
+	$hash->{Match} = '^TFMCU#.+';
     }
 }
 
