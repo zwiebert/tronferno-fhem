@@ -74,11 +74,25 @@ package Tronferno {
 	main::AssignIoPort($hash, 'tfmcu');
 
 	my $def_match = "$a,$g,$m";
+	$hash->{helper}{def_match} = $def_match;
+
 	$main::modules{Fernotron}{defptr}{$def_match} = $hash;
 	#main::Log3($hash, 0, "def_match: $def_match");
 
         return undef;
     }
+
+    
+    sub Tronferno_Undef($$) {
+	my ($hash, $name) = @_;
+
+	my $def_match = $hash->{helper}{def_match};
+	
+	undef ($main::modules{Fernotron}{defptr}{$def_match});
+
+	return undef;
+    }
+
 
     sub Tronferno_transmit($$$) {
         my ($hash, $name, $req) = @_;
@@ -186,6 +200,7 @@ package main {
         $hash->{DefFn} = 'Tronferno::Tronferno_Define';
         $hash->{SetFn} = "Tronferno::Tronferno_Set";
         $hash->{ParseFn} = "Tronferno::Tronferno_Parse";
+        $hash->{UndefFn} = 'Tronferno::Tronferno_Undef';
 
         $hash->{AttrList} = 'mcuaddr';
 	$hash->{Match} = '^TFMCU#.+';
