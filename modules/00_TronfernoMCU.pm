@@ -1,6 +1,30 @@
-############################
-# experimental module between IoDev and 10_Tronferno.pm
-# 
+#############################################
+## experimental FHEM I/O device module for Tronferno-MCU hardware
+#
+#  Author:  Bert Winkelmann <tf.zwiebert@online.de>
+#
+# - copy or softlink file 00_TronfernoMCU.pm to /opt/fhem/FHEM/00_TronfernoMCU.pm
+# - copy or softlink this file to /opt/fhem/FHEM/10_Tronferno.pm
+# - do 'reload 00_TronfernoMCU' and 'reload 10_Tronferno'
+#
+#     Example:
+#
+#    define tfmcu TronfernoMCU  192.168.1.123
+#    define roll_11 Tronferno g=1 m=1
+#    define roll_12 Tronferno g=1 m=2
+#    define roll_13 Tronferno g=1 m=3
+#    define roll_14 Tronferno g=1 m=4
+#     ..
+#    define roll_77 Tronferno g=7 m=7
+#
+#  ### Make sure the I/O device tfmcu is defined before any roll_xx device ###
+#  ### Otherwise the roll_xx devices can't find their I/O device (because its not defined yet) ###
+#
+#
+# TODO
+# - ...
+
+
 use DevIo; # load DevIo.pm if not already loaded
 use strict;
 use warnings;
@@ -175,9 +199,45 @@ package main {
 
 1;
 
+=pod
+=item device
+=item summary I/O device which communicates with Tronferno-MCU
+=item summary_DE E/A Gerät welches mit Tronferno-MCU kommuniziert
+
+=begin html
+
+<a name="TronfernoMCU"></a>
+
+<h3>TronfernoMCU</h3>
+
+<i>TronfernoMCU</i> is a physical module to talk to <i>Tronferno-MCU</i> via TCP/IP using FHEM's DevIo mechanism.
+
+<br>#
+<br># - copy or softlink file 00_TronfernoMCU.pm to /opt/fhem/FHEM/00_TronfernoMCU.pm
+<br># - copy or softlink this file to /opt/fhem/FHEM/10_Tronferno.pm
+<br># - do 'reload 00_TronfernoMCU' and 'reload 10_Tronferno'
+<br>#
+<br>#     Example:
+<br>#
+<br>#    define tfmcu TronfernoMCU  192.168.1.123
+<br>#    define roll_11 Tronferno g=1 m=1
+<br>#    define roll_12 Tronferno g=1 m=2
+<br>#    define roll_13 Tronferno g=1 m=3
+<br>#    define roll_14 Tronferno g=1 m=4
+<br>#     ..
+<br>#    define roll_77 Tronferno g=7 m=7
+<br>#
+<br>#  ### Make sure the I/O device tfmcu is defined before any roll_xx device ###
+<br>#  ### Otherwise the roll_xx devices can't find their I/O device (because its not defined yet) ###
+<br>#
+<br>#
+
+=end html
 
 # Local Variables:
-# compile-command: "perl -cw -MO=Lint ./10_TronfernoMCU.pm"
+# compile-command: "perl -cw -MO=Lint ./00_TronfernoMCU.pm"
 # End:
+
+
 
 

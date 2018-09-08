@@ -1,30 +1,37 @@
 #############################################
 ## *experimental* FHEM module Tronferno
-#  FHEM module to control Fernotron devices via Tronferno-MCU ESP8266 hardware
+#  Logical FHEM module to control Fernotron devices via physical module 00_TronfernoMCU.pm
 #
 #  Author:  Bert Winkelmann <tf.zwiebert@online.de>
 #
-#
+# - copy or softlink file 00_TronfernoMCU.pm to /opt/fhem/FHEM/00_TronfernoMCU.pm
 # - copy or softlink this file to /opt/fhem/FHEM/10_Tronferno.pm
-# - do 'reload 10_Tronferno'
+# - do 'reload 00_TronfernoMCU' and 'reload 10_Tronferno'
 #
 #  device arguments
 #      a - 6 digit Fernotron hex ID or 0 (default: 0)
 #      g - group number: 0..7 (default: 0)
 #      m - member number: 0..7 (default: 0)
 #
-#     Example: define roll12 Tronferno g=1 m=2
+#     Example:
 #
-#  device attributes:
-#      mcuaddr - IP4 address/hostname of tronferno-mcu hardware (default: fernotron.fritz.box.)
+#    define tfmcu TronfernoMCU  192.168.1.123
+#    define roll_11 Tronferno g=1 m=1
+#    define roll_12 Tronferno g=1 m=2
+#    define roll_13 Tronferno g=1 m=3
+#    define roll_14 Tronferno g=1 m=4
+#     ..
+#    define roll_77 Tronferno g=7 m=7
+#
+#  ### Make sure the I/O device tfmcu is defined before any roll_xx device ###
+#  ### Otherwise the roll_xx devices can't find their I/O device (because its not defined yet) ###
 #
 #  device set commands
 #      down, stop, up, set, sun-inst, sun-down, sup-up
 #
 # TODO
-# - doc
 # - ...
-# - states
+
 
 use strict;
 use warnings;
@@ -225,6 +232,8 @@ package main {
 
 Tronferno-MCU is a micro-controller to control Fernotron shutters. It can also programm the built-in timers.
 
+<p>00_TronfernoMCU.pm is the FHEM I/O module which talks to the MCU via TCP/IP (using FHEM's DevIo)
+
 <h4>Defining Devices</h4>
 
 Each device may control a single shutter, but could also control an entire group.
@@ -282,7 +291,11 @@ This depends on the ID and the group and member numbers.
 <h4>Examples</h4>
 <ol>
   <li><ul>
-      <li>first scan the ID of the 2411 using fhemft.pl (FIXME)</li>
+      <li>first define the I/O device, so it exists before any rollo_xx devices which depends on it.</li>
+      <li><code>define tfmcu TronfernoMCU 192.168.1.123</code></li>
+  </ul></li>
+
+  <li><ul>
       <li><code>define rollo42 Tronferno g=4 m=2</code></li>
   </ul></li>
 
