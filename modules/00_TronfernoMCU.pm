@@ -121,18 +121,19 @@ sub TronfernoMCU_Set($$@)
     my ($hash, $name, $cmd) = @_;
     
     my $usage = "unknown argument $cmd, choose one of statusRequest:noArg on:noArg off:noArg";
+    $usage = "unknown argument $cmd";
 
     if($cmd eq "statusRequest")
     {
-         main::DevIo_SimpleWrite($hash, "get_status\r\n", 2);
+         #main::DevIo_SimpleWrite($hash, "get_status\r\n", 2);
     }
     elsif($cmd eq "on")
     {
-         main::DevIo_SimpleWrite($hash, "on\r\n", 2);
+         #main::DevIo_SimpleWrite($hash, "on\r\n", 2);
     }
     elsif($cmd eq "off")
     {
-         main::DevIo_SimpleWrite($hash, "off\r\n", 2);
+         #main::DevIo_SimpleWrite($hash, "off\r\n", 2);
     }
     else
     {

@@ -12,6 +12,8 @@
 #      a - 6 digit Fernotron hex ID or 0 (default: 0)
 #      g - group number: 0..7 (default: 0)
 #      m - member number: 0..7 (default: 0)
+#      iodev - if you have more than one Fernotron-MCU
+#      mcu_addr - only needed if you don't want to use FernotronMCU as IO device
 #
 #     Example:
 #
@@ -39,8 +41,6 @@ use 5.14.0;
 
 use IO::Socket;
 
-#use IO::Select;
-
 package Tronferno {
 
     my $def_mcuaddr = 'fernotron.fritz.box.';
@@ -51,7 +51,7 @@ package Tronferno {
         my $name    = $a[0];
         my $address = $a[1];
 
-        my ($a, $g, $m) = (0, 0, 0);
+        my ($a, $g, $m, $iodev, $mcu_addr) = (0, 0, 0, undef, $def_mcuaddr);
         my $u = 'wrong syntax: define <name> Tronferno a=ID [g=N] [m=N]';
 
         return $u if ($#a < 2);
@@ -69,6 +69,10 @@ package Tronferno {
             } elsif ($key eq 'm') {
                 $m = int($value);
                 return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
+            } elsif ($key eq 'iodev') {
+		$iodev = $value;
+            } elsif ($key eq 'mcu_addr') {
+		$mcu_addr = $value;
             } else {
                 return "$name: unknown argument $o in define";    #FIXME add usage text
             }
@@ -77,8 +81,9 @@ package Tronferno {
         $hash->{helper}{ferid_a} = $a;
         $hash->{helper}{ferid_g} = $g;
         $hash->{helper}{ferid_m} = $m;
+        $hash->{helper}{mcu_addr} = $mcu_addr;
 
-	main::AssignIoPort($hash, 'tfmcu');
+	main::AssignIoPort($hash, $iodev);
 
 	my $def_match = "$a,$g,$m";
 	$hash->{helper}{def_match} = $def_match;
@@ -100,16 +105,35 @@ package Tronferno {
 	return undef;
     }
 
+    sub Tronferno_transmit_by_socket($$$) {
+        my ($hash, $name, $req) = @_;
+        my $socket = IO::Socket::INET->new(
+            Proto    => 'tcp',
+            PeerPort => 7777,
+            PeerAddr => main::AttrVal($name, 'mcuaddr', $hash->{helper}{mcu_addr}),  
+        ) or return "\"no socket\"";
+
+        $socket->autoflush(1);
+        $socket->send($req . "\n");
+        $socket->close();
+
+	return undef;
+}
 
     sub Tronferno_transmit($$$) {
         my ($hash, $name, $req) = @_;
         my $io   = $hash->{IODev};
 
-	return 'error: IO device not open' unless (exists($io->{NAME}) and main::ReadingsVal($io->{NAME}, 'state', '') eq 'opened');
-
+	if (exists($io->{NAME})) {
+	    # send message to pyhsical I/O device TronfernoMCU
+	    return 'error: IO device not open' unless (main::ReadingsVal($io->{NAME}, 'state', '') eq 'opened');
+	    main::IOWrite($hash, 'mcu', $req);
+	    return undef;
+	} else {
+	    #no I/O device seems to be defined. send directly via TCP socket
+	    return Tronferno_transmit_by_socket ($hash, $name, $req);
+	}
 	
-	main::IOWrite($hash, 'mcu', $req);
-
 	return undef;
     }
 
@@ -118,7 +142,7 @@ package Tronferno {
         my $a   = $hash->{helper}{ferid_a};
         my $g   = $hash->{helper}{ferid_g};
         my $m   = $hash->{helper}{ferid_m};
-        my $msg = "$cmd a=$a g=$g m=$m c=$c;";
+        my $msg = "$cmd a=$a g=$g m=$m c=$c mid=82;";
         main::Log3($hash, 3, "$name:command: $msg");
         return $msg;
     }
@@ -190,6 +214,13 @@ package Tronferno {
 		main::readingsSingleUpdate($hash, 'state',  $p, 0);
 		# Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
 		return $hash->{NAME};
+	    } elsif ($m == 0) {
+		for my $i (1..7) {
+		    my $h = $main::modules{Fernotron}{defptr}{"0,$g,$i"};
+		    main::readingsSingleUpdate($h, 'state',  $p, 0) if ($h);
+		    $hash = $h if ($h);
+		}
+		return $hash->{NAME} if ($hash); 
 	    }
 	    
 	}
