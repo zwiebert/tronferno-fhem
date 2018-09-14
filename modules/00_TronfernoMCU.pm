@@ -124,23 +124,32 @@ sub TronfernoMCU_Read($)
   my $name = $hash->{NAME};
   
   # read the available data
-  my $buf = main::DevIo_SimpleRead($hash);
-  
+  my $data = main::DevIo_SimpleRead($hash);
   # stop processing if no data is available (device disconnected)
-  return if(!defined($buf));
-  
-  main::Log3 $name, 5, "TronfernoMCU ($name) - received: $buf"; 
+  return if(!defined($data));
 
+  my $buf = $hash->{PARTIAL} . $data;
+  
+  main::Log3 $name, 5, "TronfernoMCU ($name) - received data: >>>$data<<<"; 
+
+  my $remain = '';
   foreach my $line (split(/^/m, $buf)) {
+      if (index($line, "\n") < 0) {
+	  $remain = $line;
+	  last;
+      }
+
+      $line =~ tr/\r\n//d;
+
+      main::Log3 $name, 4, "TronfernoMCU ($name) - received line: >>>>>$line<<<<<"; 
+
       if ($line =~ /^U:position:\s*(.+);$/) {
-	  main::Log3 $name, 4, "TronfernoMCU ($name): position_update: $1";
+	  main::Log3 $name, 3, "TronfernoMCU ($name): position_update: $1";
 	  main::Dispatch($hash, "TFMCU#$line");
       }
   }
-  #
-  # do something with $buf, e.g. generate readings, send answers via main::DevIo_SimpleWrite(), ...
-  #
-   
+
+  $hash->{PARTIAL} = $remain;
 }
 
 # called if set command is executed
