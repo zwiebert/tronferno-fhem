@@ -7,15 +7,35 @@
 # - copy or softlink this file to /opt/fhem/FHEM/10_Tronferno.pm
 # - do 'reload 00_TronfernoMCU' and 'reload 10_Tronferno'
 #
-#     Example:
+#     Examples:
+#
+# 1) MCU module is connected via TCP/IP
 #
 #    define tfmcu TronfernoMCU  192.168.1.123
 #    define roll_11 Tronferno g=1 m=1
 #    define roll_12 Tronferno g=1 m=2
-#    define roll_13 Tronferno g=1 m=3
-#    define roll_14 Tronferno g=1 m=4
 #     ..
 #    define roll_77 Tronferno g=7 m=7
+#
+# 2) MCU module is connected via USB port /dev/ttyUSB1
+#
+#    define tfmcu TronfernoMCU /dev/ttyUSB1
+#    define roll_11 Tronferno g=1 m=1
+#    define roll_12 Tronferno g=1 m=2
+#     ..
+#    define roll_77 Tronferno g=7 m=7
+#
+# 3) Connect to multiple TronfernoMCU
+#
+#    define tfmcu_A TronfernoMCU /dev/tty/USB1
+#    define tfmcu_B TronfernoMCU 192.168.1.123
+#    define tfmcu_C TronfernoMCU computer.domain.com
+#
+#    define roll_A_11 Tronferno g=1 m=1 iodev=tfmcu_A
+#     ...
+#    define roll_B_11 Tronferno g=1 m=1 iodev=tfmcu_B
+#     ...
+#    define roll_C_11 Tronferno g=1 m=1 iodev=tfmcu_C
 #
 #  ### Make sure the I/O device tfmcu is defined before any roll_xx device ###
 #  ### Otherwise the roll_xx devices can't find their I/O device (because its not defined yet) ###
@@ -33,7 +53,8 @@ use 5.14.0;
 package TronfernoMCU {
 
     my $def_mcuaddr = 'fernotron.fritz.box.';
-    my $mcu_port = '7777';
+    my $mcu_port = 7777;
+    my $mcu_baud = 115200;
 
 
 
@@ -53,9 +74,16 @@ sub TronfernoMCU_Define($$)
   $dev = $def_mcuaddr unless($dev); # FIXME: remove this line
 
   return "no device given" unless($dev);
-  
-  # add a default port, if not explicitly given by user
-  $dev .= ":$mcu_port" if(not $dev =~ m/:\d+$/);
+
+  #append default baudrate / portnumber
+  if (index($dev, '/dev/') == 0) {
+      #serial device
+      $dev .= '@' . "$mcu_baud" if (index($dev, '@') < 0);
+  } else {
+      #TCP/IP connection
+      $dev .= ":$mcu_port" if(index($dev, ':') < 0);
+  }
+ 
   
   $hash->{DeviceName} = $dev;
   
@@ -211,27 +239,41 @@ package main {
 
 <h3>TronfernoMCU</h3>
 
-<i>TronfernoMCU</i> is a physical module to talk to <i>Tronferno-MCU</i> via TCP/IP using FHEM's DevIo mechanism.
-
-<br>#
-<br># - copy or softlink file 00_TronfernoMCU.pm to /opt/fhem/FHEM/00_TronfernoMCU.pm
-<br># - copy or softlink this file to /opt/fhem/FHEM/10_Tronferno.pm
-<br># - do 'reload 00_TronfernoMCU' and 'reload 10_Tronferno'
-<br>#
-<br>#     Example:
-<br>#
-<br>#    define tfmcu TronfernoMCU  192.168.1.123
-<br>#    define roll_11 Tronferno g=1 m=1
-<br>#    define roll_12 Tronferno g=1 m=2
-<br>#    define roll_13 Tronferno g=1 m=3
-<br>#    define roll_14 Tronferno g=1 m=4
-<br>#     ..
-<br>#    define roll_77 Tronferno g=7 m=7
-<br>#
-<br>#  ### Make sure the I/O device tfmcu is defined before any roll_xx device ###
-<br>#  ### Otherwise the roll_xx devices can't find their I/O device (because its not defined yet) ###
-<br>#
-<br>#
+<i>TronfernoMCU</i> is a physical module to talk to <i>Tronferno-MCU</i> via USB or TCP/IP using FHEM's DevIo mechanism.
+<br>
+<br>
+<br>     Examples:
+<br>
+<br> 1) MCU module is connected via TCP/IP
+<br>
+<br>    define tfmcu TronfernoMCU  192.168.1.123
+<br>    define roll_11 Tronferno g=1 m=1
+<br>    define roll_12 Tronferno g=1 m=2
+<br>     ..
+<br>    define roll_77 Tronferno g=7 m=7
+<br>
+<br> 2) MCU module is connected via USB port /dev/ttyUSB1
+<br>
+<br>    define tfmcu TronfernoMCU /dev/ttyUSB1
+<br>    define roll_11 Tronferno g=1 m=1
+<br>    define roll_12 Tronferno g=1 m=2
+<br>     ..
+<br>    define roll_77 Tronferno g=7 m=7
+<br>
+<br> 3) Connect to multiple TronfernoMCU
+<br>
+<br>    define tfmcu_A TronfernoMCU /dev/tty/USB1
+<br>    define tfmcu_B TronfernoMCU 192.168.1.123
+<br>    define tfmcu_C TronfernoMCU computer.domain.com
+<br>
+<br>    define roll_A_11 Tronferno g=1 m=1 iodev=tfmcu_A
+<br>     ...
+<br>    define roll_B_11 Tronferno g=1 m=1 iodev=tfmcu_B
+<br>     ...
+<br>    define roll_C_11 Tronferno g=1 m=1 iodev=tfmcu_C
+<br>
+<br>  ### Make sure the I/O device tfmcu is defined before any roll_xx device ###
+<br>  ### Otherwise the roll_xx devices can't find their I/O device (because its not defined yet) ###
 
 =end html
 

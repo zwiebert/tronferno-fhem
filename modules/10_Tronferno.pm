@@ -15,15 +15,35 @@
 #      iodev - if you have more than one Fernotron-MCU
 #      mcu_addr - only needed if you don't want to use FernotronMCU as IO device
 #
-#     Example:
+#     Examples:
+#
+# 1) MCU module is connected via TCP/IP
 #
 #    define tfmcu TronfernoMCU  192.168.1.123
 #    define roll_11 Tronferno g=1 m=1
 #    define roll_12 Tronferno g=1 m=2
-#    define roll_13 Tronferno g=1 m=3
-#    define roll_14 Tronferno g=1 m=4
 #     ..
 #    define roll_77 Tronferno g=7 m=7
+#
+# 2) MCU module is connected via USB port /dev/ttyUSB1
+#
+#    define tfmcu TronfernoMCU /dev/ttyUSB1
+#    define roll_11 Tronferno g=1 m=1
+#    define roll_12 Tronferno g=1 m=2
+#     ..
+#    define roll_77 Tronferno g=7 m=7
+#
+# 3) Connect to multiple TronfernoMCU
+#
+#    define tfmcu_A TronfernoMCU /dev/tty/USB1
+#    define tfmcu_B TronfernoMCU 192.168.1.123
+#    define tfmcu_C TronfernoMCU computer.domain.com
+#
+#    define roll_A_11 Tronferno g=1 m=1 iodev=tfmcu_A
+#     ...
+#    define roll_B_11 Tronferno g=1 m=1 iodev=tfmcu_B
+#     ...
+#    define roll_C_11 Tronferno g=1 m=1 iodev=tfmcu_C
 #
 #  ### Make sure the I/O device tfmcu is defined before any roll_xx device ###
 #  ### Otherwise the roll_xx devices can't find their I/O device (because its not defined yet) ###
@@ -257,13 +277,13 @@ package main {
 
 <h3>Tronferno</h3>
 
-<i>Tronferno</i> is a logic module to control shutters by sending commands to <i>Tronferno-MCU</i> via TCP/IP.
+<i>Tronferno</i> is a logic module to control shutters by sending commands to <i>Tronferno-MCU</i> via USB port or TCP/IP.
 
 <h4>Basics</h4>
 
 Tronferno-MCU is a micro-controller to control Fernotron shutters. It can also programm the built-in timers.
 
-<p>00_TronfernoMCU.pm is the FHEM I/O module which talks to the MCU via TCP/IP (using FHEM's DevIo)
+<p>00_TronfernoMCU.pm is the FHEM I/O module which talks to the MCU via USB or TCP/IP (using FHEM's DevIo)
 
 <h4>Defining Devices</h4>
 
@@ -320,6 +340,7 @@ This depends on the ID and the group and member numbers.
 </ul>
 
 <h4>Examples</h4>
+
 <ol>
   <li><ul>
       <li>first define the I/O device, so it exists before any rollo_xx devices which depends on it.</li>
@@ -340,6 +361,40 @@ This depends on the ID and the group and member numbers.
       <li><code>define rollo_0d123 Fernotron a=90d123</code></li>
   </ul></li>
 </ol>
+
+<br>     Examples:
+<br>
+<br> 1) MCU module is connected via TCP/IP
+<br>
+<br>    define tfmcu TronfernoMCU  192.168.1.123
+<br>    define roll_11 Tronferno g=1 m=1
+<br>    define roll_12 Tronferno g=1 m=2
+<br>     ..
+<br>    define roll_77 Tronferno g=7 m=7
+<br>
+<br> 2) MCU module is connected via USB port /dev/ttyUSB1
+<br>
+<br>    define tfmcu TronfernoMCU /dev/ttyUSB1
+<br>    define roll_11 Tronferno g=1 m=1
+<br>    define roll_12 Tronferno g=1 m=2
+<br>     ..
+<br>    define roll_77 Tronferno g=7 m=7
+<br>
+<br> 3) Connect to multiple TronfernoMCU
+<br>
+<br>    define tfmcu_A TronfernoMCU /dev/tty/USB1
+<br>    define tfmcu_B TronfernoMCU 192.168.1.123
+<br>    define tfmcu_C TronfernoMCU computer.domain.com
+<br>
+<br>    define roll_A_11 Tronferno g=1 m=1 iodev=tfmcu_A
+<br>     ...
+<br>    define roll_B_11 Tronferno g=1 m=1 iodev=tfmcu_B
+<br>     ...
+<br>    define roll_C_11 Tronferno g=1 m=1 iodev=tfmcu_C
+<br>
+<br>  ### Make sure the I/O device tfmcu is defined before any roll_xx device ###
+<br>  ### Otherwise the roll_xx devices can't find their I/O device (because its not defined yet) ###
+
 =end html
 
 # Local Variables:
