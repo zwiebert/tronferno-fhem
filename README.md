@@ -33,6 +33,6 @@ attr roll25 webCmd down:stop:up
 
 ## Recent Changes
 
-* TronferMCU can now works on ESP32. It's more stable via TCP/IP.
+* TronfernoMCU can now be flashed on ESP32. It's at the moment more stable via TCP/IP than ESP8266.
 * Tronferno can read back status from MCU module
 * Tronferno comes now with DevIO module 00_TronfernoMCU.pm. So the MCU can now be attached via USB port.
