@@ -5,7 +5,7 @@ experimental code for Fernotron and FHEM
 
 ### Experimental FHEM modules  (10_Tronferno.pm and 10_Fernotron.pm)
 
-* Fhem module Fernotron  works with SIGNALduino.  Module Tronferno works with Tronferno-MUC hardware
+* Fhem module Fernotron  works with SIGNALduino.  Module Tronferno works with TronfernoMCU hardware device
 
 * how to install: see comments at top of the module files
 
@@ -35,4 +35,4 @@ attr roll25 webCmd down:stop:up
 
 * TronfernoMCU can now be flashed on ESP32. It's at the moment more stable via TCP/IP than ESP8266.
 * Tronferno can read back status from MCU module
-* Tronferno comes now with DevIO module 00_TronfernoMCU.pm. So the MCU can now be attached via USB port.
+* Tronferno comes now with DevIO module 00_TronfernoMCU.pm. So the MCU can now be connected via USB port too.
