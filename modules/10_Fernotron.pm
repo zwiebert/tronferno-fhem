@@ -21,11 +21,14 @@
 ##
 ##
 ## There are firmware issues:
-## Version 3.3.1 - with dev-33 receving Fernotron commands does not work
-## Version 3.3.2 - sending does not work. Receving works only with dev-33
+## Version 3.3.1 - with dev-r33 receving Fernotron commands does not work
+## Version 3.3.2 - sending does not work. Receving works only with dev-r33
+##
+## new Version 3.3.2.1 rc3 is supposed to work fine with dev-r33
+## https://forum.fhem.de/index.php/topic,82379.msg836541.html#msg836541
 ##
 ##
-## To enable receiving edit the file:
+## To enable receiving with dev-r33 edit the file:
 ## /opt/fhem/FHEM/lib/signalduino_protocols.hash
 ##
 ## search for Fernotron and remove there the line:
