@@ -5,9 +5,32 @@
 ##
 ## - copy or softlink this file to /opt/fhem/FHEM/10_Fernotron.pm
 ##
-## - patch SIGNALduino
-##    sudo patch /opt/fhem/FHEM/00_SIGNALduino.pm  <./signalduino.diff
+## If you have 00_SIGNALduino.pm v3.3.2 (stable release 3.3)
+## then patch it:
+##    sudo patch -u /opt/fhem/FHEM/00_SIGNALduino.pm  <./signalduino.diff
 ##
+## If you have  v3.3.3 (Development release 3.3) v3.3.3 (Development release 3.3)
+## then the patch is already included.
+##
+##
+## To get  v3.3.3 (Development release 3.3) type the command in FHEM:
+## update all https://raw.githubusercontent.com/RFD-FHEM/RFFHEM/dev-r33/controls_signalduino.txt
+##
+## To go back to stable release 3.3 type the command in FHEM:
+## update
+##
+##
+## There are firmware issues:
+## Version 3.3.1 - with dev-33 receving Fernotron commands does not work
+## Version 3.3.2 - sending does not work. Receving works only with dev-33
+##
+##
+## To enable receiving edit the file:
+## /opt/fhem/FHEM/lib/signalduino_protocols.hash
+##
+## search for Fernotron and remove there the line:
+## developId      => 'm',
+  
 
 use strict;
 
