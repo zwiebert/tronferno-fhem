@@ -1,0 +1,18 @@
+--- signalduino_protocols.hash.orig	2018-09-15 23:53:31.995720195 +0200
++++ /opt/fhem/FHEM/lib/signalduino_protocols.hash	2018-09-15 23:53:50.963483065 +0200
+@@ -1470,7 +1470,7 @@
+ 		{
+ 			name           => 'Fernotron',
+ 			id             => '82',       # protocol number
+-			developId      => 'm',
++		#	developId      => 'm',
+ 			one            => [1,-2],     # on=400us, off=800us
+ 			zero           => [2,-1],     # on=800us, off=400us
+ 			float          => [1,-8],     # on=400us, off=3200us. each 10bit word has one [1,-8] in front
+@@ -1502,4 +1502,4 @@
+ 			length_min      => '12',
+ 			length_max      => '12',
+ 		},
+-);
+\ Kein Zeilenumbruch am Dateiende.
++);
