@@ -118,13 +118,16 @@ sub TronfernoMCU_Ready($)
 }
 
 # called when data was received
-sub TronfernoMCU_Read($)
+sub TronfernoMCU_Read($$)
 {
-  my ($hash) = @_;
+  # if DevIo_Expect() returns something we call this function with an additional argument
+  my ($hash, $data) = @_;
   my $name = $hash->{NAME};
+
+
   
-  # read the available data
-  my $data = main::DevIo_SimpleRead($hash);
+  # read the available data (or don't if called from TronfernoMCU_Set)
+  $data = main::DevIo_SimpleRead($hash) unless (defined($data));
   # stop processing if no data is available (device disconnected)
   return if(!defined($data));
 
@@ -203,17 +206,23 @@ sub TronfernoMCU_Callback($)
 
     sub TronfernoMCU_Write ($$)
 {
-	my ( $hash, $message, $address) = @_;
-     my $name = $hash->{NAME};
+	my ( $hash, $addr, $msg) = @_;
+	my $name = $hash->{NAME};
 
-	main::Log3 $name, 5, "TronfernoMCU ($name): $message: $address";	
+	main::Log3 $name, 5, "TronfernoMCU ($name): $addr: $msg";
 
-	#main::DevIo_SimpleWrite($hash, $address, 2, 1);
-	my $reply = main::DevIo_Expect($hash, $address, 1);
-        main::Log3 $name, 5, "TronfernoMCU ($name): reply: >>>$reply<<<" if (defined($reply)); 
+	#main::DevIo_SimpleWrite($hash, $msg, 2, 1);
+	foreach (1..3) {
+	    my $reply = main::DevIo_Expect($hash, "\n$msg", 1);
+	    main::Log3 $name, 5, "TronfernoMCU ($name): reply: >>>$reply<<<" if (defined($reply));
+	    # reply may contain more than one line. make the data available for _Read()
+	    TronfernoMCU_Read ($hash, $reply);
+	    last if (index($reply, "reply@82: ok"));
+	}
 
 	return undef;
 }
+
 }
 
 package main {
