@@ -184,7 +184,7 @@ sub TronfernoMCU_Init($)
     my ($hash) = @_;
 
     # send a status request to the device
-    main::DevIo_SimpleWrite($hash, "get_status\r\n", 2);
+    # main::DevIo_SimpleWrite($hash, "get_status\r\n", 2);
     
     return undef; 
 }
@@ -208,7 +208,9 @@ sub TronfernoMCU_Callback($)
 
 	main::Log3 $name, 5, "TronfernoMCU ($name): $message: $address";	
 
-	main::DevIo_SimpleWrite($hash, $address, 2, 1);
+	#main::DevIo_SimpleWrite($hash, $address, 2, 1);
+	my $reply = main::DevIo_Expect($hash, $address, 1);
+        main::Log3 $name, 5, "TronfernoMCU ($name): reply: >>>$reply<<<" if (defined($reply)); 
 
 	return undef;
 }
