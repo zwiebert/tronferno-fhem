@@ -10,8 +10,9 @@
 ##    sudo patch -u /opt/fhem/FHEM/00_SIGNALduino.pm  <./signalduino.diff
 ##
 ## If you have  v3.3.3 (Development release 3.3) v3.3.3 (Development release 3.3)
-## then the patch is already included.
+## then the protocol patch is already included. Only this module has to be installed.
 ##
+## (deutsche anleitung: https://forum.fhem.de/index.php/topic,12599.msg836552.html#msg836552 )
 ##
 ## To get  v3.3.3 (Development release 3.3) type the command in FHEM:
 ## update all https://raw.githubusercontent.com/RFD-FHEM/RFFHEM/dev-r33/controls_signalduino.txt
@@ -19,20 +20,13 @@
 ## To go back to stable release 3.3 type the command in FHEM:
 ## update
 ##
-##
-## There are firmware issues:
-## Version 3.3.1 - with dev-r33 receving Fernotron commands does not work
-## Version 3.3.2 - sending does not work. Receving works only with dev-r33
-##
-## new Version 3.3.2.1 rc3 is supposed to work fine with dev-r33
+## You need the firmware version 3.3.2.1 rc3 or newer (older ones have issues)
 ## https://forum.fhem.de/index.php/topic,82379.msg836541.html#msg836541
 ##
+## To enable receiving with dev-r33 enter and save:
 ##
-## To enable receiving with dev-r33 edit the file:
-## /opt/fhem/FHEM/lib/signalduino_protocols.hash
-##
-## search for Fernotron and remove there the line:
-## developId      => 'm',
+##      attr sduino development m82
+
   
 
 use strict;
