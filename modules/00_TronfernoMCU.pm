@@ -208,7 +208,7 @@ sub TronfernoMCU_Callback($)
 
 	main::Log3 $name, 5, "TronfernoMCU ($name): $message: $address";	
 
-	main::DevIo_SimpleWrite($hash, $address, 2);
+	main::DevIo_SimpleWrite($hash, $address, 2, 1);
 
 	return undef;
 }
