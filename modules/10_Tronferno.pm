@@ -203,50 +203,85 @@ package Tronferno {
     }
 
     sub Tronferno_Parse {
-	my ($io_hash, $message) = @_;
-	my $name = $io_hash->{NAME};
-	my ($a, $g, $m, $p) = (0, 0, 0, 0);
-	
-	if ($message =~ /^TFMCU#U:position:\s*(.+);$/) {
-	    foreach my $arg (split(/\s+/, $1)) {
-		my ($key, $value) = split('=', $arg);
+      my ($io_hash, $message) = @_;
+      my $name = $io_hash->{NAME};
+      my ($a, $g, $m, $p, $mm) = (0, 0, 0, 0, undef);
+      my $result = undef;
+      
+      if ($message =~ /^TFMCU#U:position:\s*(.+);$/) {
+	foreach my $arg (split(/\s+/, $1)) {
+	  my ($key, $value) = split('=', $arg);
 
-		if ($key eq 'a') {
-		    $a = hex($value);
+	  if ($key eq 'a') {
+	    $a = hex($value);
 
-		} elsif ($key eq 'g') {
-		    $g = int($value);
-		    return "out of range value $g for g. expected: 0..7" unless (0 <= $g && $g <= 7);
-		} elsif ($key eq 'm') {
-		    $m = int($value);
-		    return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
-		} elsif ($key eq 'p') {
-		    $p = $value;
-		    return "out of range value $p for p. expected: 0..100" unless (0 <= $p && $m <= 100);
-		}			
-	    }
-	    my $def_match = "0,$g,$m";
-	    #main::Log3($io_hash, 3, "def_match: $def_match");
-	    
-	    my $hash = $main::modules{Fernotron}{defptr}{$def_match}; #FIXME: add support for $a different than zero
-	    
-	    if ($hash) {
-		main::readingsSingleUpdate($hash, 'state',  $p, 0);
-		# Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
-		return $hash->{NAME};
-	    } elsif ($m == 0) {
-		for my $i (1..7) {
-		    my $h = $main::modules{Fernotron}{defptr}{"0,$g,$i"};
-		    main::readingsSingleUpdate($h, 'state',  $p, 0) if ($h);
-		    $hash = $h if ($h);
-		}
-		return $hash->{NAME} if ($hash); 
-	    }
-	    
+	  } elsif ($key eq 'g') {
+	    $g = int($value);
+	    return "out of range value $g for g. expected: 0..7" unless (0 <= $g && $g <= 7);
+	  } elsif ($key eq 'm') {
+	    $m = int($value);
+	    return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
+	  } elsif ($key eq 'mm') {
+	    my @mask_arr = split(/\,/, $value);
+	    $mm = \@mask_arr;
+	  return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
+	} elsif ($key eq 'p') {
+	  $p = $value;
+	  return "out of range value $p for p. expected: 0..100" unless (0 <= $p && $m <= 100);
 	}
-	return undef;
-    }
+      }
 
+      if (defined ($mm)) {
+	for $g (0..7) {
+	  my $gm =hex($$mm[$g]);
+	  for $m (0..7) {
+	    if ($gm & (1 << $m)) {
+	      my $def_match = "0,$g,$m";
+	      my $hash = $main::modules{Fernotron}{defptr}{$def_match}; #FIXME: add support for $a different than zero
+	      if ($hash) {
+		main::readingsSingleUpdate($hash, 'state',  $p, 0);
+		$result = $hash->{NAME};
+	      }
+	    }
+	  }
+	}
+
+	return $result;
+
+      } else {
+	my $def_match = "0,$g,$m";
+	#main::Log3($io_hash, 3, "def_match: $def_match");
+	my $hash = $main::modules{Fernotron}{defptr}{$def_match}; #FIXME: add support for $a different than zero
+
+	if ($hash) {
+	  main::readingsSingleUpdate($hash, 'state',  $p, 0);
+	  # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
+	  return $hash->{NAME};
+	} elsif ($g == 0) {
+	  for $g (1..7) {
+	    for $m (1..7) {
+	      my $hash = $main::modules{Fernotron}{defptr}{"0,$g,$m"};
+	      if ($hash) {
+		main::readingsSingleUpdate($hash, 'state',  $p, 0);
+		$result = $hash->{NAME};
+	      }
+	    }
+	  }
+	  return $result;
+	} elsif ($m == 0) {
+	  for $m (1..7) {
+	    my $hash = $main::modules{Fernotron}{defptr}{"0,$g,$m"};
+	    if ($hash) {
+	      main::readingsSingleUpdate($hash, 'state',  $p, 0);
+	      $result = $hash->{NAME};
+	    }
+	  }
+	  return $result;
+	}
+      }
+    }
+    return undef;
+  }
 
 }
 

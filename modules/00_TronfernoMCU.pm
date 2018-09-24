@@ -187,7 +187,7 @@ sub TronfernoMCU_Init($)
     my ($hash) = @_;
 
     # send a status request to the device
-    # main::DevIo_SimpleWrite($hash, "get_status\r\n", 2);
+    main::DevIo_SimpleWrite($hash, "mcu cs=?;\n", 2);  #FIXME: need better cli option for this
     
     return undef; 
 }
