@@ -159,7 +159,7 @@ package Tronferno {
 
     sub Tronferno_build_cmd($$$$) {
         my ($hash, $name, $cmd, $c) = @_;
-        my $a   = $hash->{helper}{ferid_a};
+        my $a   = ($cmd eq 'pair') ? '?' : $hash->{helper}{ferid_a};
         my $g   = $hash->{helper}{ferid_g};
         my $m   = $hash->{helper}{ferid_m};
         my $msg = "$cmd a=$a g=$g m=$m c=$c mid=82;";
@@ -167,7 +167,7 @@ package Tronferno {
         return $msg;
     }
 
-    my $map_tcmd = {
+    my $map_send_cmds = {
         up         => 'up',
         down       => 'down',
         stop       => 'stop',
@@ -177,8 +177,13 @@ package Tronferno {
         'sun-inst' => 'sun-inst',
     };
 
-    sub get_commandlist()   { return keys %$map_tcmd; }
-    sub is_command_valid($) { return exists $map_tcmd->{ $_[0] }; }
+    my $map_pair_cmds = {
+        xxx_pair         => 'pair',
+        xxx_unpair       => 'unpair',
+    };
+
+
+    sub get_commandlist()   { return keys %$map_send_cmds, keys %$map_pair_cmds; }
 
     sub Tronferno_Set($$@) {
         my ($hash, $name, $cmd, @args) = @_;
@@ -191,8 +196,12 @@ package Tronferno {
                 $res .= " $key:noArg";
             }
             return $res;
-        } elsif (is_command_valid($cmd)) {
-            my $req = Tronferno_build_cmd($hash, $name, 'send', $map_tcmd->{$cmd});
+	  } elsif (exists $map_send_cmds->{$cmd}) {
+            my $req = Tronferno_build_cmd($hash, $name, 'send', $map_send_cmds->{$cmd});
+            my $res = Tronferno_transmit($hash, $name, $req);
+	    return $res if ($res);
+	  } elsif (exists $map_pair_cmds->{$cmd}) {
+            my $req = Tronferno_build_cmd($hash, $name, 'pair', $map_pair_cmds->{$cmd});
             my $res = Tronferno_transmit($hash, $name, $req);
 	    return $res if ($res);
         } else {
