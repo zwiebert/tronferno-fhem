@@ -33,7 +33,6 @@ use strict;
 
 use 5.14.0;
 
-
 package Fernotron::Drv {
 
     my $def_cu = '801234';
@@ -51,24 +50,16 @@ package Fernotron::Drv {
 
     my $p_string = 'P0=400;P1=-400;P2=-3200;P3=-800;P4=800;';
 
-    my $rf_timings = {
-        'P0.min' => 350,
-        'P0.max' => 450,
-        'P1.min' => -450,
-        'P1.max' => -350,
-        'P2.min' => -3500,
-        'P2.max' => -2500,
-        'P3.min' => -900,
-        'P3.max' => -700,
-        'P4.min' => 700,
-        'P4.max' => 900,
-    };
-
     #                    1 2 3 4 5 6 7
     my $d_pre_string = '01010101010101';    # preamble
     my $d_stp_string = '02';                # stop comes before each preamble and before each word
     my $d_dt0_string = '41';                # data bit 0 (/..long..\short)
     my $d_dt1_string = '03';                # data bit 1 (/short\..long..)
+
+    # with later SIGNALduino versions we can send in DMSG format instead of RAW
+    my $d_float_string = 'D';  # or 'F'
+    my $d_pause_string = $d_float_string . 'PPPPPPP';
+    my $fmt_dmsg_string = 'P82#%s%s';  # repeats, d_pause_string, data
 
     # global configuration
     my $C = {
@@ -119,11 +110,28 @@ package Fernotron::Drv {
         return $r;
     }
 ##
+    sub word2bitString($) {
+        my ($w) = @_;
+        my $r = '';
+        for (my $i = 0; $i < 10; ++$i) {
+            $r .= (0 == (($w >> $i) & 1) ? '0' : '1');
+        }
+        return $r;
+    }
+
+##
 ## turn one databyte into a string of: two 10-bit words and two stop bits
     sub byte2dString {
         my $res = "";
         foreach my $b (@_) {
             $res .= $d_stp_string . word2dString(byte2word($b, 0)) . $d_stp_string . word2dString(byte2word($b, 1));
+        }
+        return $res;
+    }
+    sub byte2dmsgString {
+        my $res = "";
+        foreach my $b (@_) {
+            $res .= $d_float_string . word2bitString(byte2word($b, 0)) . $d_float_string . word2bitString(byte2word($b, 1));
         }
         return $res;
     }
@@ -148,6 +156,15 @@ package Fernotron::Drv {
         return sprintf($fmt_string, $repeats + 1, $p_string, $d_stp_string, $d_pre_string, byte2dString(@$fsb, calc_checksum($fsb, 0)));
 
         # return $p_string . "D=$d_stp_string$d_pre_string" . byte2dString(@$fsb, calc_checksum($fsb, 0)) . ';';
+    }
+
+    # convert 5-byte message into SIGNALduino message like DMSG
+    sub cmd2dmsgString($$) {
+        my ($fsb, $repeats) = @_;
+        return sprintf($fmt_dmsg_string,
+		       #$repeats + 1,
+		       $d_pause_string,
+		       byte2dmsgString(@$fsb, calc_checksum($fsb, 0)));
     }
 
 #### end ###
@@ -358,6 +375,10 @@ package Fernotron::Drv {
     # checksum may be truncated by older SIGNALduino versions, so verify if ID and MEMB match
     sub fsb_verify_by_id($) {
         my ($fsb) = @_;
+	my $have_checksum = (scalar(@$fsb) == 6);
+
+	return (($$fsb[0] + $$fsb[1] + $$fsb[2] + $$fsb[3] + $$fsb[4]) & 0xFF) eq $$fsb[5] if ($have_checksum);
+	
         my $m = FSB_GET_MEMB($fsb);
 
         return ($m == $fer_memb_Broadcast || ($fer_memb_M1 <= $m && $m <= $fer_memb_M7)) if FSB_MODEL_IS_CENTRAL($fsb);
@@ -378,11 +399,15 @@ package Fernotron::Drv {
         return $bitMsg;
     }
 
-    # convert dmsg to just bits (by simply removing the F (floating) characters
-    sub fer_dev33dmsg2bitMsg($) {
+    # convert dmsg to array of 10bit strings. disregard trailing bits.
+    sub fer_dev33dmsg_split($) {
 	my ($dmsg) = @_;
-	$dmsg =~ s/F//g;
-	return $dmsg;
+	my @bitArr = split('F', $dmsg);
+
+	# if dmsg starts with 'F', as it should, remove the empty string at index 0
+	shift(@bitArr) if (length($bitArr[0] == 0));
+	
+	return \@bitArr;
     }
 
     # convert 10bit string to 10bit word
@@ -403,7 +428,11 @@ package Fernotron::Drv {
         my @wordArr = ();
 
         foreach my $ws (@$bitArr) {
-            push(@wordArr, fer_bin2word($ws));
+	    if (length($ws) == 10) {
+		push(@wordArr, fer_bin2word($ws));
+	    } else {
+		push (@wordArr, -1);
+	    }
         }
         return \@wordArr;
     }
@@ -412,17 +441,15 @@ package Fernotron::Drv {
     sub fer_words2bytes($) {
         my ($words) = @_;
         my @bytes = ();
-
+		
         for (my $i = 0; $i < scalar(@$words); $i += 2) {
             my $w0 = $$words[$i];
             my $w1 = $$words[ $i + 1 ];
-            my $p0 = defined($w0) && fer_get_word_parity($w0, 0);
-            my $p1 = defined($w1) && fer_get_word_parity($w1, 1);
-
-            if ($p0 ne 0) {
+            my $p0 = defined($w0) && ($w0 ne -1) && fer_get_word_parity($w0, 0);
+            my $p1 = defined($w1) && ($w1 ne -1) && fer_get_word_parity($w1, 1);
+            if ($p0) {
                 push(@bytes, $w0 & 0xff);
-
-            } elsif ($p1 ne 0) {
+            } elsif ($p1) {
                 push(@bytes, $w1 & 0xff);
             } else {
                 return \@bytes;
@@ -434,9 +461,12 @@ package Fernotron::Drv {
     # convert decoded message from SIGNALduino dispatch to Fernotron byte message
     sub fer_sdDmsg2Bytes($) {
 	my ($dmsg) = @_;
-	
-	my $bit_msg =  (length($dmsg) < 100) ? fer_byteHex2bitMsg($dmsg) : fer_dev33dmsg2bitMsg($dmsg);
-        return fer_words2bytes(fer_bitMsg2words(fer_bitMsg_split($bit_msg)));
+
+	if ((length($dmsg) < 100)) {
+	    return fer_words2bytes(fer_bitMsg2words(fer_bitMsg_split(fer_byteHex2bitMsg($dmsg))));
+	} else {
+	    return fer_words2bytes(fer_bitMsg2words(fer_dev33dmsg_split($dmsg)));
+	}
     }
 ##
 ##
@@ -539,8 +569,9 @@ package Fernotron {
     sub Fernotron_Parse {
         my ($io_hash, $message) = @_;
 
-      my $hash = $main::modules{Fernotron}{defptr}{Fernotron};
-
+	my $hash = $main::modules{Fernotron}{defptr}{Fernotron};
+	my $result = undef;
+	
       if (!$hash) {
 #	return undef; # no autocreate
 	return "UNDEFINED scanFerno Fernotron scan";  #FIXME: may autocreate scanner device for neighbor's shutter controls ... really bad idea?
@@ -549,9 +580,21 @@ package Fernotron {
         my ($proto, $dmsg) = split('#', $message);
         my $fsb     = Fernotron::Drv::fer_sdDmsg2Bytes($dmsg);
 
-	
-        return undef if (ref($fsb) ne 'ARRAY' || scalar(@$fsb) < 5);
-        return undef unless Fernotron::Drv::fsb_verify_by_id($fsb);
+	if (0) {
+	    ## log information about received data
+	    my $bitArr = Fernotron::Drv::fer_dev33dmsg_split($dmsg);
+	    #pop(@$bitArr);
+	    my $wordArr = Fernotron::Drv::fer_bitMsg2words($bitArr);
+	    $fsb = Fernotron::Drv::fer_words2bytes($wordArr);
+	    main::Log3($io_hash, 3, "message length (should be 12) is : " . scalar(@$bitArr) . " fsb_len=" . scalar(@$fsb)) if (scalar(@$bitArr) ne 12); 
+	    for (my $i=0; $i < scalar(@$bitArr); ++$i) {
+		main::Log3($io_hash, 3, "Word $i wrong length (" . $$bitArr[$i] . ") " . length($$bitArr[$i])) if (length($$bitArr[$i]) ne 10);
+		main::Log3($io_hash, 3, "Word $i undefined") if ($$wordArr[$i] eq -1);
+	    }
+	    main::Log3($io_hash, 3, "len WordArr: " . scalar(@$wordArr));
+	}
+        return $result if (ref($fsb) ne 'ARRAY' || scalar(@$fsb) < 5);
+        return $result unless Fernotron::Drv::fsb_verify_by_id($fsb);
 
         my $msg = sprintf("%02x, %02x, %02x, %02x, %02x", @$fsb);
         main::Log3($io_hash, 3, "Fernotron: message received: $msg");
@@ -639,7 +682,7 @@ sub Fernotron_Undef($$) {
         my ($hash, $command, $c) = @_;
         my $name = $hash->{NAME};
         my $io   = $hash->{IODev};
-
+	
         return 'error: IO device not open' unless (exists($io->{NAME}) and main::ReadingsVal($io->{NAME}, 'state', '') eq 'opened');
 
         my $args = {
@@ -653,9 +696,18 @@ sub Fernotron_Undef($$) {
         my $fsb = Fernotron::Drv::args2cmd($args);
         if ($fsb != -1) {
             main::Log3($name, 1, "$name: send: " . Fernotron::Drv::fsb2string($fsb));
-            my $msg = Fernotron::Drv::cmd2sdString($fsb, $args->{r});
-            main::Log3($name, 3, "$name: raw: $msg");
-            main::IOWrite($hash, 'raw', $msg);
+	    if (1) # FIXME: send in raw format for now
+	    {
+		my $msg= Fernotron::Drv::cmd2sdString($fsb, $args->{r});
+		main::Log3($name, 3, "$name: raw: $msg");
+		main::IOWrite($hash, 'raw', $msg);
+	    }
+	    else
+	    {
+		my $msg = Fernotron::Drv::cmd2dmsgString($fsb, $args->{r});
+		main::Log3($name, 3, "$name: sendMsg: $msg");
+		main::IOWrite($hash, 'sendMsg', $msg);
+	    }
         } else {
             return Fernotron::Drv::get_last_error();
         }
@@ -718,15 +770,12 @@ package main {
         $hash->{AttrList} = 'repeats:0,1,2,3,4,5';
 
         $hash->{DefFn}   = 'Fernotron::Fernotron_Define';
-      $hash->{UndefFn} = 'Fernotron::Fernotron_Undef';
+	$hash->{UndefFn} = 'Fernotron::Fernotron_Undef';
         $hash->{SetFn}   = "Fernotron::Fernotron_Set";
         $hash->{ParseFn} = "Fernotron::Fernotron_Parse";
         $hash->{AttrFn}  = "Fernotron::Fernotron_Attr";
 
-      $hash->{AutoCreate} = {'scanFerno'  => {noAutocreatedFilelog => 1
-						}
-			    };
-      
+	$hash->{AutoCreate} = {'scanFerno'  => {noAutocreatedFilelog => 1} };
     }
 }
 
