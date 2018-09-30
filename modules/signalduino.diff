@@ -16,7 +16,7 @@
       "X:SIGNALduino_un"			=> '^[u]\d+#.*',
  );
  
-@@ -1479,13 +1481,25 @@
+@@ -1479,13 +1481,26 @@
  			length_min		=> 58,
  			length_max		=> 58,
  		},
@@ -32,10 +32,11 @@
 + 			one            => [1,-2],     # on=400us, off=800us
 + 			zero           => [2,-1],     # on=800us, off=400us
 + 			float          => [1,-8],     # on=400us, off=3200us. each 10bit word has one [1,-8] in front
++ 			pause          => [1,-8],     # preamble (7x)
 + 			clockabs       => 400,        # 400us
 + 			preamble       => 'P82#',     # prepend our protocol number to converted message
 + 			clientmodule   => 'Fernotron',
-+ 			length_min     => '100',     # actual 120 bit (12 x 10bit words to decode 6 bytes data), but last 20 bit are for checksum and truncated by SIGNALduino firmware
++ 			length_min     => '100',     # actual 120 bit (12 x 10bit words to decode 6 bytes data), but last 20 bit are for checksum and truncated by SIGNALduino
 + 			length_max     => '3360',    # 3360 bit (336 x 10bit words to decode 168 bytes data) for full timer message
 + 	     	},
  );
