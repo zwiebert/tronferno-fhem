@@ -162,7 +162,9 @@ package Tronferno {
         my $a   = ($cmd eq 'pair') ? '?' : $hash->{helper}{ferid_a};
         my $g   = $hash->{helper}{ferid_g};
         my $m   = $hash->{helper}{ferid_m};
-        my $msg = "$cmd a=$a g=$g m=$m c=$c mid=82;";
+	my $r   = int(main::AttrVal($name, 'repeats', '1'));
+	
+        my $msg = "$cmd a=$a g=$g m=$m c=$c r=$r mid=82;";
         main::Log3($hash, 3, "$name:command: $msg");
         return $msg;
     }
@@ -290,7 +292,26 @@ package Tronferno {
       }
     }
     return undef;
-  }
+    }
+
+
+    
+    sub Tronferno_Attr(@) {
+        my ($cmd, $name, $attrName, $attrValue) = @_;
+
+        # $cmd  - Vorgangsart - kann die Werte "del" (löschen) oder "set" (setzen) annehmen
+        # $name - Gerätename
+        # $attrName/$attrValue sind Attribut-Name und Attribut-Wert
+
+        if ($cmd eq "set") {
+            if ($attrName eq 'repeats') {
+                my $r = int($attrValue);
+                return "invalid argument '$attrValue'. Expected: 0..5" unless (0 <= $r and $r <= 5);
+            }
+        }
+        return undef;
+    }
+
 
 }
 
@@ -300,11 +321,12 @@ package main {
         my ($hash) = @_;
 
         $hash->{DefFn} = 'Tronferno::Tronferno_Define';
-        $hash->{SetFn} = "Tronferno::Tronferno_Set";
-        $hash->{ParseFn} = "Tronferno::Tronferno_Parse";
+        $hash->{SetFn} = 'Tronferno::Tronferno_Set';
+        $hash->{ParseFn} = 'Tronferno::Tronferno_Parse';
         $hash->{UndefFn} = 'Tronferno::Tronferno_Undef';
+        $hash->{AttrFn}  =  'Tronferno::Tronferno_Attr';
 
-        $hash->{AttrList} = 'mcuaddr';
+	$hash->{AttrList} = 'repeats:0,1,2,3,4,5';
 	$hash->{Match} = '^TFMCU#.+';
     }
 }
