@@ -26,6 +26,8 @@
 ## To enable receiving with dev-r33 enter and save:
 ##
 ##      attr sduino development m82
+##
+## or add 82 to the sduino attribute whitelist_IDs (which is a comma separated list of protocol numbers)
 
   
 
@@ -72,7 +74,7 @@ package Fernotron::Drv {
     my $fsbs = {};
 
     sub dbprint($) {
-        main::Log3(undef, 5, "Fernotron: $_[0]");    # global verbose level used
+        main::Log3(undef, 5, "Fernotron: $_[0]");    # verbose level of IODev may be used here
     }
 
 ########################################################
@@ -396,6 +398,7 @@ package Fernotron::Drv {
         for my $b (split(//, $byteHex)) {
             $bitMsg .= sprintf("%04b", hex($b));
         }
+	dbprint("bitMsg=$bitMsg");
         return $bitMsg;
     }
 
@@ -463,8 +466,10 @@ package Fernotron::Drv {
 	my ($dmsg) = @_;
 
 	if ((length($dmsg) < 100)) {
+	    dbprint("old byte string dmsg");
 	    return fer_words2bytes(fer_bitMsg2words(fer_bitMsg_split(fer_byteHex2bitMsg($dmsg))));
 	} else {
+	    dbprint("new bit string dmsg");
 	    return fer_words2bytes(fer_bitMsg2words(fer_dev33dmsg_split($dmsg)));
 	}
     }
@@ -578,6 +583,7 @@ package Fernotron {
       }
 
         my ($proto, $dmsg) = split('#', $message);
+#	$dmsg = "P82#01406481232C4B294652C4712";
         my $fsb     = Fernotron::Drv::fer_sdDmsg2Bytes($dmsg);
 
 	if (0) {
@@ -593,10 +599,23 @@ package Fernotron {
 	    }
 	    main::Log3($io_hash, 3, "len WordArr: " . scalar(@$wordArr));
 	}
-        return $result if (ref($fsb) ne 'ARRAY' || scalar(@$fsb) < 5);
-        return $result unless Fernotron::Drv::fsb_verify_by_id($fsb);
+	
+        return $result if (ref($fsb) ne 'ARRAY');
+	
+	my $byteCount = scalar(@$fsb);
+	$hash->{received_ByteCount} = "$byteCount";
+	$hash->{received_ID} = ($byteCount >= 3) ? sprintf("a=%02x%02x%02x", @$fsb) : undef;
+	$hash->{received_CheckSum} = ($byteCount == 6) ? sprintf("%02x", $$fsb[5]) : undef;
+        return $result if ($byteCount < 5);
+
+	
+	
+	my $fsb_valid =  Fernotron::Drv::fsb_verify_by_id($fsb);
+	$hash->{received_IsValid} = $fsb_valid ? "yes" : "no"; 
+        return $result unless $fsb_valid;
 
         my $msg = sprintf("%02x, %02x, %02x, %02x, %02x", @$fsb);
+        $hash->{received_Bytes} = $msg;
         main::Log3($io_hash, 3, "Fernotron: message received: $msg");
 
 
@@ -610,7 +629,6 @@ package Fernotron {
 	$gm = "g=$g m=$m ";
       }
             # Nachricht für $hash verarbeiten
-            $hash->{received_Bytes} = $msg;
             $hash->{received_HR}
 	    = sprintf("a=%02x%02x%02x %sc=%s", $$fsb[0], $$fsb[1], $$fsb[2],
 		      $gm,
@@ -685,6 +703,8 @@ sub Fernotron_Undef($$) {
 	
         return 'error: IO device not open' unless (exists($io->{NAME}) and main::ReadingsVal($io->{NAME}, 'state', '') eq 'opened');
 
+	my $sendRaw = ! defined($io->{versionmodul}); # SIGNALduino version number 3.3.2 or less
+
         my $args = {
             command => $command,
             a       => $hash->{helper}{ferid_a},
@@ -696,7 +716,7 @@ sub Fernotron_Undef($$) {
         my $fsb = Fernotron::Drv::args2cmd($args);
         if ($fsb != -1) {
             main::Log3($name, 1, "$name: send: " . Fernotron::Drv::fsb2string($fsb));
-	    if (1) # FIXME: send in raw format for now
+	    if ($sendRaw)
 	    {
 		my $msg= Fernotron::Drv::cmd2sdString($fsb, $args->{r});
 		main::Log3($name, 3, "$name: raw: $msg");
@@ -767,7 +787,7 @@ package main {
     sub Fernotron_Initialize($) {
         my ($hash) = @_;
         $hash->{Match}    = "^P82#.+";
-        $hash->{AttrList} = 'repeats:0,1,2,3,4,5';
+        $hash->{AttrList} = 'IODev repeats:0,1,2,3,4,5';
 
         $hash->{DefFn}   = 'Fernotron::Fernotron_Define';
 	$hash->{UndefFn} = 'Fernotron::Fernotron_Undef';

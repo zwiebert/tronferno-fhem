@@ -326,7 +326,7 @@ package main {
         $hash->{UndefFn} = 'Tronferno::Tronferno_Undef';
         $hash->{AttrFn}  =  'Tronferno::Tronferno_Attr';
 
-	$hash->{AttrList} = 'repeats:0,1,2,3,4,5';
+	$hash->{AttrList} = 'IODev repeats:0,1,2,3,4,5';
 	$hash->{Match} = '^TFMCU#.+';
     }
 }

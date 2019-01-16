@@ -217,7 +217,7 @@ sub TronfernoMCU_Callback($)
 	    main::Log3 $name, 5, "TronfernoMCU ($name): reply: >>>$reply<<<" if (defined($reply));
 	    # reply may contain more than one line. make the data available for _Read()
 	    TronfernoMCU_Read ($hash, $reply);
-	    last if (index($reply, "reply@82: ok"));
+	    last if (index($reply, 'reply@82: ok'));
 	}
 
 	return undef;
