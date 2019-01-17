@@ -61,7 +61,7 @@ package Fernotron::Drv {
     # with later SIGNALduino versions we can send in DMSG format instead of RAW
     my $d_float_string = 'D';  # or 'F'
     my $d_pause_string = $d_float_string . 'PPPPPPP';
-    my $fmt_dmsg_string = 'P82#%s%s';  # repeats, d_pause_string, data
+    my $fmt_dmsg_string = 'P82#%s%s#R%d';  # d_pause_string, data, repeats
 
     # global configuration
     my $C = {
@@ -143,7 +143,7 @@ package Fernotron::Drv {
 #### convert a byte commmand to a data string
 ##
 ##
-    # calc checksum to @array,
+    # calc checksum for @array,
     sub calc_checksum($$) {
         my ($cmd, $cs) = @_;
         foreach my $b (@$cmd) {
@@ -164,9 +164,9 @@ package Fernotron::Drv {
     sub cmd2dmsgString($$) {
         my ($fsb, $repeats) = @_;
         return sprintf($fmt_dmsg_string,
-		       #$repeats + 1,
 		       $d_pause_string,
-		       byte2dmsgString(@$fsb, calc_checksum($fsb, 0)));
+		       byte2dmsgString(@$fsb, calc_checksum($fsb, 0)),
+		       $repeats + 1);
     }
 
 #### end ###
@@ -443,22 +443,51 @@ package Fernotron::Drv {
     # convert array of 10bit words into array of 8bit bytes
     sub fer_words2bytes($) {
         my ($words) = @_;
-        my @bytes = ();
-		
+        my @bytes1 = ();
+	my @bytes2 = ();
+	my @idx2 = ();
+
         for (my $i = 0; $i < scalar(@$words); $i += 2) {
             my $w0 = $$words[$i];
             my $w1 = $$words[ $i + 1 ];
             my $p0 = defined($w0) && ($w0 ne -1) && fer_get_word_parity($w0, 0);
             my $p1 = defined($w1) && ($w1 ne -1) && fer_get_word_parity($w1, 1);
-            if ($p0) {
-                push(@bytes, $w0 & 0xff);
+
+	    if ($p0 && $p1 && ($w0&0xff) != ($w1&0xff)) {
+                push(@bytes1, $w0 & 0xff);
+                push(@bytes2, $w1 & 0xff);
+		push(@idx2, $i);
+	    } elsif ($p0) {
+                push(@bytes1, $w0 & 0xff);
+                push(@bytes2, undef);
             } elsif ($p1) {
-                push(@bytes, $w1 & 0xff);
+                push(@bytes1, $w1 & 0xff);
+                push(@bytes2, undef);
             } else {
-                return \@bytes;
+                return \@bytes1;
             }
         }
-        return \@bytes;
+        return \@bytes1 if (scalar(@bytes1) < 6); # no checksum availabe
+
+	my @fsb = @bytes1;
+	
+	return \@fsb if ((($fsb[0] + $fsb[1] + $fsb[2] + $fsb[3] + $fsb[4]) & 0xFF) eq $fsb[5]);
+
+	### if a word is incorrect but has correct parity try to find out the correct one by checksum
+	### not sure how likely this will succeed. never saw it happen
+
+	for (my $j=0; $j < (1 << scalar(@idx2)); ++$j) {
+	    for (my $i=0; $i < scalar(@idx2); ++$i) {
+		my $k = $idx2[$i];
+		if (($j & (1<<$k)) && $bytes2[$k]) {
+		    $fsb[$k] = $bytes2[$k];
+		}
+	    }
+	    return \@fsb if ((($fsb[0] + $fsb[1] + $fsb[2] + $fsb[3] + $fsb[4]) & 0xFF) eq $fsb[5]);
+	    @fsb = @bytes1;
+	}
+
+	return undef;
     }
 
     # convert decoded message from SIGNALduino dispatch to Fernotron byte message
