@@ -185,7 +185,7 @@ package Tronferno {
     };
 
 
-    sub get_commandlist()   { return keys %$map_send_cmds, keys %$map_pair_cmds, 'position:slider,0,50,100'; }
+    sub get_commandlist()   { return keys %$map_send_cmds, keys %$map_pair_cmds; }
 
     sub Tronferno_Set($$@) {
         my ($hash, $name, $cmd, @args) = @_;
@@ -197,7 +197,7 @@ package Tronferno {
             foreach my $key (get_commandlist()) {
                 $res .= " $key:noArg";
             }
-            return $res;
+            return $res .  ' position:slider,0,50,100';
 	  } elsif (exists $map_send_cmds->{$cmd}) {
             my $req = Tronferno_build_cmd($hash, $name, 'send', $map_send_cmds->{$cmd});
             my $res = Tronferno_transmit($hash, $name, $req);
@@ -222,7 +222,7 @@ package Tronferno {
             my $req = Tronferno_build_cmd($hash, $name, 'send', $c);
             my $res = Tronferno_transmit($hash, $name, $req);
         } else {
-            return "unknown argument $cmd choose one of " . join(' ', get_commandlist());
+            return "unknown argument $cmd choose one of " . join(' ', get_commandlist()) . 'position';
         }
 
         return undef;
