@@ -214,7 +214,10 @@ package Tronferno {
 		$c = 'down';
 	    } elsif ($percent eq '50') {
 		$c = 'sun-down';
+	    } elsif ($percent eq '99') {
+		$c = 'stop';
 	    }
+
 	    
             my $req = Tronferno_build_cmd($hash, $name, 'send', $c);
             my $res = Tronferno_transmit($hash, $name, $req);
@@ -415,7 +418,7 @@ This depends on the ID and the group and member numbers.
   <li>set  - make receiver ready to pair</li>
   <li>sun-down - move down until sun position (but only, if sun automatic is enabled)</li>
   <li>sun-inst - set the current position as sun position</li>
-  <li>position - set position to 0 (down), 50 (sun-down) or 100 (up). (required for alexa)</li>
+  <li>position - set position to 0 (down), 50 (sun-down), 100 (up), 99 (stop). (used  by alexa)</li>
   <li>xxx_pair - Lets MCU pair the next received sender to this shutter (Paired senders will influence the shutter position)</li>
   <li>xxx_unpair - Lets MCU unpair the next received Sender to this shutter</li>
 </ul>
