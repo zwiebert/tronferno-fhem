@@ -9,7 +9,7 @@
 ## then patch it:
 ##    sudo patch -u /opt/fhem/FHEM/00_SIGNALduino.pm  <./signalduino.diff
 ##
-## If you have  v3.3.3 (Development release 3.3) v3.3.3 (Development release 3.3)
+## If you have  v3.3.3 (Development release 3.3)
 ## then the protocol patch is already included. Only this module has to be installed.
 ##
 ## (deutsche anleitung: https://forum.fhem.de/index.php/topic,12599.msg836552.html#msg836552 )
