@@ -12,7 +12,7 @@
 #      a - 6 digit Fernotron hex ID or 0 (default: 0)
 #      g - group number: 0..7 (default: 0)
 #      m - member number: 0..7 (default: 0)
-#      iodev - if you have more than one Fernotron-MCU
+#      iodev - if you have more than one Fernotron-MCU (FIXME: You should rather use the attribute IODev)
 #      mcu_addr - only needed if you don't want to use FernotronMCU as IO device
 #
 #     Examples:
@@ -415,6 +415,9 @@ This depends on the ID and the group and member numbers.
   <li>set  - make receiver ready to pair</li>
   <li>sun-down - move down until sun position (but only, if sun automatic is enabled)</li>
   <li>sun-inst - set the current position as sun position</li>
+  <li>position - set position to 0 (down), 50 (sun-down) or 100 (up). (required for alexa)</li>
+  <li>xxx_pair - Lets MCU pair the next received sender to this shutter (Paired senders will influence the shutter position)</li>
+  <li>xxx_unpair - Lets MCU unpair the next received Sender to this shutter</li>
 </ul>
 
 <h4>Examples</h4>
