@@ -12,7 +12,7 @@
 #      a - 6 digit Fernotron hex ID or 0 (default: 0)
 #      g - group number: 0..7 (default: 0)
 #      m - member number: 0..7 (default: 0)
-#      iodev - if you have more than one Fernotron-MCU
+#      iodev - if you have more than one Fernotron-MCU (FIXME: You should rather use the attribute IODev)
 #      mcu_addr - only needed if you don't want to use FernotronMCU as IO device
 #
 #     Examples:
@@ -197,7 +197,7 @@ package Tronferno {
             foreach my $key (get_commandlist()) {
                 $res .= " $key:noArg";
             }
-            return $res;
+            return $res .  ' position:slider,0,50,100';
 	  } elsif (exists $map_send_cmds->{$cmd}) {
             my $req = Tronferno_build_cmd($hash, $name, 'send', $map_send_cmds->{$cmd});
             my $res = Tronferno_transmit($hash, $name, $req);
@@ -206,8 +206,23 @@ package Tronferno {
             my $req = Tronferno_build_cmd($hash, $name, 'pair', $map_pair_cmds->{$cmd});
             my $res = Tronferno_transmit($hash, $name, $req);
 	    return $res if ($res);
+	} elsif ($cmd eq 'position') {
+	    return "\"set $name $cmd\" needs one argument" unless (defined($args[0]));
+	    my $percent = $args[0];
+	    my $c = 'up';
+	    if ($percent eq '0') {
+		$c = 'down';
+	    } elsif ($percent eq '50') {
+		$c = 'sun-down';
+	    } elsif ($percent eq '99') {
+		$c = 'stop';
+	    }
+
+	    
+            my $req = Tronferno_build_cmd($hash, $name, 'send', $c);
+            my $res = Tronferno_transmit($hash, $name, $req);
         } else {
-            return "unknown argument $cmd choose one of " . join(' ', get_commandlist());
+            return "unknown argument $cmd choose one of " . join(' ', get_commandlist()) . 'position';
         }
 
         return undef;
@@ -403,6 +418,9 @@ This depends on the ID and the group and member numbers.
   <li>set  - make receiver ready to pair</li>
   <li>sun-down - move down until sun position (but only, if sun automatic is enabled)</li>
   <li>sun-inst - set the current position as sun position</li>
+  <li>position - set position to 0 (down), 50 (sun-down), 100 (up), 99 (stop). (used  by alexa)</li>
+  <li>xxx_pair - Lets MCU pair the next received sender to this shutter (Paired senders will influence the shutter position)</li>
+  <li>xxx_unpair - Lets MCU unpair the next received Sender to this shutter</li>
 </ul>
 
 <h4>Examples</h4>

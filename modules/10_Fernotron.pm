@@ -9,7 +9,7 @@
 ## then patch it:
 ##    sudo patch -u /opt/fhem/FHEM/00_SIGNALduino.pm  <./signalduino.diff
 ##
-## If you have  v3.3.3 (Development release 3.3) v3.3.3 (Development release 3.3)
+## If you have  v3.3.3 (Development release 3.3)
 ## then the protocol patch is already included. Only this module has to be installed.
 ##
 ## (deutsche anleitung: https://forum.fhem.de/index.php/topic,12599.msg836552.html#msg836552 )
@@ -765,6 +765,8 @@ sub Fernotron_Undef($$) {
 
     }
 
+    my $cmd2pos = { up => 100, down => 0, 'sun-down' => 50  };
+    
     sub Fernotron_Set($$@) {
         my ($hash, $name, $cmd, @args) = @_;
         return "\"set $name\" needs at least one argument" unless (defined($cmd));
@@ -781,15 +783,33 @@ sub Fernotron_Undef($$) {
             foreach my $key (Fernotron::Drv::get_commandlist()) {
                 $u .= " $key:noArg";
             }
-            return $u;
+            return $u .  ' position:slider,0,50,100';
         }
 
         if (Fernotron::Drv::is_command_valid($cmd)) {
             my $res = Fernotron_transmit($hash, 'send', $cmd);
-            main::readingsSingleUpdate($hash, 'state', $cmd, 0) unless ($res);
+	    unless ($res) {
+		my $pos = $$cmd2pos{$cmd};
+		
+		main::readingsSingleUpdate($hash, 'state', $pos, 0) if (defined($pos));
+	    }
+            return $res if ($res);
+	} elsif ($cmd eq 'position') {
+	    return "\"set $name $cmd\" needs one argument" unless (defined($args[0]));
+	    my $percent = $args[0];
+	    my $c = 'up';
+	    if ($percent eq '0') {
+		$c = 'down';
+	    } elsif ($percent eq '50') {
+		$c = 'sun-down';
+	    } elsif ($percent eq '99') {
+		$c = 'stop';
+	    }
+
+            my $res = Fernotron_transmit($hash, 'send', $c);
             return $res if ($res);
         } else {
-            return "unknown argument $cmd choose one of " . join(' ', Fernotron::Drv::get_commandlist());
+            return "unknown argument $cmd choose one of " . join(' ', Fernotron::Drv::get_commandlist(), 'position');
         }
 
         return undef;
