@@ -1,3 +1,8 @@
+<p align="center">
+  <span>English</span> |
+  <a href="README-de.md">Deutsch</a>
+</p>
+
 # tronferno-fhem
 experimental code for Fernotron and FHEM
 
@@ -30,9 +35,3 @@ define roll25 Tronferno g=2 m=5                 #shutter 2/5
 attr roll25 webCmd down:stop:up
 ```
 
-
-## Recent Changes
-
-* TronfernoMCU can now be flashed on ESP32. It's at the moment more stable via TCP/IP than ESP8266.
-* Tronferno can read back status from MCU module
-* Tronferno comes now with DevIO module 00_TronfernoMCU.pm. So the MCU can now be connected via USB port too.

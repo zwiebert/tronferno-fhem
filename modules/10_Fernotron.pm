@@ -122,7 +122,8 @@ package Fernotron::Drv {
     }
 
 ##
-## turn one databyte into a string of: two 10-bit words and two stop bits
+## turn databytes into bit string with two 10bit words for each byte and one stop bit before each word
+##    
     sub byte2dString {
         my $res = "";
         foreach my $b (@_) {
