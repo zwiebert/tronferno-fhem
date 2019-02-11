@@ -12,9 +12,7 @@
 #      a - 6 digit Fernotron hex ID or 0 (default: 0)
 #      g - group number: 0..7 (default: 0)
 #      m - member number: 0..7 (default: 0)
-#      iodev - if you have more than one Fernotron-MCU (FIXME: You should rather use the attribute IODev)
-#      mcu_addr - only needed if you don't want to use FernotronMCU as IO device
-#
+#  
 #     Examples:
 #
 # 1) MCU module is connected via TCP/IP
@@ -39,17 +37,27 @@
 #    define tfmcu_B TronfernoMCU 192.168.1.123
 #    define tfmcu_C TronfernoMCU computer.domain.com
 #
-#    define roll_A_11 Tronferno g=1 m=1 iodev=tfmcu_A
+#    define roll_A_11 Tronferno g=1 m=1
+#    attr roll_A_11 IODev=tfmcu_A
 #     ...
-#    define roll_B_11 Tronferno g=1 m=1 iodev=tfmcu_B
+#    define roll_B_11 Tronferno g=1 m=1
+#    attr roll_B_11 IODev=tfmcu_B
 #     ...
-#    define roll_C_11 Tronferno g=1 m=1 iodev=tfmcu_C
+#    define roll_C_11 Tronferno g=1 m=1
+#    attr roll_C_11 attr IODev=tfmcu_C
 #
 #  ### Make sure the I/O device tfmcu is defined before any roll_xx device ###
 #  ### Otherwise the roll_xx devices can't find their I/O device (because its not defined yet) ###
 #
 #  device set commands
-#      down, stop, up, set, sun-inst, sun-down, sup-up
+#      down, stop, up, set, sun-inst, sun-down, sup-up, position
+#
+# To work with Alexa module:
+#
+# attr roll_XX genericDeviceType blind
+# set roll_XX alexaName MY_NAME
+# set alexa restart
+# ...search for new devices with alexa app or by voice...
 #
 # TODO
 # - ...

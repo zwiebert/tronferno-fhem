@@ -124,8 +124,6 @@ sub TronfernoMCU_Read($$)
   my ($hash, $data) = @_;
   my $name = $hash->{NAME};
 
-
-  
   # read the available data (or don't if called from TronfernoMCU_Set)
   $data = main::DevIo_SimpleRead($hash) unless (defined($data));
   # stop processing if no data is available (device disconnected)
@@ -204,30 +202,19 @@ sub TronfernoMCU_Callback($)
     return undef; 
 }
 
-    sub TronfernoMCU_Write ($$)
+sub TronfernoMCU_Write ($$)
 {
 	my ( $hash, $addr, $msg) = @_;
 	my $name = $hash->{NAME};
 
-	main::Log3 $name, 5, "TronfernoMCU ($name): $addr: $msg";
-
-	#main::DevIo_SimpleWrite($hash, $msg, 2, 1);
-	foreach (1..3) {
-	    my $reply = main::DevIo_Expect($hash, "\n$msg", 1);
-	    main::Log3 $name, 5, "TronfernoMCU ($name): reply: >>>$reply<<<" if (defined($reply));
-	    # reply may contain more than one line. make the data available for _Read()
-	    TronfernoMCU_Read ($hash, $reply);
-	    last if (index($reply, 'reply@82: ok'));
-	}
-
+	main::Log3 $name, 5, "TronfernoMCU ($name) _Write(): $addr: $msg";
+	main::DevIo_SimpleWrite($hash, $msg, 2, 1);
 	return undef;
 }
-
+    
 }
 
 package main {
-
-
     sub TronfernoMCU_Initialize($) {
         my ($hash) = @_;
 
@@ -237,9 +224,6 @@ package main {
         $hash->{ReadyFn} = 'TronfernoMCU::TronfernoMCU_Ready';
         $hash->{WriteFn} = 'TronfernoMCU::TronfernoMCU_Write';
         $hash->{UndefFn} = 'TronfernoMCU::TronfernoMCU_Undef';
-#        $hash->{ShutdownFn} = 'TronfernoMCU::TronfernoMCU_Shutdown';
-
-	#        $hash->{AttrList} = '';
 
 	$hash->{Clients} = 'Tronferno';
 	$hash->{MatchList} = { '1:Tronferno' => '^TFMCU#.+' };
@@ -300,7 +284,4 @@ package main {
 # Local Variables:
 # compile-command: "perl -cw -MO=Lint ./00_TronfernoMCU.pm"
 # End:
-
-
-
 
