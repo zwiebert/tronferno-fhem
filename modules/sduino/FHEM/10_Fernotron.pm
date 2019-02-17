@@ -25,11 +25,8 @@ use strict;
 
 use 5.14.0;
 
-package Fernotron::Drv {
-
-    my $def_cu = '801234';
-
-################################################
+package Fernotron::Protocol {
+################################################################################
 ### 
 
     # for sendMsg()
@@ -48,12 +45,12 @@ package Fernotron::Drv {
     my $fsbs = {};
 
     sub dbprint($) {
-        main::Log3(undef, 5, "Fernotron: $_[0]");    # verbose level of IODev may be used here
+       # main::Log3(undef, 5, "Fernotron: $_[0]");    # verbose level of IODev may be used here
     }
 
-########################################################
+################################################################################
 ### convert a single byte to a string of two 10bit words
-########################################################
+################################################################################
 ##
 ##  "t if VAL contains an even number of 1 bits"
     sub is_bits_even($) {
@@ -71,7 +68,7 @@ package Fernotron::Drv {
         my $is_even = is_bits_even($data_byte);
         return (($pos & 1)) ? ($is_even ? 3 : 1) : ($is_even ? 0 : 2);
     }
-##
+## create 10bit word from 8bit byte (pos: 0 or 1)
     sub byte2word ($$) {
         my ($data_byte, $pos) = @_;
         return ($data_byte | (fer_get_word_parity($data_byte, $pos) << 8));
@@ -531,7 +528,7 @@ package Fernotron::Drv {
 }
  	
 
-package Fernotron {
+package Fernotron::fhem {
 #dev-33: dmsg: P82#F0000000101F0000000110F1001001001F1001001010F1011101001F1011101010F1001111001F1001111010F1100010001F1100010010F010000110
     sub Fernotron_Parse {
         my ($io_hash, $message) = @_;
@@ -544,7 +541,7 @@ package Fernotron {
 	}
 
         my ($proto, $dmsg) = split('#', $message);
-        my $fsb     = Fernotron::Drv::fer_sdDmsg2Bytes($dmsg);
+        my $fsb     = Fernotron::Protocol::fer_sdDmsg2Bytes($dmsg);
 
         return $result if (ref($fsb) ne 'ARRAY'); # message format unknown
 	
@@ -556,7 +553,7 @@ package Fernotron {
 
 	
 	
-	my $fsb_valid =  Fernotron::Drv::fsb_verify_by_id($fsb);
+	my $fsb_valid =  Fernotron::Protocol::fsb_verify_by_id($fsb);
 	$hash->{received_IsValid} = $fsb_valid ? "yes" : "no"; 
         return $result unless $fsb_valid;
 
@@ -565,26 +562,26 @@ package Fernotron {
         main::Log3($io_hash, 3, "Fernotron: message received: $msg");
 
 	### convert message to human readable parts
-	my $kind = Fernotron::Drv::FSB_MODEL_IS_CENTRAL($fsb) ? "central"
-	    : Fernotron::Drv::FSB_MODEL_IS_RECEIVER($fsb) ? "receiver"
-	    : Fernotron::Drv::FSB_MODEL_IS_SUNSENS($fsb) ? "sun"
-	    : Fernotron::Drv::FSB_MODEL_IS_STANDARD($fsb) ? "plain"
+	my $kind = Fernotron::Protocol::FSB_MODEL_IS_CENTRAL($fsb) ? "central"
+	    : Fernotron::Protocol::FSB_MODEL_IS_RECEIVER($fsb) ? "receiver"
+	    : Fernotron::Protocol::FSB_MODEL_IS_SUNSENS($fsb) ? "sun"
+	    : Fernotron::Protocol::FSB_MODEL_IS_STANDARD($fsb) ? "plain"
 	    : "unknown";
 	
 	my $a = sprintf("%02x%02x%02x", @$fsb);
         my $g = 0;
 	my $m = 0;
 	my $gm = "";
-	if (Fernotron::Drv::FSB_MODEL_IS_CENTRAL($fsb)) {
-	    $m =  Fernotron::Drv::FSB_GET_MEMB($fsb);
+	if (Fernotron::Protocol::FSB_MODEL_IS_CENTRAL($fsb)) {
+	    $m =  Fernotron::Protocol::FSB_GET_MEMB($fsb);
 	    if ($m > 0) {
 		$m -= 7;
 	    }
-	    $g = Fernotron::Drv::FSB_GET_GRP($fsb);
+	    $g = Fernotron::Protocol::FSB_GET_GRP($fsb);
 	    $gm = " g=$g m=$m";
 	}
 	
-	my $c = Fernotron::Drv::get_command_name_by_number(Fernotron::Drv::FSB_GET_CMD($fsb));
+	my $c = Fernotron::Protocol::get_command_name_by_number(Fernotron::Protocol::FSB_GET_CMD($fsb));
 	
         ### combine parts and update reading
 	my $human_readable = "$kind a=$a$gm c=$c";
@@ -671,14 +668,14 @@ package Fernotron {
             c       => $c,
             r       => int(main::AttrVal($name, 'repeats', '1')),
         };
-        my $fsb = Fernotron::Drv::args2cmd($args);
+        my $fsb = Fernotron::Protocol::args2cmd($args);
         if ($fsb != -1) {
-            main::Log3($name, 1, "$name: send: " . Fernotron::Drv::fsb2string($fsb));
-	    my $msg = Fernotron::Drv::cmd2dmsgString($fsb, $args->{r});
+            main::Log3($name, 1, "$name: send: " . Fernotron::Protocol::fsb2string($fsb));
+	    my $msg = Fernotron::Protocol::cmd2dmsgString($fsb, $args->{r});
 	    main::Log3($name, 3, "$name: sendMsg: $msg");
 	    main::IOWrite($hash, 'sendMsg', $msg);
         } else {
-            return Fernotron::Drv::get_last_error();
+            return Fernotron::Protocol::get_last_error();
         }
         return undef;
 
@@ -699,13 +696,13 @@ package Fernotron {
 	my $io = $hash->{IODev} or return 'error: no io device';
 
         if ($cmd eq '?') {
-            foreach my $key (Fernotron::Drv::get_commandlist()) {
+            foreach my $key (Fernotron::Protocol::get_commandlist()) {
                 $u .= " $key:noArg";
             }
             return $u .  ' position:slider,0,50,100';
         }
 
-        if (Fernotron::Drv::is_command_valid($cmd)) {
+        if (Fernotron::Protocol::is_command_valid($cmd)) {
             my $res = Fernotron_transmit($hash, 'send', $cmd);
 	    unless ($res) {
 		my $pos = $$cmd2pos{$cmd};
@@ -728,7 +725,7 @@ package Fernotron {
             my $res = Fernotron_transmit($hash, 'send', $c);
             return $res if ($res);
         } else {
-            return "unknown argument $cmd choose one of " . join(' ', Fernotron::Drv::get_commandlist(), 'position');
+            return "unknown argument $cmd choose one of " . join(' ', Fernotron::Protocol::get_commandlist(), 'position');
         }
 
         return undef;
@@ -758,11 +755,11 @@ package main {
         $hash->{Match}    = "^P82#.+";
         $hash->{AttrList} = 'IODev repeats:0,1,2,3,4,5';
 
-        $hash->{DefFn}   = 'Fernotron::Fernotron_Define';
-	$hash->{UndefFn} = 'Fernotron::Fernotron_Undef';
-        $hash->{SetFn}   = "Fernotron::Fernotron_Set";
-        $hash->{ParseFn} = "Fernotron::Fernotron_Parse";
-        $hash->{AttrFn}  = "Fernotron::Fernotron_Attr";
+        $hash->{DefFn}   = 'Fernotron::fhem::Fernotron_Define';
+	$hash->{UndefFn} = 'Fernotron::fhem::Fernotron_Undef';
+        $hash->{SetFn}   = "Fernotron::fhem::Fernotron_Set";
+        $hash->{ParseFn} = "Fernotron::fhem::Fernotron_Parse";
+        $hash->{AttrFn}  = "Fernotron::fhem::Fernotron_Attr";
 
 	$hash->{AutoCreate} = {'scanFerno'  => {noAutocreatedFilelog => 1} };
     }
