@@ -20,20 +20,20 @@ Die Installation oder Aktualisierung der Module und Dokumentation wird durch den
 
 ### Fernotron Modul für SIGNALduino-dev
 ```
-     update https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/sduino/control.txt
+     update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/sduino/control.txt
 ```
 
 
 ### Fernotron Modul für SIGNALduino-stable
 ```
-     update https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/sduino-stable/control.txt
+     update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/sduino-stable/control.txt
 ```
 
 Hier sollte noch das diff aus dem Verzeichnis modules/sduino-stable benutzt werden um FHEM/00_SIGNALduino.pm zu patchen. Alternativ das IODev-Attribut jedes Fernotron Gerätes auf sduino setzen. Allerdings ist dann nur Senden möglich, kein Empfangen. 
 
 ### Tronferno Module für tronferno-mcu Hardware
 ```
-     update https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/tronferno/control.txt
+     update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/tronferno/control.txt
 ```
 
 
