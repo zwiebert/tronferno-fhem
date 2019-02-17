@@ -9,7 +9,7 @@ Fernotron Geräte mit FHEM Server verwenden
 
 ## Allgemeines
 
-Zwei verschiedene FHEM Module nützlich für Besitzer von Fernotron Rollläden.
+Zwei verschiedene FHEM Module nützlich für Besitzer von Fernotron Rollläden oder Fernotron Sendern.
 
 * Ein Modul zur Benutzung mit FHEM um Fernotron Empfäger-Geräte (Rollläden) anzusteuern und zur Verwendung von Fernotron-Tastern und Sonnensensoren zu allgemeinen Steuerung in FHEM. Das Modul funktioniert mit SIGNALduino Hardware am FHEM
 
