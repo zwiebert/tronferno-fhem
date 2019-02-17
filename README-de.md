@@ -11,7 +11,7 @@ Fernotron Geräte mit FHEM Server verwenden
 
 Zwei verschiedene FHEM Module nützlich für Besitzer von Fernotron Rollläden oder Fernotron Sendern.
 
-* Ein FHEM-Modul welches SIGNALduino verwendet um Fernotron Empfäger-Geräte (meistens Rollläden) anzusteuern und zur Verwendung von Fernotron-Tastern und Sonnensensoren zu allgemeinen Steuerung in FHEM.
+* Ein FHEM-Modul welches SIGNALduino verwendet um Fernotron Empfäger-Geräte (meistens Rollläden) anzusteuern und Fernotron-Taster und Sonnensensoren zur allgemeinen Steuerung in FHEM notify oder DOIF zu nutzen.
 
 * Ein FHEM-Modul für die Benutzer der Hardware [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu).
 
