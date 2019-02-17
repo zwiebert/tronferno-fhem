@@ -1,35 +1,37 @@
 ######################################
-## *experimental* FHEM module Fernotron
-## FHEM module to control Fernotron devices via SIGNALduino hardware
-## Author: Bert Winkelmann <tf.zwiebert@online.de>
+## *experimental* FHEM module for Fernotron devices...
 ##
-## - copy or softlink this file to /opt/fhem/FHEM/10_Fernotron.pm
+##  ... to work with IODev SIGNALduino v3.3.3 (Development release 3.3) and latest firmware...
+##  ... to send commands to Fernotron devices and recveive from Fernotron controllers.
 ##
-## If you have 00_SIGNALduino.pm v3.3.2 (stable release 3.3)
-## then patch it:
-##    sudo patch -u /opt/fhem/FHEM/00_SIGNALduino.pm  <./signalduino.diff
+## Fernotron is a legacy unidirectional 434MHz protocol for shutter-motors and room-lights.
+## 
+## TO INSTALL: copy this file to /opt/fhem/FHEM/10_Fernotron.pm and add 82 to sduino whitelist attribute (comma separated list of protocol numbers)
+## TO UPDATE SIGNALduino module to v3.3.3 with FHEM command: update all https://raw.githubusercontent.com/RFD-FHEM/RFFHEM/dev-r33/controls_signalduino.txt
+## TO UPDATE SIGNALduino firmware: https://forum.fhem.de/index.php/topic,82379.0.html
 ##
-## If you have  v3.3.3 (Development release 3.3)
-## then the protocol patch is already included. Only this module has to be installed.
+##  To revert to SIGNALduino stable release use FHEM command: update
+##
+
+
+######################################
+## *experimentelles* FHEM Modul für Fernotron Geräte...
+##
+##  ... zur Verwendung mit IODev SIGNALduino v3.3.3 (Entwicklerversion 3.3) und neuester Firmware...
+##  ... zum Senden von Kommandos an Fernotron-Geräte und empfangen von Fernotron-Sendern.
+##
+## Installieren: kopieren dieser Datei nach /opt/fhem/FHEM/10_Fernotron.pm an und hinzufügen von 82 zum sduino whitelist attribute (Komma-separierte Protokollnummer-Liste)
+## Updaten des SIGNALduino-Moduls auf v3.3.3 mit FHEM Kommando: update all https://raw.githubusercontent.com/RFD-FHEM/RFFHEM/dev-r33/controls_signalduino.txt
+## Updaten der SIGNALduiono-Firmware:  https://forum.fhem.de/index.php/topic,82379.0.html
+##
 ##
 ## (deutsche anleitung: https://forum.fhem.de/index.php/topic,12599.msg836552.html#msg836552 )
 ##
-## To get  v3.3.3 (Development release 3.3) type the command in FHEM:
-## update all https://raw.githubusercontent.com/RFD-FHEM/RFFHEM/dev-r33/controls_signalduino.txt
-##
-## To go back to stable release 3.3 type the command in FHEM:
-## update
-##
-## You need the firmware version 3.3.2.1 rc3 or newer (older ones have issues)
-## https://forum.fhem.de/index.php/topic,82379.msg836541.html#msg836541
-##
-## To enable receiving with dev-r33 enter and save:
-##
-##      attr sduino development m82
-##
-## or add 82 to the sduino attribute whitelist_IDs (which is a comma separated list of protocol numbers)
-
+##  Zur Rückkehr zur SIGNALduino stable mit FHEM-Kommando: update
   
+##
+##
+## Author: Bert Winkelmann <tf.zwiebert@online.de>
 
 use strict;
 
@@ -42,23 +44,7 @@ package Fernotron::Drv {
 ################################################
 ### timings
 
-## PRE_STP_DT1_ON, #P0  +2 * 200us =  +400us
-## PRE_DT0_OFF,    #P1  -2 * 200us =  -400us
-## STP_OFF,        #P2 -16 * 200us = -3200us
-## DT1_OFF,        #P3  -4 * 200us =  -800us
-## DT0_ON,         #P4  +4 * 200us =  +800us
-
-    my $fmt_string = 'SR;R=%d;%sD=%s%s%s;';    # repeats, p_string, d_stp_string, d_pre_string, data
-
-    my $p_string = 'P0=400;P1=-400;P2=-3200;P3=-800;P4=800;';
-
-    #                    1 2 3 4 5 6 7
-    my $d_pre_string = '01010101010101';    # preamble
-    my $d_stp_string = '02';                # stop comes before each preamble and before each word
-    my $d_dt0_string = '41';                # data bit 0 (/..long..\short)
-    my $d_dt1_string = '03';                # data bit 1 (/short\..long..)
-
-    # with later SIGNALduino versions we can send in DMSG format instead of RAW
+    # for sendMsg()
     my $d_float_string = 'D';  # or 'F'
     my $d_pause_string = $d_float_string . 'PPPPPPP';
     my $fmt_dmsg_string = 'P82#%s%s#R%d';  # d_pause_string, data, repeats
@@ -103,15 +89,6 @@ package Fernotron::Drv {
         return ($data_byte | (fer_get_word_parity($data_byte, $pos) << 8));
     }
 ##
-    sub word2dString($) {
-        my ($w) = @_;
-        my $r = '';
-        for (my $i = 0; $i < 10; ++$i) {
-            $r .= (0 == (($w >> $i) & 1) ? $d_dt0_string : $d_dt1_string);
-        }
-        return $r;
-    }
-##
     sub word2bitString($) {
         my ($w) = @_;
         my $r = '';
@@ -124,13 +101,6 @@ package Fernotron::Drv {
 ##
 ## turn databytes into bit string with two 10bit words for each byte and one stop bit before each word
 ##    
-    sub byte2dString {
-        my $res = "";
-        foreach my $b (@_) {
-            $res .= $d_stp_string . word2dString(byte2word($b, 0)) . $d_stp_string . word2dString(byte2word($b, 1));
-        }
-        return $res;
-    }
     sub byte2dmsgString {
         my $res = "";
         foreach my $b (@_) {
@@ -151,14 +121,6 @@ package Fernotron::Drv {
             $cs += $b;
         }
         return (0xff & $cs);
-    }
-
-    # convert 5-byte message into SIGNALduino raw message
-    sub cmd2sdString($$) {
-        my ($fsb, $repeats) = @_;
-        return sprintf($fmt_string, $repeats + 1, $p_string, $d_stp_string, $d_pre_string, byte2dString(@$fsb, calc_checksum($fsb, 0)));
-
-        # return $p_string . "D=$d_stp_string$d_pre_string" . byte2dString(@$fsb, calc_checksum($fsb, 0)) . ';';
     }
 
     # convert 5-byte message into SIGNALduino message like DMSG
@@ -392,17 +354,6 @@ package Fernotron::Drv {
         return 0;
     }
 
-    # convert byte string to bit string (no longer needed for dev-33)
-    sub fer_byteHex2bitMsg($) {
-        my ($byteHex) = @_;
-        my $bitMsg = '';
-        for my $b (split(//, $byteHex)) {
-            $bitMsg .= sprintf("%04b", hex($b));
-        }
-	dbprint("bitMsg=$bitMsg");
-        return $bitMsg;
-    }
-
     # convert dmsg to array of 10bit strings. disregard trailing bits.
     sub fer_dev33dmsg_split($) {
 	my ($dmsg) = @_;
@@ -494,14 +445,8 @@ package Fernotron::Drv {
     # convert decoded message from SIGNALduino dispatch to Fernotron byte message
     sub fer_sdDmsg2Bytes($) {
 	my ($dmsg) = @_;
-
-	if ((length($dmsg) < 100)) {
-	    dbprint("old byte string dmsg");
-	    return fer_words2bytes(fer_bitMsg2words(fer_bitMsg_split(fer_byteHex2bitMsg($dmsg))));
-	} else {
-	    dbprint("new bit string dmsg");
-	    return fer_words2bytes(fer_bitMsg2words(fer_dev33dmsg_split($dmsg)));
-	}
+	dbprint("new bit string dmsg");
+	return fer_words2bytes(fer_bitMsg2words(fer_dev33dmsg_split($dmsg)));
     }
 ##
 ##
@@ -599,7 +544,6 @@ package Fernotron::Drv {
  	
 
 package Fernotron {
-#old: dmsg: P82#01406481232C4B294652C4712
 #dev-33: dmsg: P82#F0000000101F0000000110F1001001001F1001001010F1011101001F1011101010F1001111001F1001111010F1100010001F1100010010F010000110
     sub Fernotron_Parse {
         my ($io_hash, $message) = @_;
@@ -607,30 +551,14 @@ package Fernotron {
 	my $hash = $main::modules{Fernotron}{defptr}{Fernotron};
 	my $result = undef;
 	
-      if (!$hash) {
-#	return undef; # no autocreate
-	return "UNDEFINED scanFerno Fernotron scan";  #FIXME: may autocreate scanner device for neighbor's shutter controls ... really bad idea?
-      }
+	if (!$hash) {
+	    return "UNDEFINED scanFerno Fernotron scan"; # autocreate
+	}
 
         my ($proto, $dmsg) = split('#', $message);
-#	$dmsg = "P82#01406481232C4B294652C4712";
         my $fsb     = Fernotron::Drv::fer_sdDmsg2Bytes($dmsg);
 
-	if (0) {
-	    ## log information about received data
-	    my $bitArr = Fernotron::Drv::fer_dev33dmsg_split($dmsg);
-	    #pop(@$bitArr);
-	    my $wordArr = Fernotron::Drv::fer_bitMsg2words($bitArr);
-	    $fsb = Fernotron::Drv::fer_words2bytes($wordArr);
-	    main::Log3($io_hash, 3, "message length (should be 12) is : " . scalar(@$bitArr) . " fsb_len=" . scalar(@$fsb)) if (scalar(@$bitArr) ne 12); 
-	    for (my $i=0; $i < scalar(@$bitArr); ++$i) {
-		main::Log3($io_hash, 3, "Word $i wrong length (" . $$bitArr[$i] . ") " . length($$bitArr[$i])) if (length($$bitArr[$i]) ne 10);
-		main::Log3($io_hash, 3, "Word $i undefined") if ($$wordArr[$i] eq -1);
-	    }
-	    main::Log3($io_hash, 3, "len WordArr: " . scalar(@$wordArr));
-	}
-	
-        return $result if (ref($fsb) ne 'ARRAY');
+        return $result if (ref($fsb) ne 'ARRAY'); # message format unknown
 	
 	my $byteCount = scalar(@$fsb);
 	$hash->{received_ByteCount} = "$byteCount";
@@ -648,26 +576,40 @@ package Fernotron {
         $hash->{received_Bytes} = $msg;
         main::Log3($io_hash, 3, "Fernotron: message received: $msg");
 
-
-      my $gm = "";
-      if (Fernotron::Drv::FSB_MODEL_IS_CENTRAL($fsb)) {
-	my $m =  Fernotron::Drv::FSB_GET_MEMB($fsb);
-	if ($m > 0) {
-	  $m -= 7;
+	### convert message to human readable parts
+	my $kind = Fernotron::Drv::FSB_MODEL_IS_CENTRAL($fsb) ? "central"
+	    : Fernotron::Drv::FSB_MODEL_IS_RECEIVER($fsb) ? "receiver"
+	    : Fernotron::Drv::FSB_MODEL_IS_SUNSENS($fsb) ? "sun"
+	    : Fernotron::Drv::FSB_MODEL_IS_STANDARD($fsb) ? "plain"
+	    : "unknown";
+	
+	my $a = sprintf("%02x%02x%02x", @$fsb);
+        my $g = 0;
+	my $m = 0;
+	my $gm = "";
+	if (Fernotron::Drv::FSB_MODEL_IS_CENTRAL($fsb)) {
+	    $m =  Fernotron::Drv::FSB_GET_MEMB($fsb);
+	    if ($m > 0) {
+		$m -= 7;
+	    }
+	    $g = Fernotron::Drv::FSB_GET_GRP($fsb);
+	    $gm = " g=$g m=$m";
 	}
-	my $g = Fernotron::Drv::FSB_GET_GRP($fsb);
-	$gm = "g=$g m=$m ";
-      }
-            # Nachricht für $hash verarbeiten
-            $hash->{received_HR}
-	    = sprintf("a=%02x%02x%02x %sc=%s", $$fsb[0], $$fsb[1], $$fsb[2],
-		      $gm,
-		      Fernotron::Drv::get_command_name_by_number(Fernotron::Drv::FSB_GET_CMD($fsb)));
-
-      main::readingsSingleUpdate($hash, 'state',  $hash->{received_HR}, 0); #FIXME: is this ok?
-            # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
-            return $hash->{NAME};
-        }
+	
+	my $c = Fernotron::Drv::get_command_name_by_number(Fernotron::Drv::FSB_GET_CMD($fsb));
+	
+        ### combine parts and update reading
+	my $human_readable = "$kind a=$a$gm c=$c";
+        my $state = "$kind:$a" . ($kind eq 'central' ? "-$g-$m" : "")  . ":$c";
+	$state =~ tr/ /:/; # don't want spaces in reading
+	my $do_trigger =  !($kind eq 'receiver' || $kind eq 'unknown'); # unknown and receiver should not trigger events
+	
+	$hash->{received_HR} = $human_readable;
+	main::readingsSingleUpdate($hash, 'state',  $state, $do_trigger);
+	
+	# return name of the device which handled the message
+	return $hash->{NAME};
+    }
 
 
     sub Fernotron_Define($$) {
@@ -698,7 +640,7 @@ package Fernotron {
                 return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
             } elsif ($key eq 'scan') {
                 $scan = 1;
-      $main::modules{Fernotron}{defptr}{Fernotron} = $hash;
+		$main::modules{Fernotron}{defptr}{Fernotron} = $hash;
             } else {
                 return "$name: unknown argument $o in define";    #FIXME add usage text
             }
@@ -716,15 +658,15 @@ package Fernotron {
         return undef;
     }
 
-sub Fernotron_Undef($$) {
-  my ($hash, $name) = @_;
+    sub Fernotron_Undef($$) {
+	my ($hash, $name) = @_;
 
-  if ($main::modules{Fernotron}{defptr}{Fernotron} == $hash) {
-    undef($main::modules{Fernotron}{defptr}{Fernotron});
-  }
+	if ($main::modules{Fernotron}{defptr}{Fernotron} == $hash) {
+	    undef($main::modules{Fernotron}{defptr}{Fernotron});
+	}
 
-  return undef;
-}
+	return undef;
+    }
 
     sub Fernotron_transmit($$$) {
         my ($hash, $command, $c) = @_;
@@ -732,8 +674,6 @@ sub Fernotron_Undef($$) {
         my $io   = $hash->{IODev};
 	
         return 'error: IO device not open' unless (exists($io->{NAME}) and main::ReadingsVal($io->{NAME}, 'state', '') eq 'opened');
-
-	my $sendRaw = ! defined($io->{versionmodul}); # SIGNALduino version number 3.3.2 or less
 
         my $args = {
             command => $command,
@@ -746,18 +686,9 @@ sub Fernotron_Undef($$) {
         my $fsb = Fernotron::Drv::args2cmd($args);
         if ($fsb != -1) {
             main::Log3($name, 1, "$name: send: " . Fernotron::Drv::fsb2string($fsb));
-	    if ($sendRaw)
-	    {
-		my $msg= Fernotron::Drv::cmd2sdString($fsb, $args->{r});
-		main::Log3($name, 3, "$name: raw: $msg");
-		main::IOWrite($hash, 'raw', $msg);
-	    }
-	    else
-	    {
-		my $msg = Fernotron::Drv::cmd2dmsgString($fsb, $args->{r});
-		main::Log3($name, 3, "$name: sendMsg: $msg");
-		main::IOWrite($hash, 'sendMsg', $msg);
-	    }
+	    my $msg = Fernotron::Drv::cmd2dmsgString($fsb, $args->{r});
+	    main::Log3($name, 3, "$name: sendMsg: $msg");
+	    main::IOWrite($hash, 'sendMsg', $msg);
         } else {
             return Fernotron::Drv::get_last_error();
         }
@@ -772,12 +703,12 @@ sub Fernotron_Undef($$) {
         return "\"set $name\" needs at least one argument" unless (defined($cmd));
         my $u = "unknown argument $cmd choose one of ";
 
-  if ($main::modules{Fernotron}{defptr}{Fernotron} eq $hash) { ## receiver
+	if ($main::modules{Fernotron}{defptr}{Fernotron} eq $hash) { ## receiver
             return $u;                                                    # nothing to set for receiver
 
         }
 
-  my $io = $hash->{IODev} or return 'error: no io device';
+	my $io = $hash->{IODev} or return 'error: no io device';
 
         if ($cmd eq '?') {
             foreach my $key (Fernotron::Drv::get_commandlist()) {
@@ -897,13 +828,13 @@ This depends on the ID and the group and member numbers.
   'g' or  'n' are only useful combined with an ID of the central controller type. 
 
 <p>
-  Its also posssible to define a device which scans the commands sent by  other controllers
+  Incoming data is handled by a single device named scanFerno. It will autocreate if a Fernotron message is received for the first time. The 'state' can be used by notify and DOIF. Because we only have a single device as receiver, the 'state' also contains the ID of the sender. (multiple receiver devices may be added later) 
 
-<p>
-<code>
-  define scanFerno Fernotron scan<br>
-</code>
 
+<p> Example: A Notify to toggle the lamp device  'HUEDevice3' if STOP was pressed on plain sender with ID 1024dc:
+  <code>
+    define n_toggleHUEDevice3 notify scanFerno:plain:1024dc:stop set HUEDevice3 toggle
+  </code>
 
 <h4>Different Kinds of Adressing</h4>
 
@@ -943,7 +874,7 @@ This depends on the ID and the group and member numbers.
 <h4>Examples</h4>
 <ol>
   <li><ul>
-      <li>first scan the ID of the 2411: <code>define scanFerno Fernotron scan</code>.  Hold down the stop button of your 2411 some time. Now open the scanFerno on the FHEM web-interface.  The ID is found under Internals:received_HR</li>
+      <li>first scan the ID of the 2411:  Hold down the stop button of your 2411 some time. Now open the automatically created device 'scanFerno', The ID can be found there under Internals:received_HR</li>
       <li><code>define rollo42 Fernotron a=80808 g=4 m=2</code></li>
   </ul></li>
 
@@ -1000,13 +931,12 @@ Dies wird durch die verwendete ID und Gruppen und Empfängernummer bestimmt.
   'g' und 'n' sind nur sinnvoll, wenn als ID eine Zentraleinheit angegeben wurde 
 
 <p>
-  Gerät zum scannen von Kommandos welche von anderen Controllern gesendet werden zu empfangen:
+  Eingehende Fernotron-Nachrichten werden durch ein Einzel-Gerät empfangen. Es wird beim ersten Empfang einer Fernotron Nachricht unter dem Namen scanFerno angelegt. Es dient zum scannen der ID von anderen Kontrollern, falls diese benötigt werden und um Fernotron Sender (Handsender, Sonnensensoren) als Eingabegeräte für allgemeine Steueraufgaben in FHEM zu nutzen. Da es zur Zeit scanFerno alle Eingaben verarbeitet müssen notify oder DOIF auch die Absenderadresse überprüfen können, weshalb diese im EVENT enthalten ist.  (In Zukunft sollen auch weitere Fernotron-Eingabegeräte möglich sein, so wie in FHEM üblich. Also ein Gerät pro Funkschalter oder Sensor)
 
-<p>
-<code>
-  define scanFerno Fernotron scan<br>
-</code>
-
+<p> Beispiel: Ein Notify um Lampe HUEDevice3 zu toggeln wenn STOP auf Handsender 1024dc gedrückt wird:
+  <code>
+    define n_toggleHUEDevice3 notify scanFerno:plain:1024dc:stop set HUEDevice3 toggle
+  </code>
 
 <h4>Verschiedene Methoden der Adressierung</h4>
 
@@ -1046,7 +976,7 @@ Dies wird durch die verwendete ID und Gruppen und Empfängernummer bestimmt.
 <h4>Beispiele</h4>
 <ol>
   <li><ul>
-      <li>scanne die ID der 2411: <code>define scanFerno Fernotron scan</code>. Den Stop Taster der 2411 einige Sekunden drücken. Das scanFerno Gerät über die FHEM-Webseite öffnen. DIe ID der 2411 steht nun  unter Internals:received_HR.</li>
+      <li>scanne die ID der 2411: Den Stop Taster der 2411 einige Sekunden drücken. Im automatisch erzeugten Gerät "scanFerno" steht die ID unter Internals:received_HR.</li>
       <li><code>define rollo42 Fernotron a=80abcd g=4 m=2</code></li>
   </ul></li>
 
