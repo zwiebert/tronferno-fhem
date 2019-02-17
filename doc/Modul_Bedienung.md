@@ -1,33 +1,10 @@
 FHEM Modul Fernotron - Benutzung
 ================================
 
-
-Modul installieren
-------------------
-
-* Die Datei "10_Fernotron.pm" muss in den FHEM Modul-Ordner (/opt/fhem/FHEM/) kopiert werden.
-
-* Folgender Schritt (Patchen) ist nur notwendig bei der älteren (stable) Version von SIGNALduino. Und auch dort kann das vermieden werden wenn das IODev Attribut jedes definieren Fernotron Gerätes auf sduino gesetzt wird. Dann kann allerdings nur gesendet werden, also keine ID gescannt werden.
-
-In diesem [FHEM-Forums-Beitrag](https://forum.fhem.de/index.php/topic,12599.msg836552.html#msg836552) und folgenden Beiträgen sind aktuelle Kurz-Infos zur Installation.
-
-
-* Bei SIGNALduino-stable-Version: Patche die Datei  "00_SIGNALduino.pm" um Fernotron als Klient dieses Moduls hinzuzufügen:
-
-               $ sudo patch /opt/fhem/FHEM/00_SIGNALduino.pm  ./signalduino.diff
-			   
-			   reload 00_SIGNALduino
-			   rereadcfg
-
-
-
-* Ein Gerät vom Typ SIGNALduino muss definiert und natürlich die SIGNALduino Hardware angeschlossen sein.
-
-
 Grundlagen
 ----------
 
-Original-Fernotron-Geräte habe eine ID-Nummer ab Werk fest einprogrammiert. Empfänger und Sender werden gekoppelt, indem sich der Empfänger die ID des Senders merkt. Jeder Empfänger kann sich je eine ID einer Zentraleinheit (inklusive Gruppe und Empfängernummer), eines Sonnensensors und mehrerer Handsender merken.
+Original-Fernotron-Geräte habe eine ID-Nummer ab Werk fest einprogrammiert. Empfänger und Sender werden gekoppelt, indem sich der Empfänger die ID des Senders merkt (bzw. diese "lernt"). Jeder Empfänger kann sich je eine ID einer Zentraleinheit (inklusive Gruppe und Empfängernummer), eines Sonnensensors und mehrerer Handsender merken.
 
 Gerät definieren
 ----------------
