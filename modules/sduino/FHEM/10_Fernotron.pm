@@ -1,37 +1,25 @@
-######################################
-## *experimental* FHEM module for Fernotron devices...
+################################################################################
+## *experimental* FHEM module for Fernotron devices
 ##
-##  ... to work with IODev SIGNALduino v3.3.3 (Development release 3.3) and latest firmware...
-##  ... to send commands to Fernotron devices and recveive from Fernotron controllers.
+##  - needs IODev SIGNALduino v3.3.3 (Development release 3.3) and latest firmware
+##  - to send commands to Fernotron devices
+##  - to recveive commands from Fernotron controllers
 ##
-## Fernotron is a legacy unidirectional 434MHz protocol for shutter-motors and room-lights.
+## Fernotron is a legacy unidirectional 434MHz protocol for shutters and lights
 ## 
-## TO INSTALL: copy this file to /opt/fhem/FHEM/10_Fernotron.pm and add 82 to sduino whitelist attribute (comma separated list of protocol numbers)
-## TO UPDATE SIGNALduino module to v3.3.3 with FHEM command: update all https://raw.githubusercontent.com/RFD-FHEM/RFFHEM/dev-r33/controls_signalduino.txt
-## TO UPDATE SIGNALduino firmware: https://forum.fhem.de/index.php/topic,82379.0.html
+################################################################################
+## *experimentelles* FHEM Modul für Fernotron Geräte
 ##
-##  To revert to SIGNALduino stable release use FHEM command: update
-##
-
-
-######################################
-## *experimentelles* FHEM Modul für Fernotron Geräte...
-##
-##  ... zur Verwendung mit IODev SIGNALduino v3.3.3 (Entwicklerversion 3.3) und neuester Firmware...
-##  ... zum Senden von Kommandos an Fernotron-Geräte und empfangen von Fernotron-Sendern.
-##
-## Installieren: kopieren dieser Datei nach /opt/fhem/FHEM/10_Fernotron.pm an und hinzufügen von 82 zum sduino whitelist attribute (Komma-separierte Protokollnummer-Liste)
-## Updaten des SIGNALduino-Moduls auf v3.3.3 mit FHEM Kommando: update all https://raw.githubusercontent.com/RFD-FHEM/RFFHEM/dev-r33/controls_signalduino.txt
-## Updaten der SIGNALduiono-Firmware:  https://forum.fhem.de/index.php/topic,82379.0.html
+##  - braucht IODev SIGNALduino v3.3.3 (Entwicklerversion 3.3) und neuester Firmware
+##  - zum Senden von Kommandos an Fernotron-Geräte
+##  - zum Empfangen von Kommandos von Fernotron-Sendern
 ##
 ##
-## (deutsche anleitung: https://forum.fhem.de/index.php/topic,12599.msg836552.html#msg836552 )
-##
-##  Zur Rückkehr zur SIGNALduino stable mit FHEM-Kommando: update
-  
-##
-##
+################################################################################
 ## Author: Bert Winkelmann <tf.zwiebert@online.de>
+## Project: https://github.com/zwiebert/tronferno-fhem
+################################################################################
+
 
 use strict;
 
