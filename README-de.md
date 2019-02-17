@@ -24,6 +24,8 @@ Die Installation oder Aktualisierung der Module und Dokumentation wird durch den
      update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/sduino/control.txt
 ```
 
+Bei der ersten Installation ist es nötig die Protokollnummer 82 zum Attribut whitelist_IDs des SIGNALduino Gerätes (sduino) hinzuzufügen.
+
 
 ### Fernotron Modul für SIGNALduino-stable
 ```
