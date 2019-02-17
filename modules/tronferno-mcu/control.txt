@@ -1,0 +1,2 @@
+error: stat has unexpected return value for FHEM/00_TronfernoMcu.pm
+error: stat has unexpected return value for FHEM/10_Tronferno.pm
