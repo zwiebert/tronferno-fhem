@@ -42,7 +42,7 @@ package Fernotron::Drv {
     my $def_cu = '801234';
 
 ################################################
-### timings
+### 
 
     # for sendMsg()
     my $d_float_string = 'D';  # or 'F'
