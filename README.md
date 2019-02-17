@@ -4,34 +4,80 @@
 </p>
 
 # tronferno-fhem
-experimental code for Fernotron and FHEM
 
-## What it currently does
+Control Fernotron with FHEM Server
 
-### Experimental FHEM modules  (10_Tronferno.pm and 10_Fernotron.pm)
+## General
 
-* Fhem module Fernotron  works with SIGNALduino.  Module Tronferno works with TronfernoMCU hardware device
+It contains two different FHEM modules, useful to owners of Fernotron shutters and controllers.
 
-* how to install: see comments at top of the module files
+* One module to control Fernotron Receivers (like shutter motors) and to integrate Fernotron controllers (manual and sun sensors) into FHEM. It requires SIGNALduino hardware connected to your FHEM server.
 
-* How to configure in FHEM:
+* The other module is intended for users of  [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu) hardware.
 
-From web-interface or telnet add a device for each shutter and configure the attributes.
+## Installation
 
+Installation and update of the modules and documentaion is done by FHEM's update command:
+
+### Fernotron module for SIGNALduino-dev
+```
+     update https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/sduino/control.txt
+```
+
+
+### Fernotron module for SIGNALduino-stable
+```
+     update https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/sduino-stable/control.txt
+```
+
+Additionally you may need to apply the diff from directory modules/sduino-stable to FHEM/00_SIGNALduino.pm using patch command. Or set  IODev-attribute of each Fernotron device to sduino. But this only allows transmitting. No receiving possible without doing the patching.
+
+### Tronferno module for tronferno-mcu hardware
+```
+     update https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/tronferno/control.txt
+```
+
+
+## Usage
+
+### Fernotron for SIGNALduino
+
+* If SIGNALduino is already in use, all you need to do is install this module and define your devices. The input device scanFerno will be auto-created if Fernotron transmissios are received.
+
+Using Notify or DOIF you can integrate Fernotron controllers and sun-sensors into FHEM. The device 'scanFerno' handles all the input itself.
+
+Example - notify to toggle a lamp when pressig STOP on Fernotron-Controllers with ID 1023dc
+
+```
+   define n_myFerLamp notify scanFerno:plain:1023dc:stop set myLamp toggle
+```
+ 
+* More info in the module's commandref
+
+Example - define devices to control shutters
 
 ```
 ...
-define ftroll22 Fernotron a=80abcd g=2 m=2      #shutter group-2 member-2 for SIGNALduino
-attr ftroll22 webCmd down:stop:up
-define ftroll21 Fernotron  a=80abcd g=2 m=1     #shutter 2/1
-attr ftroll21 webCmd down:stop:up
+define ftroll22 Fernotron a=80abcd g=2 m=2      # define device to control shutter 2 of  group 2
+attr ftroll22 webCmd down:stop:up               # control buttons for web-interface
+attr ftroll22 genericDeviceType blind           # ... needed by alexa module
+attr ftroll22 alexaName DerName                 # ... needed by alexa module
 ...
-define tfmcu TronfernoMCU 192.168.1.61          # IO device for TCP/IP or ...
-define tfmcu TronfernoMCU /dev/ttyUSB1          # ... IO devie for USB port
-
-define roll22 Tronferno g=2 m=2                 #shutter 2/2  for Tronferno-MCU
-attr roll22 webCmd down:stop:up
-define roll25 Tronferno g=2 m=5                 #shutter 2/5
-attr roll25 webCmd down:stop:up
 ```
 
+### Tronferno for tronferno-mcu
+
+* If you have tronferno-mcu hardware in use, you can control it with FHEM using this module. Available are simple commands like up/down/stop. You have to define a single I/O device TronfernoMCU first. Then you can define Tronferno devices - one for each shutter.
+
+Example - define devices
+```
+...
+define tfmcu TronfernoMCU 192.168.1.61          # IODev for TCP/IP or ...
+define tfmcu TronfernoMCU /dev/ttyUSB1          # ... for USB
+...
+define roll22 Tronferno g=2 m=2                 # define device to control shutter 2 of  group 2
+attr roll22 webCmd down:stop:up                 # control buttons for web-interface
+attr roll22 genericDeviceType blind             # ... needed by alexa module
+attr roll22 alexaName DerName                   # ... needed by alexa module
+...
+```
