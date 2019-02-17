@@ -13,7 +13,7 @@ Zwei verschiedene FHEM Module nützlich für Besitzer von Fernotron Rollläden.
 
 * Ein Modul zur Benutzung mit FHEM um Fernotron Empfäger-Geräte (Rollläden) anzusteuern und zur Verwendung von Fernotron-Tastern und Sonnensensoren zu allgemeinen Steuerung in FHEM. Das Modul funktioniert mit SIGNALduino Hardware am FHEM
 
-* Ein FHEM-Module für Benutzer der Hardware [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu).
+* Ein anderesFHEM-Modul für die Benutzer der Hardware [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu).
 
 ## Installation
 
