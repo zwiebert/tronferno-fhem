@@ -5,7 +5,7 @@
 
 # tronferno-fhem
 
-Control Fernotron with FHEM Server
+Use Fernotron devices with FHEM Server
 
 ## General
 

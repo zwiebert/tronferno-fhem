@@ -2,10 +2,9 @@
    <a href="README.md">English</a> |
     <span>Deutsch</span>
 </p>
-
 # tronferno-fhem
 
-Fernotron mit FHEM Server steuern
+Fernotron Geräte mit FHEM Server verwenden
 
 ## Verwendung
 
