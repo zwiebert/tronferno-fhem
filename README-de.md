@@ -7,7 +7,7 @@
 
 Fernotron Geräte mit FHEM Server verwenden
 
-## Verwendung
+## Allgemeines
 
 Zwei verschiedene FHEM Module nützlich für Besitzer von Fernotron Rollläden.
 
