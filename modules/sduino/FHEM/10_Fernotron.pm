@@ -1,7 +1,7 @@
 ################################################################################
 ## *experimental* FHEM module for Fernotron devices
 ##
-##  - needs IODev SIGNALduino v3.3.3 (Development release 3.3) and latest firmware
+##  - needs IODev SIGNALduino v3.3.3 (Development release 3.3)
 ##  - to send commands to Fernotron devices
 ##  - to recveive commands from Fernotron controllers
 ##
@@ -10,7 +10,7 @@
 ################################################################################
 ## *experimentelles* FHEM Modul für Fernotron Geräte
 ##
-##  - braucht IODev SIGNALduino v3.3.3 (Entwicklerversion 3.3) und neuester Firmware
+##  - braucht IODev SIGNALduino v3.3.3 (Entwicklerversion 3.3)
 ##  - zum Senden von Kommandos an Fernotron-Geräte
 ##  - zum Empfangen von Kommandos von Fernotron-Sendern
 ##
