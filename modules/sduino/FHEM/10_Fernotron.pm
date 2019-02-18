@@ -1029,8 +1029,8 @@ Die erzeugten Kommandos werden über <i>SIGNALduino</i> gesendet.
 
 <h4>Kopplung</h4>
 
-Jeder Kontroller eine ID-Nummer ab Werk fest einprogrammiert.
-Empfänger und Sender werden gekoppelt, indem sich der Empfänger die ID eines bzw. mehrerer Sender merkt.
+Jeder Kontroller hat eine ID-Nummer ab Werk fest einprogrammiert.
+Empfänger und Sender werden gekoppelt, indem sich der Empfänger die ID eines bzw. mehrerer Sender merkt (diese lernt).
 Jeder Empfänger kann sich je eine ID einer Zentraleinheit (inklusive Gruppe und Empfängernummer), eines Sonnensensors und mehrerer Handsender merken.
 
 Rolladen-Motore haben ebenfalls eine ID Nummer aufgedruckt.  Wenn kein Zugang zum physischen Setz-Taster des Motors besteht, kann diese ID benutzt werden um den Koppelvorgang einzuleiten oder Einstellung der Drehrichtung und Endpunkte vorzunehmen.
@@ -1060,9 +1060,9 @@ Dies wird durch die verwendete ID und Gruppen und Empfängernummer bestimmt.
 
 <h5>Eingabe Geräte</h5>
 
-<p>Hereinkommende Daten werden durch Eingabe Geräte verarbeitet. Es gibt ein default Eingabegerät, welches alle Nachrichten verarbeiet, für die kein eigenes Eingabe Geräte definiert wurde. Das default Eingabegerät wird automatisch angelegt.
+<p>Empfangene Nachrichten von Controllern/Sensoren werden durch Eingabe Geräte verarbeitet. Es gibt ein Default-Eingabegerät, welches alle Nachrichten verarbeitet, für die kein eigenes Eingabe Geräte definiert wurde. Das Default-Eingabegerät wird automatisch angelegt.
 
-<p> Eingabegeräte werden wie Ausgebegeräte definiertInput plus dem Parameter 'input' in der Definition:
+<p> Eingabegeräte werden wie Ausgebegeräte definiert plus dem Parameter 'input' in der Definition:
 
 <p>
   <code>
