@@ -17,3 +17,5 @@ debug=-nopoderrors
 (echo "=begin html" && sed '/^=begin html$/,/^=end html$/!d;//d' < modules/tronferno/FHEM/00_TronfernoMCU.pm && echo "=end html") | pod2html $debug > doc/tronferno_mcu_pod.html
 
 
+
+(echo "=begin html" && sed '/^=begin html$/,/^=end html$/!d;//d' < modules/sduino-stable/FHEM/10_Fernotron.pm && echo "=end html") > doc/sduino-stable_fernotron_pod.pod
