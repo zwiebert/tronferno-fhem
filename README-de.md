@@ -49,31 +49,8 @@ Hier sollte noch das diff aus dem Verzeichnis modules/sduino-stable benutzt werd
 
 ### Fernotron für SIGNALduino
 
-Siehe auch die [deutsche Moduldokumentation](doc/sduino_fernotron_de.pod) für mehr Infos.
+Weitere Infos in der [Moduldokumentation](doc/sduino_fernotron_de.pod) und auch in [doc/Modul_Bedienung.md (teilweise veraltet)](doc/Modul_Bedienung.md) und .
 
-#### Geräte zum Steuern von Rolläden (Output)
-
-* Wenn bereits der SIGNALduino in Verwendung ist, reicht alleine die Installation dieses Moduls um Fernotron Geräte steuern zu können. Das ist beschränkt auf die normalen Kommandos wie Auf/Zu.
- Fernotron Geräte können durch FHEM Module wie ROLLO, alexa, AutomaticShuttersControl (ACS) angesteuert werden zur Erweiterung des Funktionsumfangs.
- 
-#### Geräte zum Empfangen von Fernotron Sendern und Sensoren für allgemeine Steuerungsaufgaben (Input)
- 
-* Default Input Gerät: Es wird ein Gerät scanFerno automatich angelegt was alle  Nachrichten übernimmt für deren Absender kein eigenes Input-Gerät definiert wurde. Damit könne IDs gescannt werden die benötigt werden zum Definieren von Input-Geräten und u.U. auch Output-Geräten.
-
-* Input-Geräte können für Handsender (plain) und Sonnensensor (sun) angelegt werden.
-```
-   define FernoHandsender_1 Fernotron a=1023dc input=plain    # dieses gerät empfängt Nachrichen vom Handsender. Das Reading state ist: up, down, stop.
-                                                              
-   define FernoSonnenSensor_1 Fernotron a=2023dc input=sun    # dieses gerät empfängt Nachrichen vom Sonnensensor.  Das Reading state ist: on, off. (on=Sonne)
-``` 
-
-Beispiel - Notify um Lampe zu toggeln über STOP Taster eines Fernotron-Handsenders
-
-```
-   define n_myFerLamp notify scanFerno:plain:1023dc:stop set myLamp toggle
-```
- 
-* Weitere Infos in [doc/Modul_Bedienung.md](doc/Modul_Bedienung.md) und [Moduldokumentation](doc/sduino_fernotron_de.pod).
 
 Beispiel- Geräte zur Rollladensteuerung anlegen:
 

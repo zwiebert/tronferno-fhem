@@ -46,17 +46,6 @@ Additionally you may need to apply the diff from directory modules/sduino-stable
 
 Please read the [english module help text](doc/sduino_fernotron.pod) for more information.
 
-* If SIGNALduino is already in use, all you need to do is install this module and define your devices. The input device scanFerno will be auto-created if Fernotron transmissios are received.
-
-Using Notify or DOIF you can integrate Fernotron controllers and sun-sensors into FHEM. The device 'scanFerno' handles all the input itself.
-
-Example - notify to toggle a lamp when pressig STOP on Fernotron-Controllers with ID 1023dc
-
-```
-   define n_myFerLamp notify scanFerno:plain:1023dc:stop set myLamp toggle
-```
- 
-* More info in the module's commandref
 
 Example - define devices to control shutters
 
