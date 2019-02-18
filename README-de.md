@@ -49,6 +49,7 @@ Hier sollte noch das diff aus dem Verzeichnis modules/sduino-stable benutzt werd
 
 ### Fernotron für SIGNALduino
 
+Siehe auch die [deutsche Moduldokumentation](doc/sduino_fernotron_pod.html) für mehr Infos.
 
 #### Geräte zum Steuern von Rolläden (Output)
 
@@ -72,7 +73,7 @@ Beispiel - Notify um Lampe zu toggeln über STOP Taster eines Fernotron-Handsend
    define n_myFerLamp notify scanFerno:plain:1023dc:stop set myLamp toggle
 ```
  
-* Weitere Infos in [doc/Modul_Bedienung.md](doc/Modul_Bedienung.md) und im CommandRef des Fernotron-Moduls
+* Weitere Infos in [doc/Modul_Bedienung.md](doc/Modul_Bedienung.md) und [Moduldokumentation](doc/sduino_fernotron_pod.html).
 
 Beispiel- Geräte zur Rollladensteuerung anlegen:
 
@@ -86,6 +87,8 @@ attr ftroll22 alexaName DerName                 # ... nur für alexa Modul nöti
 ```
 
 ### Tronferno für tronferno-mcu
+
+Siehe auch die [englische Moduldokumentation](doc/tronferno_pod.html) für mehr Infos.
 
 * Wird der tronferno-mcu Hardware betrieben, kann dieser über FHEM gesteuert werden.  Verfügbar sind nur die einfachen Kommandos. Es werden die Positionsdaten aus der MCU durch das Modul angezeigt.  Es muss ein E/A-Gerät TronfernoMCU definiert werden siehe unten und beliebig viele Rolladen-Geräte Tronferno.
 
@@ -101,5 +104,3 @@ attr roll22 genericDeviceType blind             # ... nur für alexa Modul nöti
 attr roll22 alexaName DerName                   # ... nur für alexa Modul nötig
 ...
 ```
-
-
