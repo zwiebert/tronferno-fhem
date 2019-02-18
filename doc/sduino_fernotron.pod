@@ -52,7 +52,9 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 <p>
   <code>
     define myFernoSwitch Fernotron a=10abcd input           # defines a plain controller as switch for up/down/stop<br>
-    define myFernoSun Fernotron a=20abcd input              # defines a sun sensor as on/off switch (on: sunshine, off: no sunshine)<br>
+   <code> </code>
+   define myFernoSun Fernotron a=20abcd input              # defines a sun sensor as on/off switch (on: sunshine, off: no sunshine)<br>
+   <code> </code>
     define myFernoSwitch2 Fernotron a=80abcd g=2 m=3 input  # defines a switch for up/down/stop controlled by a Fernotron central unit<br>
   </code>
 
