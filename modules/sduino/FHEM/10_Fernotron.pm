@@ -894,40 +894,47 @@ package main {
 
 <h3>Fernotron</h3>
 
-<i>Fernotron</i> is a logic module to 1) control shutters using Fernotron protocol and 2) use Fernotron conrollers and sensors as general switches in FHEM.
- It sends/receives via the I/O device <i>SIGNALduino</i>. <i>Fernotron</i> can also receive messages sent by other Fernotron controllers. The Fernotron shutters communicate unidirectional, so they don't sent any feedback information, like if they are currently open or close.
+<i>Fernotron</i> is a logic FHEM module to 1) control shutters and power plugs using Fernotron protocol and 2) use Fernotron controllers and sensors as general switches in FHEM.
 
+<ul>
+<li>Required I/O device: <i>SIGNALduino</li>
+<li>Protocol limitations: It's uni-directional. No information of the receivers status is available. So it's not best suited for automation without user attention.</li>
+<li>Pairing: Senders have 6 digit Hex-Numbers as ID.  To pair, the receiver learns IDs of its paired Senders.</li>
+<li>Sending direclty: Motors have also an ID wich can be used to address messages to it without pairing.</li>
+<li>
 
-<h4>Pairing</h4>
-
-Each controller has an uniq ID number. To pair a shutter to one or more controller(s), the shutter just remembers the ID of each controller.
-
-Each receiver can rmember one central controller unit (incl the group and member numbers), one sun sensor and some plain up/stop/down switches.
-
-Shutter motors have also an ID number printed on.  If you have no easy access to the pyhsical Set-Button of the shutter motor, that ID can be used to initiate pairing/unpairing or adjust rotation direction and end-positions. 
- 
 
 
 <h4>Defining Devices</h4>
 
-<h5>Output Devices</h5>
+<h5>1. FHEM devices to control Fernotron devices</h5>
 
 Each output device may control a single shutter, or a group of shutters depending on the parameters given in the define statement.
 
 <p>
   <code>
     define <my_shutter> Fernotron a=ID [g=GN] [m=MN]<br>
-  </code>			
-		
-<p> 
+  </code>
+
+<p>
   ID : the device ID. A six digit hexadecimal number. 10xxxx=plain controller, 20xxxx=sun sensor, 80xxxx=central controller unit, 90xxxx=receiver<br>
   GN : group number (1-7) or 0 (default) for all groups<br>
   MN : member number  (1-7) or  0 (default) for all group members<br>
 
 <p>
-  'g' or  'n' are only useful combined with an ID of the central controller type. 
+  'g' or  'n' are only useful combined with an ID of the central controller type.
 
-<h5>Input Devices</h5>
+<a name="Fernotronattr"></a>
+<h6>Attributes</h6>
+<ul>
+  <li><a name="repeats">repeats N</a><br>
+        repeat sent messages N additional times to increase the chance of successfull delivery (default: 2 repeats)
+  </li>
+</ul>
+
+
+
+<h5>2. FHEM Devices controlled by Fernotron senders</h5>
 
 <p>  Incoming data is handled by input devices. There is one default input device, who handles all messages not matchin a defined input device. The default input device will be auto-created.
 
@@ -939,39 +946,44 @@ Each output device may control a single shutter, or a group of shutters dependin
   </code>
 <p>
 The input type (like plain) can be ommitted. Its already determined by the ID (e.g. each ID starting with 10 is a plain controller).
-<p> <code>
-    define myFernoSwitch Fernotron a=10abcd input           # defines a plain controller as switch for up/down/stop<br>
-   <code><p></code>
-   define myFernoSun Fernotron a=20abcd input              # defines a sun sensor as on/off switch (on: sunshine, off: no sunshine)<br>
-   <code><p></code>
-    define myFernoSwitch2 Fernotron a=80abcd g=2 m=3 input  # defines a switch for up/down/stop controlled by a Fernotron central unit<br>
-  </code>
+<ul>
+ <li>defining a plain controller as switch for up/down/stop<br>
+      <code>define myFernoSwitch Fernotron a=10abcd input</code></li>
+<li>defining a sun sensor as on/off switch (on: sunshine, off: no sunshine)<br>
+     <code>define myFernoSun Fernotron a=20abcd input </code></li>
+<li>defining a switch for up/down/stop controlled by a Fernotron central unit<br>
+     <code>define myFernoSwitch2 Fernotron a=80abcd g=2 m=3 input</code></li>
+<li>define a notify device to toggle our light device HUEDevice3<br>
+      <code>define myFernoSwitch2 Fernotron a=80abcd g=2 m=3 input</code></li>
+ <li>define a notify device to toggle our light device HUEDevice3<br>
+     <code>define n_toggleHUEDevice3 notify myFernoSwitch:stop set HUEDevice3 toggle</code></li>
+<li>Its possible to use the default input device with your notify device, if you don't want to define specific input devices. This works only if you really had no input device defined for that Fernotron ID<br>
+     <code>define n_toggleHUEDevice3 notify scanFerno:plain:10abcd:stop set HUEDevice3 toggle</code></li>
+</ul>
 
-<p> You can now  write the usual notify-devices or DOIF-devices to process events from your defined input devices
 
-<p> Example: A Notify to toggle the lamp device  'HUEDevice3' if STOP was pressed your defined myFernoSwitch:
-  <code>
-    define n_toggleHUEDevice3 notify myFernoSwitch:stop set HUEDevice3 toggle
-  </code>
+<h4>Adressing and Pairing in Detail</h4>
 
-<p> Its possible to use the default input device, if you don't want to define specific input devices:
-
-<p> Example: Like above, but using the default (catch-all) input device scanFerno
-  <code>
-    define n_toggleHUEDevice3 notify scanFerno:plain:10abcd:stop set HUEDevice3 toggle
-  </code>
-
-<h4>Different Kinds of Adressing</h4>
-
+<h5>Three different methods to make messsages find their target Fernotron receiver</h5>
 <ol>
-  <li> Scanning physical controllers and use their IDs.
-    Example: Using the  ID of a  2411 controller to access shutters via group and member numbers.</li>
+  <li>Scan IDs of physical Fernotron controllers you own and copy their IDs in our FHEM output devices.  Use default Input device scanFerno to scan the ID first. Then use the ID to define your device. Here we have scanned the ID of our 2411 central resulting to 801234. No define devices using it<br>
+    <code>define myShutterGroup1 a=801234 g=1 m=0</code><br>
+    <code>define myShutter11 a=801234 g=1 m=1</code><br>
+    <code>define myShutter12 a=801234 g=1 m=2</code><br>
+    ...
+    <code>define myShutterGroup a=801234 g=1 m=0</code><br>
+    <code>define myShutter21 a=801234 g=2 m=1</code><br>
+    <code>define myShutter22 a=801234 g=2 m=2</code><br>
+      </li>
 
-  <li> Making up IDs and pair them with shutters.
-    Example: Pair shutter 1 with ID 100001, shutter  2 with 100002, ...</li>
+  <li> Invent valid IDs and pair them with shutters. See above which IDs are needed for different kind of senders<br>
+    <code>define myShutter1 a=100001</code><br>
+    <code>define myShutter2 a=100002</code><br>
+    Now activate Set-mode on the Fernotron receiver and send a STOP by the newly defined device you wish to pair with it.
+ ...</li>
 
 <li> Receiver IDs: RF controlled shutters may have a 5 digit code printed on or on a small cable sticker.
-  Prefix a 9 with it and you get an ID.</li>
+  Prefix that number with a 9 to get an valid ID.</li>
 </ol>
 
 <h4>Making Groups</h4>
@@ -979,41 +991,23 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 <ol>
   <li>groups and members are the same like in 2411. Groups are adressed using the 0 as wildcard.  (g=1 m=0 or g=0 m=1 or g=0 m=0) </li>
 
-  <li> Like with plain controllers. Example: a (virtual) plain controller paired with each shutter of the entire floor.</li>
+  <li> Like with plain controllers or sun sensors. Example: a (virtual) plain controller paired with each shutter of the entire floor.</li>
 
-  <li> not possible with reeiver IDs</li>
+  <li> not possible with receiver IDs</li>
 </ol>
 
-
 <h4>Commands</h4>
-
 <ul>
   <li>up</li>
   <li>down</li>
   <li>stop</li>
-  <li>set  - make receiver ready to pair</li>
+  <li>set  - activate set mode to make receiver ready to pair/unpair</li>
   <li>sun-down - move down until sun position (but only, if sun automatic is enabled)</li>
   <li>sun-inst - set the current position as sun position</li>
 </ul>
 
-<h4>Examples</h4>
-<ol>
-  <li><ul>
-      <li>first scan the ID of the 2411:  Hold down the stop button of your 2411 some time. Now open the automatically created default input device 'scanFerno', The ID can be found there under Internals:received_HR</li>
-      <li><code>define rollo42 Fernotron a=80808 g=4 m=2</code></li>
-  </ul></li>
-
-  <li><ul>
-      <li><code>define rollo1 Fernotron a=100001 </code></li>
-      <li>enable set mode on the receiver</li>
-      <li>press stop for rollo1</li>
-  </ul></li>
-
-  <li><ul>
-      <li><code>define rollo_0d123 Fernotron a=90d123</code></li>
-  </ul></li>
-</ol>
 =end html
+
 
 
 =begin html_DE
