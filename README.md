@@ -5,15 +5,17 @@
 
 # tronferno-fhem
 
-Use Fernotron devices with FHEM Server
+Use Fernotron devices with FHEM Server.
 
 ## General
 
-It contains two different FHEM modules, useful to owners of Fernotron shutters and controllers.
 
-* One module to control Fernotron Receivers (like shutter motors) and to integrate Fernotron controllers (manual and sun sensors) into FHEM. It requires SIGNALduino hardware connected to your FHEM server.
+This project holds two different FHEM modules for the same purpose:
 
-* The other module is intended for users of  [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu) hardware.
+* Module Fernotron which requires SIGNALduino as underlyning IODev and RF transceiver hardware.  It can control Fernotron devices and utilizes Sensors and Switches for general purpose use in FHEM.
+
+* Module Tronferno which requires TronfernoMCU as underlying IODev and my [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu) RF transceiver hardware.
+
 
 ## Installation
 
