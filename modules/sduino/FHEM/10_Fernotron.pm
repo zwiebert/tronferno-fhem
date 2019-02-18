@@ -45,7 +45,7 @@ package Fernotron::Protocol {
     my $fsbs = {};
 
     sub dbprint($) {
-       # main::Log3(undef, 5, "Fernotron: $_[0]");    # verbose level of IODev may be used here
+        main::Log3(undef, 0, "Fernotron: $_[0]");    # verbose level of IODev may be used here
     }
 
 ################################################################################
@@ -535,7 +535,9 @@ package Fernotron::fhem {
     my $FDT_PLAIN = 'plain';
     my $FDT_CENTRAL = 'central';
     my $FDT_RECV = 'receiver';
+    my $msb2fdt = { '1' => $FDT_PLAIN, '2' => $FDT_SUN, '8' => $FDT_CENTRAL,  '9' => $FDT_RECV };
     my $DEF_INPUT_DEVICE = 'default';
+
   
     # returns input device hash for this fsb, or default input device, or undef if none exists
     sub getInputDeviceByFsb($) {
@@ -600,6 +602,8 @@ package Fernotron::fhem {
 		: $c eq 'sun-up' ? 'off' : undef;
 	} elsif ($inputType eq $FDT_PLAIN) {
 	    $state = $c;
+	} elsif ($inputType eq $FDT_CENTRAL) {
+	    $state = $c;
 	}
 
 	return undef unless defined ($state);
@@ -645,22 +649,31 @@ package Fernotron::fhem {
 	return $hash->{NAME}; # message was handled by this device
     }
 
+    sub getFDTypeByA($) {
+	my ($a) = @_;
+	my $msb = ($a >> 20);# sprintf('%x', ($a >> 20));
+	#return "$msb";
+	my $fdt = $msb2fdt->{"$msb"};
+	return $fdt;
+    }
+
     sub Fernotron_Define($$) {
         my ($hash, $def) = @_;
-        my @a       = split("[ \t][ \t]*", $def);
-        my $name    = $a[0];
-        my $address = $a[1];
+        my @args       = split("[ \t][ \t]*", $def);
+        my $name    = $args[0];
+        my $address = $args[1];
 
         my ($a, $g, $m) = (0, 0, 0);
         my $u    = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N] [scan] [input=(sun|plain|central)]';
         my $scan = 0;
-	my $kind = '';
+	my $is_input = 0;
+	my $fdt = '';
 
-        return $u if ($#a < 2);
+        return $u if ($#args < 2);
 
-        shift(@a);
-        shift(@a);
-        foreach my $o (@a) {
+        shift(@args);
+        shift(@args);
+        foreach my $o (@args) {
             my ($key, $value) = split('=', $o);
 
             if ($key eq 'a') {
@@ -681,19 +694,27 @@ package Fernotron::fhem {
 		$hash->{helper}{ferInputType} = 'scan';
 
             } elsif ($key eq 'input') {
-                $kind = $value;
-		return "$name: invalid input type: $value in define. Choose one of: sun, plain" unless ("$kind" eq $FDT_SUN || "$kind" eq $FDT_PLAIN);
-		$hash->{helper}{ferInputType} = $kind;
-		my $key =  sprintf('%6x', $a);
-		$main::modules{Fernotron}{defptr}{$key} = $hash;
-		$hash->{helper}{inputKey} = $key;
-		
+                $fdt = $value;
+		$is_input = 1;		
 	    } else {
                 return "$name: unknown argument $o in define";    #FIXME add usage text
             }
         }
 
-        if ($scan eq 0) {
+	if ($is_input) {
+	    my $value = $fdt;
+	    $fdt = getFDTypeByA($a) unless $fdt;
+	    
+	    return "$name: invalid input type: $value in define. Choose one of: sun, plain, central" unless (defined($fdt) and "$fdt" eq $FDT_SUN || "$fdt" eq $FDT_PLAIN || "$fdt" eq $FDT_CENTRAL);
+	    $hash->{helper}{ferInputType} = $fdt;
+	    my $key =  sprintf('%6x%s', $a);
+	    $key .= "-$g-$m" if ("$fdt" eq $FDT_CENTRAL);
+	    $main::modules{Fernotron}{defptr}{$key} = $hash;
+	    $hash->{helper}{inputKey} = $key;
+	    $hash->{fernotron_type} = $fdt;
+	}
+
+        if (not $scan) {
             main::Log3($name, 3, "Fernotron ($name): a=$a g=$g m=$m\n");
             return 'missing argument a' if ($a == 0);
             $hash->{helper}{ferid_a} = $a;
@@ -759,11 +780,17 @@ package Fernotron::fhem {
 		    return $u . 'on:noArg off:noArg';
 		} elsif ($hash->{helper}{ferInputType} eq $FDT_PLAIN) {
 		    return $u . 'up:noArg down:noArg stop:noArg';
+		} elsif ($hash->{helper}{ferInputType} eq $FDT_CENTRAL) {
+		    return $u . 'up:noArg down:noArg stop:noArg';
 		}
 		return $u; #default input device takes no arguments
 	    }
 
 	    if ($inputType eq $FDT_PLAIN) {
+		if ($cmd eq 'stop' || $cmd eq 'up' || $cmd eq 'down') {
+		    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
+		}
+	    } elsif ($inputType eq $FDT_CENTRAL) {
 		if ($cmd eq 'stop' || $cmd eq 'up' || $cmd eq 'down') {
 		    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
 		}
@@ -855,6 +882,7 @@ package main {
 
 1;
 
+
 =pod
 =item device
 =item summary controls shutters via Fernotron protocol
@@ -866,9 +894,8 @@ package main {
 
 <h3>Fernotron</h3>
 
-<i>Fernotron</i> is a logic module to control shutters using Fernotron protocol. 
-It generates commands wich are then send via <i>SIGNALduino</i>. <i>Fernotron</i> can also receive messages sent by other Fernotron controllers. The Fernotron shutters communicate unidirectional, so they don't sent any feedback information, like if they are currently open or close.
-
+<i>Fernotron</i> is a logic module to 1) control shutters using Fernotron protocol and 2) use Fernotron conrollers and sensors as general switches in FHEM.
+ It sends/receives via the I/O device <i>SIGNALduino</i>. <i>Fernotron</i> can also receive messages sent by other Fernotron controllers. The Fernotron shutters communicate unidirectional, so they don't sent any feedback information, like if they are currently open or close.
 
 
 <h4>Pairing</h4>
@@ -883,11 +910,11 @@ Shutter motors have also an ID number printed on.  If you have no easy access to
 
 <h4>Defining Devices</h4>
 
-Each device may control a single shutter, but could also control an entire group.
-This depends on the ID and the group and member numbers.
+<h5>Output Devices</h5>
+
+Each output device may control a single shutter, or a group of shutters depending on the parameters given in the define statement.
 
 <p>
-				    
   <code>
     define <my_shutter> Fernotron a=ID [g=GN] [m=MN]<br>
   </code>			
@@ -900,13 +927,37 @@ This depends on the ID and the group and member numbers.
 <p>
   'g' or  'n' are only useful combined with an ID of the central controller type. 
 
+<h5>Input Devices</h5>
+
+<p>  Incoming data is handled by input devices. There is one default input device, who handles all messages not matchin a defined input device. The default input device will be auto-created.
+
+<p> Input devices are defined just like output devices, but with the parameter 'input' given in the define.
+
 <p>
-  Incoming data is handled by a single device named scanFerno. It will autocreate if a Fernotron message is received for the first time. The 'state' can be used by notify and DOIF. Because we only have a single device as receiver, the 'state' also contains the ID of the sender. (multiple receiver devices may be added later) 
-
-
-<p> Example: A Notify to toggle the lamp device  'HUEDevice3' if STOP was pressed on plain sender with ID 1024dc:
   <code>
-    define n_toggleHUEDevice3 notify scanFerno:plain:1024dc:stop set HUEDevice3 toggle
+    define <my_shutter> Fernotron a=ID [g=GN] [m=MN] input[=(plain|sun|central)]<br>
+  </code>
+<p>
+The input type (like plain) can be ommitted. Its already determined by the ID (e.g. each ID starting with 10 is a plain controller).
+<p>
+  <code>
+    define myFernoSwitch Fernotron a=10abcd input           # defines a plain controller as switch for up/down/stop<br>
+    define myFernoSun Fernotron a=20abcd input              # defines a sun sensor as on/off switch (on: sunshine, off: no sunshine)<br>
+    define myFernoSwitch2 Fernotron a=80abcd g=2 m=3 input  # defines a switch for up/down/stop controlled by a Fernotron central unit<br>
+  </code>
+
+<p> You can now  write the usual notify-devices or DOIF-devices to process events from your defined input devices
+
+<p> Example: A Notify to toggle the lamp device  'HUEDevice3' if STOP was pressed your defined myFernoSwitch:
+  <code>
+    define n_toggleHUEDevice3 notify myFernoSwitch:stop set HUEDevice3 toggle
+  </code>
+
+<p> Its possible to use the default input device, if you don't want to define specific input devices:
+
+<p> Example: Like above, but using the default (catch-all) input device scanFerno
+  <code>
+    define n_toggleHUEDevice3 notify scanFerno:plain:10abcd:stop set HUEDevice3 toggle
   </code>
 
 <h4>Different Kinds of Adressing</h4>
@@ -947,7 +998,7 @@ This depends on the ID and the group and member numbers.
 <h4>Examples</h4>
 <ol>
   <li><ul>
-      <li>first scan the ID of the 2411:  Hold down the stop button of your 2411 some time. Now open the automatically created device 'scanFerno', The ID can be found there under Internals:received_HR</li>
+      <li>first scan the ID of the 2411:  Hold down the stop button of your 2411 some time. Now open the automatically created default input device 'scanFerno', The ID can be found there under Internals:received_HR</li>
       <li><code>define rollo42 Fernotron a=80808 g=4 m=2</code></li>
   </ul></li>
 
@@ -986,6 +1037,8 @@ Rolladen-Motore haben ebenfalls eine ID Nummer aufgedruckt.  Wenn kein Zugang zu
 
 <h4>Gerät definieren</h4>
 
+<h5>Ausgabe Geräte</h5>
+
 Ein Gerät kann einen einzige Rolladen aber  auch eine ganze Gruppe ansprechen.
 Dies wird durch die verwendete ID und Gruppen und Empfängernummer bestimmt.
 
@@ -1003,12 +1056,37 @@ Dies wird durch die verwendete ID und Gruppen und Empfängernummer bestimmt.
 <p>
   'g' und 'n' sind nur sinnvoll, wenn als ID eine Zentraleinheit angegeben wurde 
 
-<p>
-  Eingehende Fernotron-Nachrichten werden durch ein Einzel-Gerät empfangen. Es wird beim ersten Empfang einer Fernotron Nachricht unter dem Namen scanFerno angelegt. Es dient zum scannen der ID von anderen Kontrollern, falls diese benötigt werden und um Fernotron Sender (Handsender, Sonnensensoren) als Eingabegeräte für allgemeine Steueraufgaben in FHEM zu nutzen. Da es zur Zeit scanFerno alle Eingaben verarbeitet müssen notify oder DOIF auch die Absenderadresse überprüfen können, weshalb diese im EVENT enthalten ist.  (In Zukunft sollen auch weitere Fernotron-Eingabegeräte möglich sein, so wie in FHEM üblich. Also ein Gerät pro Funkschalter oder Sensor)
 
-<p> Beispiel: Ein Notify um Lampe HUEDevice3 zu toggeln wenn STOP auf Handsender 1024dc gedrückt wird:
+<h5>Eingabe Geräte</h5>
+
+<p>Hereinkommende Daten werden durch Eingabe Geräte verarbeitet. Es gibt ein default Eingabegerät, welches alle Nachrichten verarbeiet, für die kein eigenes Eingabe Geräte definiert wurde. Das default Eingabegerät wird automatisch angelegt.
+
+<p> Eingabegeräte werden wie Ausgebegeräte definiertInput plus dem Parameter 'input' in der Definition:
+
+<p>
   <code>
-    define n_toggleHUEDevice3 notify scanFerno:plain:1024dc:stop set HUEDevice3 toggle
+    define <my_shutter> Fernotron a=ID [g=GN] [m=MN] input[=(plain|sun|central)]<br>
+  </code>
+<p>
+Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann bestimmt durch die ID (z.B. jede ID beginnend mit 10 gehört zu Typ plain)
+<p>
+  <code>
+    define myFernoSwitch Fernotron a=10abcd input           # ein Handsender als Schalter für up/down/stop<br>
+    define myFernoSun Fernotron a=20abcd input              # ein Sonnensensor als on/off Schalter  (on: Sonnenschein, off: kein Sonnenschein)
+    define myFernoSwitch2 Fernotron a=80abcd g=2 m=3 input  # defines a switch for up/down/stop controlled by a Fernotron central unit<br>
+  </code>
+
+<p>Nun lassen sich die üblichen notify-Geräte oder DOIF-Geräte nutzen um Events zu verarbeiten:
+
+<p> Beispiel: Ein Notify um Lampe HUEDevice3 zu toggeln wenn STOP auf Handsender myFernoSwitch gedrückt wird:
+  <code>
+    define n_toggleHUEDevice3 notify myFernoSwitch:stop set HUEDevice3 toggle
+  </code>
+
+<p> Wenn kein spezifisches Eingabegerät definiert werden soll, kann man das Default-Eingabegerät nutzen:
+<p> Beispiel wie oben, nur mit dem Default-Eingabegerät
+  <code>
+    define n_toggleHUEDevice3 notify scanFerno:plain:1089ab:stop set HUEDevice3 toggle
   </code>
 
 <h4>Verschiedene Methoden der Adressierung</h4>
@@ -1049,7 +1127,7 @@ Dies wird durch die verwendete ID und Gruppen und Empfängernummer bestimmt.
 <h4>Beispiele</h4>
 <ol>
   <li><ul>
-      <li>scanne die ID der 2411: Den Stop Taster der 2411 einige Sekunden drücken. Im automatisch erzeugten Gerät "scanFerno" steht die ID unter Internals:received_HR.</li>
+      <li>scanne die ID der 2411: Den Stop Taster der 2411 einige Sekunden drücken. Im automatisch erzeugten Default-Eingabegerät "scanFerno" steht die ID unter Internals:received_HR.</li>
       <li><code>define rollo42 Fernotron a=80abcd g=4 m=2</code></li>
   </ul></li>
 
