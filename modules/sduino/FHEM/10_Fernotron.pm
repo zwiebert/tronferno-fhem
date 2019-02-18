@@ -665,7 +665,10 @@ package Fernotron::fhem {
                 return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
             } elsif ($key eq 'scan') {
                 $scan = 1;
+		
 		$main::modules{Fernotron}{defptr}{Fernotron} = $hash;
+		$hash->{helper}{inputKey} = 'Fernotron';
+
 		$hash->{helper}{ferInputType} = 'scan';
 
             } elsif ($key eq 'input') {
@@ -674,6 +677,7 @@ package Fernotron::fhem {
 		$hash->{helper}{ferInputType} = $kind;
 		my $key =  sprintf("%6x", $a);
 		$main::modules{Fernotron}{defptr}{$key} = $hash;
+		$hash->{helper}{inputKey} = $key;
 		
 	    } else {
                 return "$name: unknown argument $o in define";    #FIXME add usage text
@@ -695,10 +699,10 @@ package Fernotron::fhem {
     sub Fernotron_Undef($$) {
 	my ($hash, $name) = @_;
 
-	if ($main::modules{Fernotron}{defptr}{Fernotron} == $hash) {
-	    undef($main::modules{Fernotron}{defptr}{Fernotron});
-	}
-
+	# remove deleted input devices from defptr
+	my $key = $hash->{helper}{inputKey};
+	delete $main::modules{Fernotron}{defptr}{$key} if (defined($key));
+	
 	return undef;
     }
 
