@@ -17,8 +17,6 @@ It contains two different FHEM modules, useful to owners of Fernotron shutters a
 
 ## Installation
 
-Please read the [english module help text](doc/sduino_fernotron.pod) for more information.
-
 Installation and update of the modules and documentaion is done by FHEM's update command:
 
 ### Fernotron module for SIGNALduino-dev
@@ -45,6 +43,8 @@ Additionally you may need to apply the diff from directory modules/sduino-stable
 ## Usage
 
 ### Fernotron for SIGNALduino
+
+Please read the [english module help text](doc/sduino_fernotron.pod) for more information.
 
 * If SIGNALduino is already in use, all you need to do is install this module and define your devices. The input device scanFerno will be auto-created if Fernotron transmissios are received.
 
