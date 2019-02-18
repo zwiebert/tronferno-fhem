@@ -17,7 +17,7 @@ It contains two different FHEM modules, useful to owners of Fernotron shutters a
 
 ## Installation
 
-Please read the [english module help text](doc/sduino_fernotron_pod.html) for more information.
+Please read the [english module help text](doc/sduino_fernotron.pod) for more information.
 
 Installation and update of the modules and documentaion is done by FHEM's update command:
 
@@ -71,7 +71,7 @@ attr ftroll22 alexaName DerName                 # ... needed by alexa module
 
 ### Tronferno for tronferno-mcu
 
-Please read the [english module help text](doc/tronferno_pod.html) for more information.
+Please read the [english module help text](doc/tronferno.pod) for more information.
 
 * If you have tronferno-mcu hardware in use, you can control it with FHEM using this module. Available are simple commands like up/down/stop. You have to define a single I/O device TronfernoMCU first. Then you can define Tronferno devices - one for each shutter.
 
