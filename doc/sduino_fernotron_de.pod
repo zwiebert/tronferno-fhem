@@ -70,7 +70,7 @@ Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann
 <p> Wenn kein spezifisches Eingabegerät definiert werden soll, kann man das Default-Eingabegerät nutzen:
 <p> Beispiel wie oben, nur mit dem Default-Eingabegerät
   <code>
-    define n_toggleHUEDevice3 notify scanFerno:plain:1089ab:stop set HUEDevice3 toggle
+    define n_toggleHUEDevice3 notify Fernotron_Scan:plain:1089ab:stop set HUEDevice3 toggle
   </code>
 
 <h4>Verschiedene Methoden der Adressierung</h4>
@@ -111,7 +111,7 @@ Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann
 <h4>Beispiele</h4>
 <ol>
   <li><ul>
-      <li>scanne die ID der 2411: Den Stop Taster der 2411 einige Sekunden drücken. Im automatisch erzeugten Default-Eingabegerät "scanFerno" steht die ID unter Internals:received_HR.</li>
+      <li>scanne die ID der 2411: Den Stop Taster der 2411 einige Sekunden drücken. Im automatisch erzeugten Default-Eingabegerät "Fernotron_Scan" steht die ID unter Internals:received_HR.</li>
       <li><code>define rollo42 Fernotron a=80abcd g=4 m=2</code></li>
   </ul></li>
 

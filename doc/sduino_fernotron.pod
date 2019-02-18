@@ -68,7 +68,7 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
  <li>define a notify device to toggle our light device HUEDevice3<br>
      <code>define n_toggleHUEDevice3 notify myFernoSwitch:stop set HUEDevice3 toggle</code></li>
 <li>Its possible to use the default input device with your notify device, if you don't want to define specific input devices. This works only if you really had no input device defined for that Fernotron ID<br>
-     <code>define n_toggleHUEDevice3 notify scanFerno:plain:10abcd:stop set HUEDevice3 toggle</code></li>
+     <code>define n_toggleHUEDevice3 notify Fernotron_Scan:plain:10abcd:stop set HUEDevice3 toggle</code></li>
 </ul>
 
 
@@ -76,7 +76,7 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 
 <h5>Three different methods to make messsages find their target Fernotron receiver</h5>
 <ol>
-  <li>Scan IDs of physical Fernotron controllers you own and copy their IDs in our FHEM output devices.  Use default Input device scanFerno to scan the ID first. Then use the ID to define your device. Here we have scanned the ID of our 2411 central resulting to 801234. No define devices using it<br>
+  <li>Scan IDs of physical Fernotron controllers you own and copy their IDs in our FHEM output devices.  Use default Input device Fernotron_Scan to scan the ID first. Then use the ID to define your device. Here we have scanned the ID of our 2411 central resulting to 801234. No define devices using it<br>
     <code>define myShutterGroup1 a=801234 g=1 m=0</code><br>
     <code>define myShutter11 a=801234 g=1 m=1</code><br>
     <code>define myShutter12 a=801234 g=1 m=2</code><br>

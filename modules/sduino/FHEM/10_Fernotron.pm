@@ -45,7 +45,7 @@ package Fernotron::Protocol {
     my $fsbs = {};
 
     sub dbprint($) {
-        main::Log3(undef, 0, "Fernotron: $_[0]");    # verbose level of IODev may be used here
+        #main::Log3(undef, 0, "Fernotron: $_[0]");    # verbose level of IODev may be used here
     }
 
 ################################################################################
@@ -623,7 +623,7 @@ package Fernotron::fhem {
         return $result if (ref($fsb) ne 'ARRAY'); # message format unknown
 
 	my $hash = getInputDeviceByFsb($fsb);
-	return 'UNDEFINED scanFerno Fernotron scan' unless defined($hash);
+	return 'UNDEFINED Fernotron_Scan Fernotron scan' unless defined($hash);
 	
 	my $byteCount = scalar(@$fsb);
 	$hash->{received_ByteCount} = '$byteCount';
@@ -876,7 +876,7 @@ package main {
         $hash->{ParseFn} = 'Fernotron::fhem::Fernotron_Parse';
         $hash->{AttrFn}  = 'Fernotron::fhem::Fernotron_Attr';
 
-	$hash->{AutoCreate} = {'scanFerno'  => {noAutocreatedFilelog => 1} };
+	$hash->{AutoCreate} = {'Fernotron_Scan'  => {noAutocreatedFilelog => 1} };
     }
 }
 
@@ -958,7 +958,7 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
  <li>define a notify device to toggle our light device HUEDevice3<br>
      <code>define n_toggleHUEDevice3 notify myFernoSwitch:stop set HUEDevice3 toggle</code></li>
 <li>Its possible to use the default input device with your notify device, if you don't want to define specific input devices. This works only if you really had no input device defined for that Fernotron ID<br>
-     <code>define n_toggleHUEDevice3 notify scanFerno:plain:10abcd:stop set HUEDevice3 toggle</code></li>
+     <code>define n_toggleHUEDevice3 notify Fernotron_Scan:plain:10abcd:stop set HUEDevice3 toggle</code></li>
 </ul>
 
 
@@ -966,7 +966,7 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 
 <h5>Three different methods to make messsages find their target Fernotron receiver</h5>
 <ol>
-  <li>Scan IDs of physical Fernotron controllers you own and copy their IDs in our FHEM output devices.  Use default Input device scanFerno to scan the ID first. Then use the ID to define your device. Here we have scanned the ID of our 2411 central resulting to 801234. No define devices using it<br>
+  <li>Scan IDs of physical Fernotron controllers you own and copy their IDs in our FHEM output devices.  Use default Input device Fernotron_Scan to scan the ID first. Then use the ID to define your device. Here we have scanned the ID of our 2411 central resulting to 801234. No define devices using it<br>
     <code>define myShutterGroup1 a=801234 g=1 m=0</code><br>
     <code>define myShutter11 a=801234 g=1 m=1</code><br>
     <code>define myShutter12 a=801234 g=1 m=2</code><br>
@@ -1082,7 +1082,7 @@ Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann
 <p> Wenn kein spezifisches Eingabegerät definiert werden soll, kann man das Default-Eingabegerät nutzen:
 <p> Beispiel wie oben, nur mit dem Default-Eingabegerät
   <code>
-    define n_toggleHUEDevice3 notify scanFerno:plain:1089ab:stop set HUEDevice3 toggle
+    define n_toggleHUEDevice3 notify Fernotron_Scan:plain:1089ab:stop set HUEDevice3 toggle
   </code>
 
 <h4>Verschiedene Methoden der Adressierung</h4>
@@ -1123,7 +1123,7 @@ Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann
 <h4>Beispiele</h4>
 <ol>
   <li><ul>
-      <li>scanne die ID der 2411: Den Stop Taster der 2411 einige Sekunden drücken. Im automatisch erzeugten Default-Eingabegerät "scanFerno" steht die ID unter Internals:received_HR.</li>
+      <li>scanne die ID der 2411: Den Stop Taster der 2411 einige Sekunden drücken. Im automatisch erzeugten Default-Eingabegerät "Fernotron_Scan" steht die ID unter Internals:received_HR.</li>
       <li><code>define rollo42 Fernotron a=80abcd g=4 m=2</code></li>
   </ul></li>
 
