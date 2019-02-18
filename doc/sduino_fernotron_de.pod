@@ -1,4 +1,5 @@
 =begin html
+=encoding utf-8
 
 <a name="Fernotron"></a>
 

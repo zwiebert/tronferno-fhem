@@ -1016,6 +1016,7 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 
 
 =begin html_DE
+=encoding utf-8
 
 <a name="Fernotron"></a>
 
