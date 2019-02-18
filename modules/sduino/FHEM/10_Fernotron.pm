@@ -310,7 +310,7 @@ package Fernotron::Protocol {
 ##
     sub fsb2string($) {
         my ($fsb) = @_;
-        return sprintf "0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x", $$fsb[0], $$fsb[1], $$fsb[2], $$fsb[3], $$fsb[4];
+        return sprintf '0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x', $$fsb[0], $$fsb[1], $$fsb[2], $$fsb[3], $$fsb[4];
 
     }
 ##
@@ -352,7 +352,7 @@ package Fernotron::Protocol {
 
     # convert 10bit string to 10bit word
     sub fer_bin2word($) {
-        return unpack("N", pack("B32", substr("0" x 32 . reverse(shift), -32)));
+        return unpack('N', pack('B32', substr('0' x 32 . reverse(shift), -32)));
     }
 
     # split long bit string to array of 10bit strings. disregard trailing bits.
@@ -430,7 +430,7 @@ package Fernotron::Protocol {
     # convert decoded message from SIGNALduino dispatch to Fernotron byte message
     sub fer_sdDmsg2Bytes($) {
 	my ($dmsg) = @_;
-	dbprint("new bit string dmsg");
+	dbprint('new bit string dmsg');
 	return fer_words2bytes(fer_bitMsg2words(fer_dev33dmsg_split($dmsg)));
     }
 ##
@@ -443,16 +443,16 @@ package Fernotron::Protocol {
 ##
 ##
     my $map_fcmd = {
-        "up"       => $fer_cmd_UP,
-        "down"     => $fer_cmd_DOWN,
-        "stop"     => $fer_cmd_STOP,
-        "set"      => $fer_cmd_SET,
-        "sun-down" => $fer_cmd_SunDOWN,
-        "sun-up"   => $fer_cmd_SunUP,
-        "sun-inst" => $fer_cmd_SunINST,
+        'up'       => $fer_cmd_UP,
+        'down'     => $fer_cmd_DOWN,
+        'stop'     => $fer_cmd_STOP,
+        'set'      => $fer_cmd_SET,
+        'sun-down' => $fer_cmd_SunDOWN,
+        'sun-up'   => $fer_cmd_SunUP,
+        'sun-inst' => $fer_cmd_SunINST,
     };
 
-    my $last_error = "";
+    my $last_error = '';
     sub get_last_error() { return $last_error; }
 
     sub get_commandlist() { return keys(%$map_fcmd); }
@@ -461,7 +461,7 @@ package Fernotron::Protocol {
     sub get_command_name_by_number($) {
         my ($cmd) = @_;
         my @res = grep { $map_fcmd->{$_} eq $cmd } keys(%$map_fcmd);
-        return $#res >= 0 ? $res[0] : "";
+        return $#res >= 0 ? $res[0] : '';
     }
 
 ##
@@ -476,8 +476,9 @@ package Fernotron::Protocol {
             my $val = $$args{'a'};
             $fsb = fsb_getByDevID($val);
         } else {
-            $fsb = fsb_getByDevID($C->{'centralUnitID'});    # default
-        }
+	    $last_error = 'error: missing parameter "a"';
+	    return -1;
+	}
 
         if (exists($$args{'c'})) {
             my $val = $$args{'c'};
@@ -529,30 +530,37 @@ package Fernotron::Protocol {
  	
 
 package Fernotron::fhem {
-
+    # names for different kind of fernotron devices
+    my $FDT_SUN = 'sun';
+    my $FDT_PLAIN = 'plain';
+    my $FDT_CENTRAL = 'central';
+    my $FDT_RECV = 'receiver';
+    my $DEF_INPUT_DEVICE = 'default';
+  
     # returns input device hash for this fsb, or default input device, or undef if none exists
     sub getInputDeviceByFsb($) {
 	my ($fsb) = @_;
-	my $key =  sprintf("%02x%02x%02x", @$fsb);
+	my $key =  sprintf('%02x%02x%02x', @$fsb);
 	my $hash = $main::modules{Fernotron}{defptr}{$key};
-	$hash =  $main::modules{Fernotron}{defptr}{Fernotron} unless defined($hash);
+	$hash =  $main::modules{Fernotron}{defptr}{$DEF_INPUT_DEVICE} unless defined($hash);
 	return $hash; # may be undef if no input device exists
     }
 
+    # update Reading of default input device, if there was no matching input device
     sub defaultInputMakeReading($$) {
 	my ($fsb, $hash) = @_;
 
 	### convert message to human readable parts
-	my $kind = Fernotron::Protocol::FSB_MODEL_IS_CENTRAL($fsb) ? "central"
-	    : Fernotron::Protocol::FSB_MODEL_IS_RECEIVER($fsb) ? "receiver"
-	    : Fernotron::Protocol::FSB_MODEL_IS_SUNSENS($fsb) ? "sun"
-	    : Fernotron::Protocol::FSB_MODEL_IS_STANDARD($fsb) ? "plain"
-	    : "unknown";
+	my $kind = Fernotron::Protocol::FSB_MODEL_IS_CENTRAL($fsb) ? $FDT_CENTRAL
+	    : Fernotron::Protocol::FSB_MODEL_IS_RECEIVER($fsb) ? $FDT_RECV
+	    : Fernotron::Protocol::FSB_MODEL_IS_SUNSENS($fsb) ? $FDT_SUN
+	    : Fernotron::Protocol::FSB_MODEL_IS_STANDARD($fsb) ? $FDT_PLAIN
+	    : 'unknown';
 	
-	my $a = sprintf("%02x%02x%02x", @$fsb);
+	my $a = sprintf('%02x%02x%02x', @$fsb);
         my $g = 0;
 	my $m = 0;
-	my $gm = "";
+	my $gm = '';
 	if (Fernotron::Protocol::FSB_MODEL_IS_CENTRAL($fsb)) {
 	    $m =  Fernotron::Protocol::FSB_GET_MEMB($fsb);
 	    if ($m > 0) {
@@ -566,15 +574,16 @@ package Fernotron::fhem {
 	
         ### combine parts and update reading
 	my $human_readable = "$kind a=$a$gm c=$c";
-        my $state = "$kind:$a" . ($kind eq 'central' ? "-$g-$m" : "")  . ":$c";
+        my $state = "$kind:$a" . ($kind eq $FDT_CENTRAL ? "-$g-$m" : '')  . ":$c";
 	$state =~ tr/ /:/; # don't want spaces in reading
-	my $do_trigger =  !($kind eq 'receiver' || $kind eq 'unknown'); # unknown and receiver should not trigger events
+	my $do_trigger =  !($kind eq $FDT_RECV || $kind eq 'unknown'); # unknown and receiver should not trigger events
 	
 	$hash->{received_HR} = $human_readable;
 	main::readingsSingleUpdate($hash, 'state',  $state, $do_trigger);
 	return 1;
     }
-    
+
+    # update Reading of matching input device
     sub inputMakeReading($$) {
 	my ($fsb, $hash) = @_;
 	
@@ -586,10 +595,10 @@ package Fernotron::fhem {
 	
         my $state = undef;
 	
-	if ($inputType eq 'sun') {
+	if ($inputType eq $FDT_SUN) {
 	    $state = $c eq 'sun-down' ? 'on'
 		: $c eq 'sun-up' ? 'off' : undef;
-	} elsif ($inputType eq 'plain') {
+	} elsif ($inputType eq $FDT_PLAIN) {
 	    $state = $c;
 	}
 
@@ -610,19 +619,19 @@ package Fernotron::fhem {
         return $result if (ref($fsb) ne 'ARRAY'); # message format unknown
 
 	my $hash = getInputDeviceByFsb($fsb);
-	return "UNDEFINED scanFerno Fernotron scan" unless defined($hash);
+	return 'UNDEFINED scanFerno Fernotron scan' unless defined($hash);
 	
 	my $byteCount = scalar(@$fsb);
-	$hash->{received_ByteCount} = "$byteCount";
-	$hash->{received_ID} = ($byteCount >= 3) ? sprintf("a=%02x%02x%02x", @$fsb) : undef;
-	$hash->{received_CheckSum} = ($byteCount == 6) ? sprintf("%02x", $$fsb[5]) : undef;
+	$hash->{received_ByteCount} = '$byteCount';
+	$hash->{received_ID} = ($byteCount >= 3) ? sprintf('a=%02x%02x%02x', @$fsb) : undef;
+	$hash->{received_CheckSum} = ($byteCount == 6) ? sprintf('%02x', $$fsb[5]) : undef;
         return $result if ($byteCount < 5);
 	
 	my $fsb_valid =  Fernotron::Protocol::fsb_verify_by_id($fsb);
-	$hash->{received_IsValid} = $fsb_valid ? "yes" : "no"; 
+	$hash->{received_IsValid} = $fsb_valid ? 'yes' : 'no'; 
         return $result unless $fsb_valid;
 
-        my $msg = sprintf("%02x, %02x, %02x, %02x, %02x", @$fsb);
+        my $msg = sprintf('%02x, %02x, %02x, %02x, %02x', @$fsb);
         $hash->{received_Bytes} = $msg;
         main::Log3($io_hash, 3, "Fernotron: message received: $msg");
 
@@ -645,7 +654,7 @@ package Fernotron::fhem {
         my ($a, $g, $m) = (0, 0, 0);
         my $u    = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N] [scan] [input=(sun|plain|central)]';
         my $scan = 0;
-	my $kind = "";
+	my $kind = '';
 
         return $u if ($#a < 2);
 
@@ -666,16 +675,16 @@ package Fernotron::fhem {
             } elsif ($key eq 'scan') {
                 $scan = 1;
 		
-		$main::modules{Fernotron}{defptr}{Fernotron} = $hash;
+		$main::modules{Fernotron}{defptr}{$DEF_INPUT_DEVICE} = $hash;
 		$hash->{helper}{inputKey} = 'Fernotron';
 
 		$hash->{helper}{ferInputType} = 'scan';
 
             } elsif ($key eq 'input') {
                 $kind = $value;
-		return "$name: invalid input type: $value in define. Choose one of: sun, plain" unless ("$kind" eq "sun" || "$kind" eq "plain");
+		return "$name: invalid input type: $value in define. Choose one of: sun, plain" unless ("$kind" eq $FDT_SUN || "$kind" eq $FDT_PLAIN);
 		$hash->{helper}{ferInputType} = $kind;
-		my $key =  sprintf("%6x", $a);
+		my $key =  sprintf('%6x', $a);
 		$main::modules{Fernotron}{defptr}{$key} = $hash;
 		$hash->{helper}{inputKey} = $key;
 		
@@ -686,7 +695,7 @@ package Fernotron::fhem {
 
         if ($scan eq 0) {
             main::Log3($name, 3, "Fernotron ($name): a=$a g=$g m=$m\n");
-            return "missing argument a" if ($a == 0);
+            return 'missing argument a' if ($a == 0);
             $hash->{helper}{ferid_a} = $a;
             $hash->{helper}{ferid_g} = $g;
             $hash->{helper}{ferid_m} = $m;
@@ -746,19 +755,19 @@ package Fernotron::fhem {
 	my $inputType = $hash->{helper}{ferInputType};
 	if (defined($inputType)) {
 	    if ($cmd eq '?') {
-		if ($hash->{helper}{ferInputType} eq 'sun') {
-		    return $u . "on:noArg off:noArg";
-		} elsif ($hash->{helper}{ferInputType} eq 'plain') {
-		    return $u . "up:noArg down:noArg stop:noArg";
+		if ($hash->{helper}{ferInputType} eq $FDT_SUN) {
+		    return $u . 'on:noArg off:noArg';
+		} elsif ($hash->{helper}{ferInputType} eq $FDT_PLAIN) {
+		    return $u . 'up:noArg down:noArg stop:noArg';
 		}
 		return $u; #default input device takes no arguments
 	    }
 
-	    if ($inputType eq 'plain') {
+	    if ($inputType eq $FDT_PLAIN) {
 		if ($cmd eq 'stop' || $cmd eq 'up' || $cmd eq 'down') {
 		    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
 		}
-	    } elsif ($inputType eq 'sun') {
+	    } elsif ($inputType eq $FDT_SUN) {
 		if ($cmd eq 'on' || $cmd eq 'off') {
 		    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
 		}
@@ -817,7 +826,7 @@ package Fernotron::fhem {
         # $name - Gerätename
         # $attrName/$attrValue sind Attribut-Name und Attribut-Wert
 
-        if ($cmd eq "set") {
+        if ($cmd eq 'set') {
             if ($attrName eq 'repeats') {
                 my $r = int($attrValue);
                 return "invalid argument '$attrValue'. Expected: 0..5" unless (0 <= $r and $r <= 5);
@@ -831,14 +840,14 @@ package main {
 
     sub Fernotron_Initialize($) {
         my ($hash) = @_;
-        $hash->{Match}    = "^P82#.+";
+        $hash->{Match}    = '^P82#.+';
         $hash->{AttrList} = 'IODev repeats:0,1,2,3,4,5';
 
         $hash->{DefFn}   = 'Fernotron::fhem::Fernotron_Define';
 	$hash->{UndefFn} = 'Fernotron::fhem::Fernotron_Undef';
-        $hash->{SetFn}   = "Fernotron::fhem::Fernotron_Set";
-        $hash->{ParseFn} = "Fernotron::fhem::Fernotron_Parse";
-        $hash->{AttrFn}  = "Fernotron::fhem::Fernotron_Attr";
+        $hash->{SetFn}   = 'Fernotron::fhem::Fernotron_Set';
+        $hash->{ParseFn} = 'Fernotron::fhem::Fernotron_Parse';
+        $hash->{AttrFn}  = 'Fernotron::fhem::Fernotron_Attr';
 
 	$hash->{AutoCreate} = {'scanFerno'  => {noAutocreatedFilelog => 1} };
     }
