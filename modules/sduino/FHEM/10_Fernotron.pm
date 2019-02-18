@@ -623,7 +623,7 @@ package Fernotron::fhem {
         return $result if (ref($fsb) ne 'ARRAY'); # message format unknown
 
 	my $hash = getInputDeviceByFsb($fsb);
-	return 'UNDEFINED Fernotron_Scan Fernotron scan' unless defined($hash);
+	return 'UNDEFINED Fernotron_Scan Fernotron scan' unless defined($hash); #  auto-create
 	
 	my $byteCount = scalar(@$fsb);
 	$hash->{received_ByteCount} = '$byteCount';
@@ -689,7 +689,7 @@ package Fernotron::fhem {
                 $scan = 1;
 		
 		$main::modules{Fernotron}{defptr}{$DEF_INPUT_DEVICE} = $hash;
-		$hash->{helper}{inputKey} = 'Fernotron';
+		$hash->{helper}{inputKey} = $DEF_INPUT_DEVICE;
 
 		$hash->{helper}{ferInputType} = 'scan';
 
