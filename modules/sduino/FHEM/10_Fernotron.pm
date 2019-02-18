@@ -529,37 +529,18 @@ package Fernotron::Protocol {
  	
 
 package Fernotron::fhem {
-#dev-33: dmsg: P82#F0000000101F0000000110F1001001001F1001001010F1011101001F1011101010F1001111001F1001111010F1100010001F1100010010F010000110
-    sub Fernotron_Parse {
-        my ($io_hash, $message) = @_;
 
-	my $hash = $main::modules{Fernotron}{defptr}{Fernotron};
-	my $result = undef;
-	
-	if (!$hash) {
-	    return "UNDEFINED scanFerno Fernotron scan"; # autocreate
-	}
+    # returns input device hash for this fsb, or default input device, or undef if none exists
+    sub getInputDeviceByFsb($) {
+	my ($fsb) = @_;
+	my $key =  sprintf("%02x%02x%02x", @$fsb);
+	my $hash = $main::modules{Fernotron}{defptr}{$key};
+	$hash =  $main::modules{Fernotron}{defptr}{Fernotron} unless defined($hash);
+	return $hash; # may be undef if no input device exists
+    }
 
-        my ($proto, $dmsg) = split('#', $message);
-        my $fsb     = Fernotron::Protocol::fer_sdDmsg2Bytes($dmsg);
-
-        return $result if (ref($fsb) ne 'ARRAY'); # message format unknown
-	
-	my $byteCount = scalar(@$fsb);
-	$hash->{received_ByteCount} = "$byteCount";
-	$hash->{received_ID} = ($byteCount >= 3) ? sprintf("a=%02x%02x%02x", @$fsb) : undef;
-	$hash->{received_CheckSum} = ($byteCount == 6) ? sprintf("%02x", $$fsb[5]) : undef;
-        return $result if ($byteCount < 5);
-
-	
-	
-	my $fsb_valid =  Fernotron::Protocol::fsb_verify_by_id($fsb);
-	$hash->{received_IsValid} = $fsb_valid ? "yes" : "no"; 
-        return $result unless $fsb_valid;
-
-        my $msg = sprintf("%02x, %02x, %02x, %02x, %02x", @$fsb);
-        $hash->{received_Bytes} = $msg;
-        main::Log3($io_hash, 3, "Fernotron: message received: $msg");
+    sub defaultInputMakeReading($$) {
+	my ($fsb, $hash) = @_;
 
 	### convert message to human readable parts
 	my $kind = Fernotron::Protocol::FSB_MODEL_IS_CENTRAL($fsb) ? "central"
@@ -591,11 +572,69 @@ package Fernotron::fhem {
 	
 	$hash->{received_HR} = $human_readable;
 	main::readingsSingleUpdate($hash, 'state',  $state, $do_trigger);
-	
-	# return name of the device which handled the message
-	return $hash->{NAME};
+	return 1;
     }
+    
+    sub inputMakeReading($$) {
+	my ($fsb, $hash) = @_;
+	
+	my $inputType = $hash->{helper}{ferInputType};
+	my $c = Fernotron::Protocol::get_command_name_by_number(Fernotron::Protocol::FSB_GET_CMD($fsb));
+	return undef unless defined($c);
 
+	my $do_trigger = 1;
+	
+        my $state = undef;
+	
+	if ($inputType eq 'sun') {
+	    $state = $c eq 'sun-down' ? 'on'
+		: $c eq 'sun-up' ? 'off' : undef;
+	} elsif ($inputType eq 'plain') {
+	    $state = $c;
+	}
+
+	return undef unless defined ($state);
+	
+	main::readingsSingleUpdate($hash, 'state',  $state, $do_trigger);
+	return 1;
+    }
+	
+#dev-33: dmsg: P82#F0000000101F0000000110F1001001001F1001001010F1011101001F1011101010F1001111001F1001111010F1100010001F1100010010F010000110
+    sub Fernotron_Parse {
+        my ($io_hash, $message) = @_;
+	my $result = undef;
+	
+        my ($proto, $dmsg) = split('#', $message);
+
+        my $fsb     = Fernotron::Protocol::fer_sdDmsg2Bytes($dmsg);
+        return $result if (ref($fsb) ne 'ARRAY'); # message format unknown
+
+	my $hash = getInputDeviceByFsb($fsb);
+	return "UNDEFINED scanFerno Fernotron scan" unless defined($hash);
+	
+	my $byteCount = scalar(@$fsb);
+	$hash->{received_ByteCount} = "$byteCount";
+	$hash->{received_ID} = ($byteCount >= 3) ? sprintf("a=%02x%02x%02x", @$fsb) : undef;
+	$hash->{received_CheckSum} = ($byteCount == 6) ? sprintf("%02x", $$fsb[5]) : undef;
+        return $result if ($byteCount < 5);
+	
+	my $fsb_valid =  Fernotron::Protocol::fsb_verify_by_id($fsb);
+	$hash->{received_IsValid} = $fsb_valid ? "yes" : "no"; 
+        return $result unless $fsb_valid;
+
+        my $msg = sprintf("%02x, %02x, %02x, %02x, %02x", @$fsb);
+        $hash->{received_Bytes} = $msg;
+        main::Log3($io_hash, 3, "Fernotron: message received: $msg");
+
+	
+	if ($hash->{helper}{ferInputType} eq 'scan') {
+	    defaultInputMakeReading($fsb, $hash) or return undef;
+	} else {
+	    inputMakeReading($fsb, $hash) or return undef;
+	}
+
+	return $hash->{NAME}; # message was handled by this device
+    }
 
     sub Fernotron_Define($$) {
         my ($hash, $def) = @_;
@@ -604,8 +643,9 @@ package Fernotron::fhem {
         my $address = $a[1];
 
         my ($a, $g, $m) = (0, 0, 0);
-        my $u    = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N]';
+        my $u    = 'wrong syntax: define <name> Fernotron a=ID [g=N] [m=N] [scan] [input=(sun|plain|central)]';
         my $scan = 0;
+	my $kind = "";
 
         return $u if ($#a < 2);
 
@@ -626,7 +666,16 @@ package Fernotron::fhem {
             } elsif ($key eq 'scan') {
                 $scan = 1;
 		$main::modules{Fernotron}{defptr}{Fernotron} = $hash;
-            } else {
+		$hash->{helper}{ferInputType} = 'scan';
+
+            } elsif ($key eq 'input') {
+                $kind = $value;
+		return "$name: invalid input type: $value in define. Choose one of: sun, plain" unless ("$kind" eq "sun" || "$kind" eq "plain");
+		$hash->{helper}{ferInputType} = $kind;
+		my $key =  sprintf("%6x", $a);
+		$main::modules{Fernotron}{defptr}{$key} = $hash;
+		
+	    } else {
                 return "$name: unknown argument $o in define";    #FIXME add usage text
             }
         }
@@ -688,19 +737,45 @@ package Fernotron::fhem {
         return "\"set $name\" needs at least one argument" unless (defined($cmd));
         my $u = "unknown argument $cmd choose one of ";
 
-	if ($main::modules{Fernotron}{defptr}{Fernotron} eq $hash) { ## receiver
-            return $u;                                                    # nothing to set for receiver
 
+	# handle input devices here
+	my $inputType = $hash->{helper}{ferInputType};
+	if (defined($inputType)) {
+	    if ($cmd eq '?') {
+		if ($hash->{helper}{ferInputType} eq 'sun') {
+		    return $u . "on:noArg off:noArg";
+		} elsif ($hash->{helper}{ferInputType} eq 'plain') {
+		    return $u . "up:noArg down:noArg stop:noArg";
+		}
+		return $u; #default input device takes no arguments
+	    }
+
+	    if ($inputType eq 'plain') {
+		if ($cmd eq 'stop' || $cmd eq 'up' || $cmd eq 'down') {
+		    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
+		}
+	    } elsif ($inputType eq 'sun') {
+		if ($cmd eq 'on' || $cmd eq 'off') {
+		    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
+		}
+	    } else {
+		return "unsupported input type: $inputType";
+	    }
+	  return undef;    
+	}
+
+	
+	
+	#handle output devices here
+        if ($cmd eq '?') {
+	    foreach my $key (Fernotron::Protocol::get_commandlist()) {
+		$u .= " $key:noArg";
+	    }
+	    return $u .  ' position:slider,0,50,100';
         }
 
 	my $io = $hash->{IODev} or return 'error: no io device';
-
-        if ($cmd eq '?') {
-            foreach my $key (Fernotron::Protocol::get_commandlist()) {
-                $u .= " $key:noArg";
-            }
-            return $u .  ' position:slider,0,50,100';
-        }
+	
 
         if (Fernotron::Protocol::is_command_valid($cmd)) {
             my $res = Fernotron_transmit($hash, 'send', $cmd);

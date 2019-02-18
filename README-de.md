@@ -9,7 +9,7 @@ Fernotron Geräte mit FHEM Server verwenden
 
 ## Allgemeines
 
-Zwei verschiedene FHEM Module nützlich für Besitzer von Fernotron Rollläden oder Fernotron Sendern.
+Zwei verschiedene FHEM Module für Besitzer von Fernotron Rollläden oder Fernotron Sendern.
 
 * Ein FHEM-Modul welches SIGNALduino verwendet um Fernotron Empfäger-Geräte (meistens Rollläden) anzusteuern und Fernotron-Taster und Sonnensensoren zur allgemeinen Steuerung in FHEM notify oder DOIF zu nutzen.
 
@@ -49,10 +49,22 @@ Hier sollte noch das diff aus dem Verzeichnis modules/sduino-stable benutzt werd
 
 ### Fernotron für SIGNALduino
 
-* Wenn bereits der SIGNALduino in Verwendung ist, reicht alleine die Installation dieses Moduls um Fernotron Geräte steuern zu können. Das ist beschränkt auf die normalen Kommandos wie Auf/Zu.
- Dieses Module kann dann durch FHEM Module wie ROLLO, alexa, AutomaticShuttersControl (ACS) angesteuert werden zur Erweiterung des Funktionsumfangs.
 
-Mittels Notify oder DOIF können Fernotron-Sender oder -Sonnensensoren in FHEM integriert werden.  Dazu dient das automatisch erzeugte Device 'scanFerno', welches zur Zeit alle physischen Fernontron-Eingabegeräte in einem einzigen FHEM-Gerät bündelt.
+#### Geräte zum Steuern von Rolläden (Output)
+
+* Wenn bereits der SIGNALduino in Verwendung ist, reicht alleine die Installation dieses Moduls um Fernotron Geräte steuern zu können. Das ist beschränkt auf die normalen Kommandos wie Auf/Zu.
+ Fernotron Geräte können durch FHEM Module wie ROLLO, alexa, AutomaticShuttersControl (ACS) angesteuert werden zur Erweiterung des Funktionsumfangs.
+ 
+#### Geräte zum Empfangen von Fernotron Sendern und Sensoren für allgemeine Steuerungsaufgaben (Input)
+ 
+* Default Input Gerät: Es wird ein Gerät scanFerno automatich angelegt was alle  Nachrichten übernimmt für deren Absender kein eigenes Input-Gerät definiert wurde. Damit könne IDs gescannt werden die benötigt werden zum Definieren von Input-Geräten und u.U. auch Output-Geräten.
+
+* Input-Geräte können für Handsender (plain) und Sonnensensor (sun) angelegt werden.
+```
+   define FernoHandsender_1 Fernotron a=1023dc input=plain    # dieses gerät empfängt Nachrichen vom Handsender. Das Reading state ist: up, down, stop.
+                                                              
+   define FernoSonnenSensor_1 Fernotron a=2023dc input=sun    # dieses gerät empfängt Nachrichen vom Sonnensensor.  Das Reading state ist: on, off. (on=Sonne)
+``` 
 
 Beispiel - Notify um Lampe zu toggeln über STOP Taster eines Fernotron-Handsenders
 
