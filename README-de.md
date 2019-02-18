@@ -49,7 +49,7 @@ Hier sollte noch das diff aus dem Verzeichnis modules/sduino-stable benutzt werd
 
 ### Fernotron für SIGNALduino
 
-Siehe auch die [deutsche Moduldokumentation](doc/sduino_fernotron_pod.html) für mehr Infos.
+Siehe auch die <a href=doc/sduino_fernotron_pod.html>deutsche Moduldokumentation</a> für mehr Infos.
 
 #### Geräte zum Steuern von Rolläden (Output)
 
