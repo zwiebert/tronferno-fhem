@@ -38,7 +38,7 @@ Each output device may control a single shutter, or a group of shutters dependin
 <h6>Attributes</h6>
 <ul>
   <li><a name="repeats">repeats N</a><br>
-        repeat sent messages N additional times to increase the chance of successfull delivery (default: 2 repeats)
+        repeat sent messages N additional times to increase the chance of successfull delivery (default: 1 repeat)
   </li>
 </ul>
 
@@ -76,12 +76,12 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 
 <h5>Three different methods to make messsages find their target Fernotron receiver</h5>
 <ol>
-  <li>Scan IDs of physical Fernotron controllers you own and copy their IDs in our FHEM output devices.  Use default Input device Fernotron_Scan to scan the ID first. Then use the ID to define your device. Here we have scanned the ID of our 2411 central resulting to 801234. No define devices using it<br>
+  <li>Scan IDs of physical Fernotron controllers you own and copy their IDs in our FHEM output devices.  Use default Input device Fernotron_Scan to scan the ID first. Then use the ID to define your device. Here we have scanned the ID of our 2411 central resulting to 801234. Now define devices by using it<br>
     <code>define myShutterGroup1 a=801234 g=1 m=0</code><br>
     <code>define myShutter11 a=801234 g=1 m=1</code><br>
     <code>define myShutter12 a=801234 g=1 m=2</code><br>
     ...
-    <code>define myShutterGroup a=801234 g=1 m=0</code><br>
+    <code>define myShutterGroup2 a=801234 g=2 m=0</code><br>
     <code>define myShutter21 a=801234 g=2 m=1</code><br>
     <code>define myShutter22 a=801234 g=2 m=2</code><br>
       </li>

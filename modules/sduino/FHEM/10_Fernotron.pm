@@ -537,12 +537,29 @@ package Fernotron::fhem {
     my $FDT_RECV = 'receiver';
     my $msb2fdt = { '1' => $FDT_PLAIN, '2' => $FDT_SUN, '8' => $FDT_CENTRAL,  '9' => $FDT_RECV };
     my $DEF_INPUT_DEVICE = 'default';
+    my $ATT_CREATE_NAME = 'create';
+    my $ATT_CREATE_IN = 'in';
+    my $ATT_CREATE_OUT = 'out';
+    my $ATT_CREATE_DEFAULT = 'default';
 
+    sub makeInputKeyByFsb($) {
+	my ($fsb) = @_;
+	my $key =  sprintf('%02x%02x%02x', @$fsb);
+	if (Fernotron::Protocol::FSB_MODEL_IS_CENTRAL($fsb)) {
+	    my $m =  Fernotron::Protocol::FSB_GET_MEMB($fsb);
+	    if ($m > 0) {
+		$m -= 7;
+	    }
+	    my $g = Fernotron::Protocol::FSB_GET_GRP($fsb);
+	    $key .= "-$g-$m";
+	}
+	return $key;
+    }
   
     # returns input device hash for this fsb, or default input device, or undef if none exists
     sub getInputDeviceByFsb($) {
 	my ($fsb) = @_;
-	my $key =  sprintf('%02x%02x%02x', @$fsb);
+	my $key = makeInputKeyByFsb($fsb);
 	my $hash = $main::modules{Fernotron}{defptr}{$key};
 	$hash =  $main::modules{Fernotron}{defptr}{$DEF_INPUT_DEVICE} unless defined($hash);
 	return $hash; # may be undef if no input device exists
@@ -586,7 +603,7 @@ package Fernotron::fhem {
     }
 
     # update Reading of matching input device
-    sub inputMakeReading($$) {
+    sub inputMakeReading($$) { # TODO: not working for central?
 	my ($fsb, $hash) = @_;
 	
 	my $inputType = $hash->{helper}{ferInputType};
@@ -611,6 +628,41 @@ package Fernotron::fhem {
 	main::readingsSingleUpdate($hash, 'state',  $state, $do_trigger);
 	return 1;
     }
+
+       # create return value for _Parse for autocreate a new in or out device
+    sub makeAutoNameByFSB($$) {
+	my ($fsb, $is_input) = @_;
+
+	### convert message to human readable parts
+	my $kind = Fernotron::Protocol::FSB_MODEL_IS_CENTRAL($fsb) ? $FDT_CENTRAL
+	    : Fernotron::Protocol::FSB_MODEL_IS_RECEIVER($fsb) ? $FDT_RECV
+	    : Fernotron::Protocol::FSB_MODEL_IS_SUNSENS($fsb) ? $FDT_SUN
+	    : Fernotron::Protocol::FSB_MODEL_IS_STANDARD($fsb) ? $FDT_PLAIN
+	    : 'unknown';
+	
+	my $a = sprintf('%02x%02x%02x', @$fsb);
+        my $g = 0;
+	my $m = 0;
+	if (Fernotron::Protocol::FSB_MODEL_IS_CENTRAL($fsb)) {
+	    $m =  Fernotron::Protocol::FSB_GET_MEMB($fsb);
+	    if ($m > 0) {
+		$m -= 7;
+	    }
+	    $g = Fernotron::Protocol::FSB_GET_GRP($fsb);
+	}
+	
+	my $c = Fernotron::Protocol::get_command_name_by_number(Fernotron::Protocol::FSB_GET_CMD($fsb));
+	
+	my $name = "UNDEFINED Fernotron";
+	$name .= "_${kind}" if ($is_input);
+	$name .= "_$a";
+	$name .= "_${g}_$m" if ($kind eq $FDT_CENTRAL);
+	$name .= " Fernotron a=$a";
+	$name .= " g=$g m=$m" if ($kind eq $FDT_CENTRAL);
+	$name .= " input=$kind" if ($is_input);
+	return $name;
+    }
+
 	
 #dev-33: dmsg: P82#F0000000101F0000000110F1001001001F1001001010F1011101001F1011101010F1001111001F1001111010F1100010001F1100010010F010000110
     sub Fernotron_Parse {
@@ -623,7 +675,19 @@ package Fernotron::fhem {
         return $result if (ref($fsb) ne 'ARRAY'); # message format unknown
 
 	my $hash = getInputDeviceByFsb($fsb);
-	return 'UNDEFINED Fernotron_Scan Fernotron scan' unless defined($hash); #  auto-create
+	my $default =  $main::modules{Fernotron}{defptr}{$DEF_INPUT_DEVICE};
+	
+	if ($hash and $hash == $default) {
+	    my $attrCreate = main::AttrVal($hash->{NAME}, $ATT_CREATE_NAME, $ATT_CREATE_DEFAULT);
+	    $hash->{debug} = $attrCreate;
+	    if ($attrCreate ne $ATT_CREATE_DEFAULT) {
+		my $is_input = $attrCreate eq $ATT_CREATE_IN;
+	        return makeAutoNameByFSB($fsb, $is_input); # autocreate specific input device 
+	    }
+	}
+	
+	return 'UNDEFINED Fernotron_Scan Fernotron scan' unless $hash; # autocreate default input device
+	
 	
 	my $byteCount = scalar(@$fsb);
 	$hash->{received_ByteCount} = '$byteCount';
@@ -707,7 +771,7 @@ package Fernotron::fhem {
 	    
 	    return "$name: invalid input type: $value in define. Choose one of: sun, plain, central" unless (defined($fdt) and "$fdt" eq $FDT_SUN || "$fdt" eq $FDT_PLAIN || "$fdt" eq $FDT_CENTRAL);
 	    $hash->{helper}{ferInputType} = $fdt;
-	    my $key =  sprintf('%6x%s', $a);
+	    my $key =  sprintf('%6x', $a);
 	    $key .= "-$g-$m" if ("$fdt" eq $FDT_CENTRAL);
 	    $main::modules{Fernotron}{defptr}{$key} = $hash;
 	    $hash->{helper}{inputKey} = $key;
@@ -857,6 +921,9 @@ package Fernotron::fhem {
             if ($attrName eq 'repeats') {
                 my $r = int($attrValue);
                 return "invalid argument '$attrValue'. Expected: 0..5" unless (0 <= $r and $r <= 5);
+            } elsif ($attrName eq $ATT_CREATE_NAME) {
+                my $val = $attrValue;
+                return "invalid argument '$attrValue'. Expected: in out default" unless ($val eq $ATT_CREATE_IN || $val eq $ATT_CREATE_OUT || $val eq $ATT_CREATE_DEFAULT);
             }
         }
         return undef;
@@ -868,7 +935,7 @@ package main {
     sub Fernotron_Initialize($) {
         my ($hash) = @_;
         $hash->{Match}    = '^P82#.+';
-        $hash->{AttrList} = 'IODev repeats:0,1,2,3,4,5';
+        $hash->{AttrList} = 'IODev repeats:0,1,2,3,4,5 create:default,out,in';
 
         $hash->{DefFn}   = 'Fernotron::fhem::Fernotron_Define';
 	$hash->{UndefFn} = 'Fernotron::fhem::Fernotron_Undef';
@@ -876,7 +943,7 @@ package main {
         $hash->{ParseFn} = 'Fernotron::fhem::Fernotron_Parse';
         $hash->{AttrFn}  = 'Fernotron::fhem::Fernotron_Attr';
 
-	$hash->{AutoCreate} = {'Fernotron_Scan'  => {noAutocreatedFilelog => 1} };
+	#$hash->{AutoCreate} = {'Fernotron_Scan'  => {noAutocreatedFilelog => 1} };
     }
 }
 
@@ -928,7 +995,7 @@ Each output device may control a single shutter, or a group of shutters dependin
 <h6>Attributes</h6>
 <ul>
   <li><a name="repeats">repeats N</a><br>
-        repeat sent messages N additional times to increase the chance of successfull delivery (default: 2 repeats)
+        repeat sent messages N additional times to increase the chance of successfull delivery (default: 1 repeat)
   </li>
 </ul>
 
@@ -966,12 +1033,12 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 
 <h5>Three different methods to make messsages find their target Fernotron receiver</h5>
 <ol>
-  <li>Scan IDs of physical Fernotron controllers you own and copy their IDs in our FHEM output devices.  Use default Input device Fernotron_Scan to scan the ID first. Then use the ID to define your device. Here we have scanned the ID of our 2411 central resulting to 801234. No define devices using it<br>
+  <li>Scan IDs of physical Fernotron controllers you own and copy their IDs in our FHEM output devices.  Use default Input device Fernotron_Scan to scan the ID first. Then use the ID to define your device. Here we have scanned the ID of our 2411 central resulting to 801234. Now define devices by using it<br>
     <code>define myShutterGroup1 a=801234 g=1 m=0</code><br>
     <code>define myShutter11 a=801234 g=1 m=1</code><br>
     <code>define myShutter12 a=801234 g=1 m=2</code><br>
     ...
-    <code>define myShutterGroup a=801234 g=1 m=0</code><br>
+    <code>define myShutterGroup2 a=801234 g=2 m=0</code><br>
     <code>define myShutter21 a=801234 g=2 m=1</code><br>
     <code>define myShutter22 a=801234 g=2 m=2</code><br>
       </li>
