@@ -997,8 +997,11 @@ Each output device may control a single shutter, or a group of shutters dependin
   <li><a name="repeats">repeats N</a><br>
         repeat sent messages N additional times to increase the chance of successfull delivery (default: 1 repeat)
   </li>
+  <li><a name="create">create (default|in| out)</a><br>
+       This attribute has only effect on the Fernotron default input device Fernotron_Scan (or whatever you named it (used to be scanFerno)
+       autocreate devices for input, output or don't autocreate anything excep the default input device. Hit the STOP button on a Fernotron controller to add it as a device to FHEM.
+  </li>
 </ul>
-
 
 
 <h5>2. FHEM Devices controlled by Fernotron senders</h5>
