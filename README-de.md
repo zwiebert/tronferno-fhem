@@ -5,15 +5,19 @@
 
 # tronferno-fhem
 
-Fernotron Geräte mit FHEM Server verwenden
+Module zum Einbinden von Fernotron Geräten in FHEM Server
 
 ## Allgemeines
 
-Zwei verschiedene FHEM Module für den gleichen Zweck.
+Dieses Repository enthält zwei verschiedene FHEM module um Fernotron Geräte zu via Funk zu steuern und/oder als Eingabe zu nutzen. Fernotron Geräte sind Rohrmotoren bzw. Steuerrelais für diese, Steckdosen sowie sendende Geräte wie Handsender und Sonnensensoren.
 
-* Ein FHEM-Modul welches SIGNALduino verwendet um Fernotron Empfäger-Geräte (meistens Rollläden) anzusteuern und Fernotron-Taster und Sonnensensoren zur allgemeinen Steuerung in FHEM notify oder DOIF zu nutzen.
 
-* Ein FHEM-Modul für die Benutzer der Hardware [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu).
+1.  Ein FHEM-Modul "Fernotron" zum steuern von Fernotron Empfänger und zum Einbinden von Fernotron-Sendern in FHEM zur allgemeinen Verwendung. Es benötigt SIGNALduino als I/O-Gerät und Radio-Hardware. Die Installation ist im folgenden Abschnitt beschrieben. Die weitere Nutzung inder  [deutschen Moduldokumentation](doc/sduino_fernotron_de.pod). 
+
+* FHEM-Modul "Tronferno" zum Steuern von Fernotron Empfängern über die Hardware [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu).
+Installation ist unten beschrieben. Die weitere Nutzung in der [englische Moduldokumentation](doc/tronferno.pod).
+
+
 ## Installation
 
 Die Installation oder Aktualisierung der Module und Dokumentation wird durch den update Befehl von FHEM wie folgt durchgeführt:
@@ -43,12 +47,11 @@ Hier sollte noch das diff aus dem Verzeichnis modules/sduino-stable benutzt werd
      update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/tronferno/control.txt
 ```
 
+## Beispiele für Fernotron für SIGNALduino
 
-## Verwendung
+Weitere Infos in der [Moduldokumentation](doc/sduino_fernotron_de.pod) und auch in [doc/Modul_Bedienung.md (teilweise veraltet)](doc/Modul_Bedienung.md).
 
-### Fernotron für SIGNALduino
-
-Weitere Infos in der [Moduldokumentation](doc/sduino_fernotron_de.pod) und auch in [doc/Modul_Bedienung.md (teilweise veraltet)](doc/Modul_Bedienung.md) und .
+Ein SIGNALduino Gerät muss bereits definiert sein.
 
 
 Beispiel- Geräte zur Rollladensteuerung anlegen:
@@ -62,17 +65,22 @@ attr ftroll22 alexaName DerName                 # ... nur für alexa Modul nöti
 ...
 ```
 
-### Tronferno für tronferno-mcu
+## Beispiele Tronferno für tronferno-mcu
 
 Siehe auch die [englische Moduldokumentation](doc/tronferno.pod) für mehr Infos.
 
-* Wird der tronferno-mcu Hardware betrieben, kann dieser über FHEM gesteuert werden.  Verfügbar sind nur die einfachen Kommandos. Es werden die Positionsdaten aus der MCU durch das Modul angezeigt.  Es muss ein E/A-Gerät TronfernoMCU definiert werden siehe unten und beliebig viele Rolladen-Geräte Tronferno.
 
-Beispiel - Geräte anlegen. 
+
+* Als erstes muss das I/O Gerät definiert werden. Es kann entweder per USB oder TCP/IP mit der Hardware verbunden werden:
 ```
 ...
 define tfmcu TronfernoMCU 192.168.1.61          # Entweder ein E/A-Gerät für Datenverkehr über TCP/IP ...
 define tfmcu TronfernoMCU /dev/ttyUSB1          # ... oder ein E/A-Gerät für Datenverkehr über USB
+```
+
+* Gerät definieren zum Steuern eines Rolladens
+
+```
 ...
 define roll22 Tronferno g=2 m=2                 # Gerät zur Steuerung Rolladen Gruppe 2 Empfänger 2
 attr roll22 webCmd down:stop:up                 # Bedienknöpfe für Weboberfläche 
