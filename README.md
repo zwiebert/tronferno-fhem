@@ -21,20 +21,13 @@ This project contains two different FHEM modules for the purpose of controlling 
 
 Installation and update of the modules and documentaion is done by FHEM's update command:
 
-### Fernotron module for SIGNALduino-dev
+### Fernotron module for SIGNALduino
 ```
      update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/sduino/control.txt
 ```
 
 At first install please add protocol number 82 to attribute whitelist_IDs of SIGNALduino device (sduino).
 
-
-### Fernotron module for SIGNALduino-stable
-```
-     update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/sduino-stable/control.txt
-```
-
-Additionally you may need to apply the diff from directory modules/sduino-stable to FHEM/00_SIGNALduino.pm using patch command. Or set  IODev-attribute of each Fernotron device to sduino. But this only allows transmitting. No receiving possible without doing the patching.
 
 ### Tronferno module for tronferno-mcu hardware
 ```
