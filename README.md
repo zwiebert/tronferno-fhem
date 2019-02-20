@@ -5,16 +5,16 @@
 
 # tronferno-fhem
 
-Use Fernotron devices with FHEM Server.
+Using Fernotron devices with FHEM
 
 ## General
 
 
-This project holds two different FHEM modules for the same purpose:
+This project contains two different FHEM modules for the purpose of controlling and utilizing pyhsical Fernotron devices via radio frequency. Fernotron devices are shutters, plugs and  controllers, sensors for input. 
 
-* Module Fernotron which requires SIGNALduino as underlyning IODev and RF transceiver hardware.  It can control Fernotron devices and utilizes Sensors and Switches for general purpose use in FHEM.
+1. Te FHEM module Fernotron controls Fernotron devices and utilizes Sensors and Switches for usage with FHEM.  It requires SIGNALduino as underlyning IODev and RF transceiver hardware. The installation is described below. After that, please refer to the [english module help text](doc/sduino_fernotron.pod).
 
-* Module Tronferno which requires TronfernoMCU as underlying IODev and my [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu) RF transceiver hardware.
+2. FHEM  Module Tronferno controls Fernotron devices. It has its own I/O device module TronfernoMCU. It requires the [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu) RF transceiver hardware. Istallation is described below. Please refer to  [english module help text](doc/tronferno.pod) for usage information after that.
 
 
 ## Installation
@@ -42,14 +42,13 @@ Additionally you may need to apply the diff from directory modules/sduino-stable
 ```
 
 
-## Usage
-
-### Fernotron for SIGNALduino
+## Usage Examples for Fernotron FHEM module
 
 Please read the [english module help text](doc/sduino_fernotron.pod) for more information.
 
+A SIGNALduino needs do be defined first. Fernotron requires is as I/O Device to connect to physical Fernotron devices via RF.
 
-Example - define devices to control shutters
+* Define devices to control shutters
 
 ```
 ...
@@ -60,11 +59,9 @@ attr ftroll22 alexaName DerName                 # ... needed by alexa module
 ...
 ```
 
-### Tronferno for tronferno-mcu
+### Usage Examples for Tronferno/TronfernoMCU FHEM modules
 
 Please read the [english module help text](doc/tronferno.pod) for more information.
-
-* If you have tronferno-mcu hardware in use, you can control it with FHEM using this module. Available are simple commands like up/down/stop. You have to define a single I/O device TronfernoMCU first. Then you can define Tronferno devices - one for each shutter.
 
 Example - define devices
 ```
