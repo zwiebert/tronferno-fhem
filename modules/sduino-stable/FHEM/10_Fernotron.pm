@@ -6,28 +6,18 @@
 ## - copy or softlink this file to /opt/fhem/FHEM/10_Fernotron.pm
 ##
 ## If you have 00_SIGNALduino.pm v3.3.2 (stable release 3.3)
-## then patch it:
-##    sudo patch -u /opt/fhem/FHEM/00_SIGNALduino.pm  <./signalduino.diff
+## then update FHEM to get at least Version v3.3.3
+##    
 ##
-## If you have  v3.3.3 (Development release 3.3)
-## then the protocol patch is already included. Only this module has to be installed.
 ##
 ## (deutsche anleitung: https://forum.fhem.de/index.php/topic,12599.msg836552.html#msg836552 )
 ##
-## To get  v3.3.3 (Development release 3.3) type the command in FHEM:
-## update all https://raw.githubusercontent.com/RFD-FHEM/RFFHEM/dev-r33/controls_signalduino.txt
 ##
-## To go back to stable release 3.3 type the command in FHEM:
-## update
+## To enable receiving of the Fernotron protocol :
 ##
-## You need the firmware version 3.3.2.1 rc3 or newer (older ones have issues)
-## https://forum.fhem.de/index.php/topic,82379.msg836541.html#msg836541
+##      attr -a sduino development 82
 ##
-## To enable receiving with dev-r33 enter and save:
-##
-##      attr sduino development m82
-##
-## or add 82 to the sduino attribute whitelist_IDs (which is a comma separated list of protocol numbers)
+## or use the menue in FHEMWEB called "Display protocollist"
 
   
 
