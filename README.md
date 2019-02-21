@@ -1,4 +1,4 @@
-#<p align="center">
+<p align="center">
   <span>English</span> |
   <a href="README-de.md">Deutsch</a>
 </p>
