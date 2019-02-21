@@ -118,7 +118,7 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
   <li>stop</li>
   <li>set  - activate set mode to make receiver ready to pair/unpair</li>
   <li>sun-down - move to sun position (but only if sun automatic is enabled and shutter is currently above this position)</li>
-  <li>sun-up - when at sun-position the shutter will be fully opened with this command (does nothing when not at sun position)/li>
+  <li>sun-up - when at sun-position the shutter will be fully opened with this command (does nothing when not at sun position)</li>
   <li>sun-inst - set the current position as sun position</li>
 </ul>
 
