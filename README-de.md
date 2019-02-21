@@ -9,7 +9,7 @@ Module zum Einbinden von Fernotron Geräten in FHEM Server
 
 ## Allgemeines
 
-Dieses Repository enthält zwei verschiedene FHEM Module um Fernotron Geräte zu via Funk zu steuern und/oder als Eingabe zu nutzen. Fernotron Geräte sind Rohrmotoren bzw. Steuerrelais für diese, Steckdosen sowie sendende Geräte wie Handsender und Sonnensensoren.
+Dieses Repository enthält zwei verschiedene FHEM Module um Fernotron Geräte via Funk zu steuern und/oder als Eingabegeräte zu nutzen. Fernotron Geräte sind u.a. Rohrmotoren bzw. Steuerrelais für diese, Funk-Steckdosen sowie sendende Geräte wie Handsender und Sonnensensoren.
 
 
 1.  Ein FHEM-Modul "Fernotron" zum steuern von Fernotron Empfänger und zum Einbinden von Fernotron-Sendern in FHEM zur allgemeinen Verwendung. Es benötigt SIGNALduino als I/O-Gerät und Radio-Hardware. Die Installation ist im folgenden Abschnitt beschrieben. Die weitere Nutzung in der  [deutschen Moduldokumentation](doc/sduino_fernotron_de.pod). 
