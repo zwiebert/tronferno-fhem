@@ -9,7 +9,7 @@ Module zum Einbinden von Fernotron Geräten in FHEM Server
 
 ## Allgemeines
 
-Dieses Repository enthält zwei verschiedene FHEM module um Fernotron Geräte zu via Funk zu steuern und/oder als Eingabe zu nutzen. Fernotron Geräte sind Rohrmotoren bzw. Steuerrelais für diese, Steckdosen sowie sendende Geräte wie Handsender und Sonnensensoren.
+Dieses Repository enthält zwei verschiedene FHEM Module um Fernotron Geräte zu via Funk zu steuern und/oder als Eingabe zu nutzen. Fernotron Geräte sind Rohrmotoren bzw. Steuerrelais für diese, Steckdosen sowie sendende Geräte wie Handsender und Sonnensensoren.
 
 
 1.  Ein FHEM-Modul "Fernotron" zum steuern von Fernotron Empfänger und zum Einbinden von Fernotron-Sendern in FHEM zur allgemeinen Verwendung. Es benötigt SIGNALduino als I/O-Gerät und Radio-Hardware. Die Installation ist im folgenden Abschnitt beschrieben. Die weitere Nutzung in der  [deutschen Moduldokumentation](doc/sduino_fernotron_de.pod). 
@@ -48,7 +48,7 @@ Ein SIGNALduino Gerät muss bereits definiert sein.
 define ftroll22 Fernotron a=80abcd g=2 m=2      # Gerät zur Steuerung Rolladen Gruppe 2 Empfänger 2 
 attr ftroll22 webCmd down:stop:up               # Bedienknöpfe für Weboberfläche 
 attr ftroll22 genericDeviceType blind           # ... nur für alexa Modul nötig
-attr ftroll22 alexaName DerName                 # ... nur für alexa Modul nötig
+attr ftroll22 alexaName EinName                 # ... nur für alexa Modul nötig
 ...
 ```
 
@@ -72,6 +72,6 @@ define tfmcu TronfernoMCU /dev/ttyUSB1          # ... oder ein E/A-Gerät für D
 define roll22 Tronferno g=2 m=2                 # Gerät zur Steuerung Rolladen Gruppe 2 Empfänger 2
 attr roll22 webCmd down:stop:up                 # Bedienknöpfe für Weboberfläche 
 attr roll22 genericDeviceType blind             # ... nur für alexa Modul nötig
-attr roll22 alexaName DerName                   # ... nur für alexa Modul nötig
+attr roll22 alexaName EinName                   # ... nur für alexa Modul nötig
 ...
 ```
