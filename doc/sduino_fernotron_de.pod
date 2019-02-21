@@ -104,7 +104,8 @@ Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann
   <li>down - schließen</li>
   <li>stop - anhalten</li>
   <li>set  - Setzfunktion aktivieren</li>
-  <li>sun-down - Herunterfahren bis Sonnenposition (nur bei aktiverter Sonnenautomatik)</li>
+  <li>sun-down - Anfahren der Sonnenposition (nur bei aktiverter Sonnenautomatik und wenn Laden oberhalb dieser Position steht)</li>
+  <li>sun-up - Wenn in Sonnenposition, dann fährt diese Kommando den Laden komplett hoch.</li>
   <li>sun-inst - aktuelle Position als Sonnenposition speichern</li>
 </ul>
 

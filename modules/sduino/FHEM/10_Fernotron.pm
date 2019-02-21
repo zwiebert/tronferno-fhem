@@ -1073,7 +1073,8 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
   <li>down</li>
   <li>stop</li>
   <li>set  - activate set mode to make receiver ready to pair/unpair</li>
-  <li>sun-down - move down until sun position (but only, if sun automatic is enabled)</li>
+  <li>sun-down - move to sun position (but only if sun automatic is enabled and shutter is currently above this position)</li>
+  <li>sun-up - when at sun-position the shutter will be fully opened with this command (does nothing when not at sun position)/li>
   <li>sun-inst - set the current position as sun position</li>
 </ul>
 
@@ -1187,7 +1188,8 @@ Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann
   <li>down - schließen</li>
   <li>stop - anhalten</li>
   <li>set  - Setzfunktion aktivieren</li>
-  <li>sun-down - Herunterfahren bis Sonnenposition (nur bei aktiverter Sonnenautomatik)</li>
+  <li>sun-down - Anfahren der Sonnenposition (nur bei aktiverter Sonnenautomatik und wenn Laden oberhalb dieser Position steht)</li>
+  <li>sun-up - Wenn in Sonnenposition, dann fährt diese Kommando den Laden komplett hoch.</li>
   <li>sun-inst - aktuelle Position als Sonnenposition speichern</li>
 </ul>
 
