@@ -535,7 +535,7 @@ package Fernotron::fhem {
     my $FDT_PLAIN = 'plain';
     my $FDT_CENTRAL = 'central';
     my $FDT_RECV = 'receiver';
-    my $msb2fdt = { '1' => $FDT_PLAIN, '2' => $FDT_SUN, '8' => $FDT_CENTRAL,  '9' => $FDT_RECV };
+    my $msb2fdt = { '10' => $FDT_PLAIN, '20' => $FDT_SUN, '80' => $FDT_CENTRAL,  '90' => $FDT_RECV };
     my $DEF_INPUT_DEVICE = 'default';
     my $ATT_CREATE_NAME = 'create';
     my $ATT_CREATE_IN = 'in';
@@ -715,8 +715,7 @@ package Fernotron::fhem {
 
     sub getFDTypeByA($) {
 	my ($a) = @_;
-	my $msb = ($a >> 20);# sprintf('%x', ($a >> 20));
-	#return "$msb";
+	my $msb = sprintf('%x', ($a >> 16));
 	my $fdt = $msb2fdt->{"$msb"};
 	return $fdt;
     }
