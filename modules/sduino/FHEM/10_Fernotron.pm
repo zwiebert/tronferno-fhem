@@ -690,7 +690,7 @@ package Fernotron::fhem {
 	
 	
 	my $byteCount = scalar(@$fsb);
-	$hash->{received_ByteCount} = '$byteCount';
+	$hash->{received_ByteCount} = "$byteCount";
 	$hash->{received_ID} = ($byteCount >= 3) ? sprintf('a=%02x%02x%02x', @$fsb) : undef;
 	$hash->{received_CheckSum} = ($byteCount == 6) ? sprintf('%02x', $$fsb[5]) : undef;
         return $result if ($byteCount < 5);
@@ -963,7 +963,7 @@ package main {
 <i>Fernotron</i> is a logic FHEM module to 1) control shutters and power plugs using Fernotron protocol and 2) use Fernotron controllers and sensors as general switches in FHEM.
 
 <ul>
-<li>Required I/O device: <i>SIGNALduino</li>
+<li>Required I/O device: <i>SIGNALduino</i></li>
 <li>Protocol limitations: It's uni-directional. No information of the receivers status is available. So it's not best suited for automation without user attention.</li>
 <li>Pairing: Senders have 6 digit Hex-Numbers as ID.  To pair, the receiver learns IDs of its paired Senders.</li>
 <li>Sending direclty: Motors have also an ID wich can be used to address messages to it without pairing.</li>
