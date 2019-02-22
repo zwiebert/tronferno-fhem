@@ -27,7 +27,7 @@ Die Installation oder Aktualisierung der Module und Dokumentation wird durch den
      update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/sduino/control.txt
 ```
 
-Bei der ersten Installation ist es nötig die Protokollnummer 82 zum Attribut whitelist_IDs des SIGNALduino Gerätes (sduino) hinzuzufügen um das Empfangen freizuschalten. Dazu das Gerät sduino in FHEMWEB öffnen und im Information Menu den Link 'Display protocollist' öffnen. Oder besser vorher den aktuellen Hilfetext für das Attribute whitelist_IDs lesen.
+Bei der ersten Installation ist es nötig die Protokollnummer 82 zum Attribut whitelist_IDs des SIGNALduino Gerätes (sduino) hinzuzufügen um das Empfangen freizuschalten. Dazu das Gerät sduino in FHEMWEB öffnen und im Information-Menü den Link 'Display protocollist' öffnen. Dazu auch den aktuellen Hilfetext für das Attribute whitelist_IDs lesen.
 
 Die SIGNALduino-Hardware müsste zum Empfang entsprechend konfiguiert werden durch:
 ```
@@ -36,7 +36,7 @@ get sduino raw CDR
 ```
 (Config_Enable_Overflow und Config_Disable_Reduction ?)
 
-SIGNALduinoe Konfiguration ist beschrieben in [Nachricht im FHEM-Forum](https://forum.fhem.de/index.php/topic,82379.msg744554.html#msg744554)
+SIGNALduino Konfiguration ist beschrieben in [Nachricht im FHEM-Forum](https://forum.fhem.de/index.php/topic,82379.msg744554.html#msg744554)
 
 ### Tronferno Module für tronferno-mcu Hardware
 ```
