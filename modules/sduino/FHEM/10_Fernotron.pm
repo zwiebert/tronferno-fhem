@@ -201,26 +201,34 @@ package Fernotron::Protocol {
         return ($result > 15) ? 1 : $result;
     }
 
+    my $FDT_MASK = 0xff; # 0xf0 or 0xff (more strict)
+    
+    sub FSB_MODEL_IS_INVALID($) { # assumes that low nibble is zero in any device  (not sure if this is true)
+        my ($fsb) = @_;
+        return ($$fsb[0] & 0x0f) != 0;
+    }
+
+    
     sub FSB_MODEL_IS_CENTRAL($) {
         my ($fsb) = @_;
-        return ($$fsb[0] & 0xf0) == 0x80;
+        return ($$fsb[0] & $FDT_MASK) == 0x80;
     }
 
     sub FSB_MODEL_IS_RECEIVER($) {
         my ($fsb) = @_;
-        return ($$fsb[0] & 0xf0) == 0x90;
+        return ($$fsb[0] & $FDT_MASK) == 0x90;
     }
 
     sub FSB_MODEL_IS_SUNSENS($) {
         my ($fsb) = @_;
-        return ($$fsb[0] & 0xf0) == 0x20;
+        return ($$fsb[0] & $FDT_MASK) == 0x20;
     }
 
     sub FSB_MODEL_IS_STANDARD($) {
         my ($fsb) = @_;
-        return ($$fsb[0] & 0xf0) == 0x10;
-    }
-
+        return ($$fsb[0] & $FDT_MASK) == 0x10;
+    }   
+   
     sub FSB_GET_DEVID($) {
         my ($fsb) = @_;
         return $$fsb[$fer_dat_ADDR_2] << 16 | $$fsb[$fer_dat_ADDR_1] << 8 | $$fsb[$fer_dat_ADDR_0];
