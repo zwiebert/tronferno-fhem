@@ -36,7 +36,7 @@ get sduino raw CDR
 ```
 (Config_Enable_Overflow und Config_Disable_Reduction ?)
 
-Infos aus [Thread aus FHEM-Forum](https://forum.fhem.de/index.php/topic,82379.msg744554.html#msg744554)
+SIGNALduinoe Konfiguration ist beschrieben in [Nachricht im FHEM-Forum](https://forum.fhem.de/index.php/topic,82379.msg744554.html#msg744554)
 
 ### Tronferno Module für tronferno-mcu Hardware
 ```
