@@ -26,7 +26,16 @@ Installation and update of the modules and documentation is done by FHEM's updat
      update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/sduino/control.txt
 ```
 
-At first install please add protocol number 82 to attribute whitelist_IDs of SIGNALduino device (sduino).
+To be able to receive Fernotron commands you need to:
+
+ * add protocol number 82 to attribute whitelist_IDs of SIGNALduino device (sduino). To do this go to menu 'Display protocollist' available at the SIGNALduino device page at FHEMWEB. (note: if you add protocol numbers to that attribute, all other protocol numbers become disabled)
+
+ * configure two SIGNALduino hardware options:
+```
+get sduino raw CEO
+get sduino raw CDR
+```
+
 
 ### Tronferno module for tronferno-mcu hardware
 ```
