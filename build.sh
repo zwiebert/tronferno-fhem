@@ -1,7 +1,7 @@
 #!/bin/sh
 
-(cd modules/sduino && perl ../../mk_ctrl_fernotron.pl > control.txt)
-(cd modules/tronferno && perl ../../mk_ctrl_tronferno.pl > control.txt)
+(cd modules/sduino && perl ../../mk_ctrl_fernotron.pl > controls_fernotron.txt)
+(cd modules/tronferno && perl ../../mk_ctrl_tronferno.pl > controls_tronferno.txt)
 
 
 echo || (

@@ -26,7 +26,7 @@ This project contains two different FHEM modules for the purpose of controlling 
 
 
 ```
-     update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/sduino/control.txt
+     update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/sduino/controls_fernotron.txt
 ```
 
 To be able to receive Fernotron commands you need to:
@@ -56,7 +56,7 @@ get sduino raw CDR
  The modules and commandref are installed and updated by FHEM's update command:
 
 ```
-     update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/tronferno/control.txt
+     update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/tronferno/controls_tronferno.txt
 ```
 
 

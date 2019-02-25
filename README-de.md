@@ -24,7 +24,7 @@ Dieses Repository enthält zwei verschiedene FHEM Module um Fernotron Geräte vi
  * die Module und commandref werden durch FHEMs update Kommando installiert und aktualisiert
 
 ```
-     update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/sduino/control.txt
+     update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/sduino/controls_fernotron.txt
 ```
 
  * (wenn erforderlich: einmalig alle vorher manuell manuell installierten Versionen in einer shell löschen oder deren Besitzer ändern mit 'sudo chown fhem.dialout /opt/fhem/10_Fernotron.pm').
@@ -52,6 +52,6 @@ Installation ist unten beschrieben. Die weitere Nutzung in [englische TronfernoM
  Die Module und commandref werden durch FHEMs update Kommando installiert und aktualisiert
 
 ```
-     update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/tronferno/control.txt
+     update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/tronferno/controls_tronferno.txt
 ```
 
