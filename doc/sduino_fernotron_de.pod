@@ -111,7 +111,7 @@ Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann
 
 <h4>Beispiele</h4>
 
-<h5>Addressierung und Paring</h5>
+<h5>Addressierung und Pairing</h5>
 <ol>
   <li><ul>
       <li>scanne die ID der 2411: Den Stop Taster der 2411 einige Sekunden drücken. Im automatisch erzeugten Default-Eingabegerät "Fernotron_Scan" steht die ID unter Internals:received_HR.</li>
