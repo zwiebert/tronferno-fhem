@@ -14,7 +14,7 @@ This project contains two different FHEM modules for the purpose of controlling 
 
 1. FHEM module Fernotron controls Fernotron devices and utilizes Sensors and Switches for usage with FHEM.  It requires SIGNALduino as underlying IODev and RF transceiver hardware. The installation is described below. After that, please refer to the [module help text](doc/sduino_fernotron.pod).
 
-2. FHEM  Module Tronferno controls Fernotron devices. It has its own I/O device module TronfernoMCU. It requires the [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu) RF transceiver hardware. Installation is described below. Please refer to  [module help text](doc/tronferno.pod) for usage information after that.
+2. FHEM  Module Tronferno controls Fernotron devices. It has its own I/O device module TronfernoMCU. It requires the [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu) RF transceiver hardware. Installation is described below. Please refer to  [TronfernoMCU I/O  module help text](doc/tronferno_mcu.pod) and [Tronferno module help text](doc/tronferno.pod) for usage information after that.
 
 
 ## Installation

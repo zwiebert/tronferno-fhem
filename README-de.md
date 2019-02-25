@@ -15,12 +15,12 @@ Dieses Repository enthält zwei verschiedene FHEM Module um Fernotron Geräte vi
 1.  Ein FHEM-Modul "Fernotron" zum steuern von Fernotron Empfänger und zum Einbinden von Fernotron-Sendern in FHEM zur allgemeinen Verwendung. Es benötigt SIGNALduino als I/O-Gerät und Radio-Hardware. Die Installation ist im folgenden Abschnitt beschrieben. Die weitere Nutzung in der  [deutschen Moduldokumentation](doc/sduino_fernotron_de.pod). 
 
 2.  FHEM-Modul "Tronferno" zum Steuern von Fernotron Empfängern über die Hardware [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu).
-Installation ist unten beschrieben. Die weitere Nutzung in der [englische Moduldokumentation](doc/tronferno.pod).
+Installation ist unten beschrieben. Die weitere Nutzung in [englische TronfernoMCU I/O Moduldokumentation](doc/tronferno_mcu.pod) und  [englische Tronferno Moduldokumentation](doc/tronferno.pod).
 
 
 ## Installation
 
-Die Installation oder Aktualisierung der Module und Dokumentation wird durch den update Befehl von FHEM wie folgt durchgeführt:
+Die Installation oder Aktualisierung der Module und Dokumentation wird durch den update Befehl von FHEM wie folgt durchgeführt (wenn erforderlich: einmalig alle vorher manuell manuell installierten Versionen in einer shell löschen oder deren Besitzer ändern mit 'sudo chown fhem.dialout /opt/fhem/10_Fernotron.pm').
 
 ### Fernotron Modul für SIGNALduino
 ```
