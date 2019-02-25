@@ -1122,7 +1122,7 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 
 <h3>Fernotron</h3>
 
-<i>Fernotron</i> ist ein logisches Modul zur Steuerung von Fernotron Rolläden.
+<i>Fernotron</i> ist ein logisches Modul zur Steuerung von Fernotron Rolläden und Funk-Steckdosen/Lampen
 Die erzeugten Kommandos werden über <i>SIGNALduino</i> gesendet.
 <i>Fernotron</i> kann außerdem Nachrichten empfangen die von anderen Fernotron-Kontrollern  gesendet werden. Die Rolläden kommunizieren unidirektional. Sie senden also leider keine Feedback Information wie offen/geschlossen.
 
