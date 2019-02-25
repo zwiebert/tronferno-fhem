@@ -4,12 +4,11 @@
 
 <h3>Tronferno</h3>
 
-<i>Tronferno</i> is a logic module to control Fernotron shutters by sending commands to <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a> micro controller hardware.
+<i>Tronferno</i> is a logic module to control Fernotron shutters via radio frequency. To do this, it utilizes the <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a> micro controller hardware.
 
 <ul>
 <li>Required I/O device: <i>TronfernoMCU</i></li>
-<li>Tronferno-MCU is a micro-controller to control Fernotron shutters via radio frequency. It can also programm the built-in timers.</li>
-<li>00_TronfernoMCU.pm is the FHEM I/O module which talks to the MCU via USB or TCP/IP (using FHEM's DevIo)
+<li>Protocol limitations: It's uni-directional. No information of the receivers status is available. So it's not best suited for automation without user attention.</li>
 <li>Pairing: Senders have 6 digit Hex-Numbers as ID.  To pair, the receiver learns IDs of its paired Senders.</li>
 <li>Sending directly: Motors have also an ID wich can be used to address messages to it without pairing.</li>
 </ul>
@@ -78,7 +77,7 @@ Each output device may control a single shutter, or a group of shutters dependin
 
 
 <ul>
-      <li>first define the I/O device, so it exists before any rollo_xx devices which depends on it.<br>
+      <li>first define the I/O device, so it exists before any myShutter_xx devices which are depending on it.<br>
       <code>define tfmcu TronfernoMCU 192.168.1.123</code></li>
 </ul>
 

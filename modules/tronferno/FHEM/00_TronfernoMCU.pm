@@ -6,6 +6,7 @@
 ################################################################################
 ## Author: Bert Winkelmann <tf.zwiebert@online.de>
 ## Project: https://github.com/zwiebert/tronferno-fhem
+## Related Hardware-Project: https://github.com/zwiebert/tronferno-mcu
 ################################################################################
 
 
