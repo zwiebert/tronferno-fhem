@@ -1100,7 +1100,7 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 <li><code>define myShutter__0d123 Fernotron a=90d123</code></li>
 </ol>
 
-
+<h5>More Examples</h5>
 <ul>
 <li>Attribute for alexa module:<br>
 <code>attr myShutter_42 genericDeviceType blind</code><br>
@@ -1244,6 +1244,7 @@ Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann
   </ul></li>
 </ol>
 
+<h5>weitere Beispiele</h5>
 <ul>
 <li>Attribute für alexa setzen:<br>
 <code>attr myShutter_42 genericDeviceType blind</code><br>
