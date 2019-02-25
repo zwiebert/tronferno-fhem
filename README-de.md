@@ -43,24 +43,6 @@ SIGNALduino Konfiguration ist beschrieben in [Nachricht im FHEM-Forum](https://f
      update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/tronferno/control.txt
 ```
 
-## Beispiele für Fernotron für SIGNALduino
-
-Weitere Infos in der [Moduldokumentation](doc/sduino_fernotron_de.pod) und auch in [doc/Modul_Bedienung.md (teilweise veraltet)](doc/Modul_Bedienung.md).
-
-Ein SIGNALduino Gerät muss bereits definiert sein.
-
-
-* Gerät zur Rollladensteuerung anlegen:
-
-```
-...
-define ftroll22 Fernotron a=80abcd g=2 m=2      # Gerät zur Steuerung Rolladen Gruppe 2 Empfänger 2 
-attr ftroll22 webCmd down:stop:up               # Bedienknöpfe für Weboberfläche 
-attr ftroll22 genericDeviceType blind           # ... nur für alexa Modul nötig
-attr ftroll22 alexaName EinName                 # ... nur für alexa Modul nötig
-...
-```
-
 ## Beispiele Tronferno für tronferno-mcu
 
 Siehe auch die [englische Moduldokumentation](doc/tronferno.pod) für mehr Infos.
