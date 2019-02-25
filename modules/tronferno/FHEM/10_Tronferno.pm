@@ -1,67 +1,18 @@
-#############################################
-## *experimental* FHEM module Tronferno
-#  Logical FHEM module to control Fernotron devices via physical module 00_TronfernoMCU.pm
-#
-#  Author:  Bert Winkelmann <tf.zwiebert@online.de>
-#
-# - copy or softlink file 00_TronfernoMCU.pm to /opt/fhem/FHEM/00_TronfernoMCU.pm
-# - copy or softlink this file to /opt/fhem/FHEM/10_Tronferno.pm
-# - do 'reload 00_TronfernoMCU' and 'reload 10_Tronferno'
-#
-#  device arguments
-#      a - 6 digit Fernotron hex ID or 0 (default: 0)
-#      g - group number: 0..7 (default: 0)
-#      m - member number: 0..7 (default: 0)
-#  
-#     Examples:
-#
-# 1) MCU module is connected via TCP/IP
-#
-#    define tfmcu TronfernoMCU  192.168.1.123
-#    define roll_11 Tronferno g=1 m=1
-#    define roll_12 Tronferno g=1 m=2
-#     ..
-#    define roll_77 Tronferno g=7 m=7
-#
-# 2) MCU module is connected via USB port /dev/ttyUSB1
-#
-#    define tfmcu TronfernoMCU /dev/ttyUSB1
-#    define roll_11 Tronferno g=1 m=1
-#    define roll_12 Tronferno g=1 m=2
-#     ..
-#    define roll_77 Tronferno g=7 m=7
-#
-# 3) Connect to multiple TronfernoMCU
-#
-#    define tfmcu_A TronfernoMCU /dev/tty/USB1
-#    define tfmcu_B TronfernoMCU 192.168.1.123
-#    define tfmcu_C TronfernoMCU computer.domain.com
-#
-#    define roll_A_11 Tronferno g=1 m=1
-#    attr roll_A_11 IODev=tfmcu_A
-#     ...
-#    define roll_B_11 Tronferno g=1 m=1
-#    attr roll_B_11 IODev=tfmcu_B
-#     ...
-#    define roll_C_11 Tronferno g=1 m=1
-#    attr roll_C_11 attr IODev=tfmcu_C
-#
-#  ### Make sure the I/O device tfmcu is defined before any roll_xx device ###
-#  ### Otherwise the roll_xx devices can't find their I/O device (because its not defined yet) ###
-#
-#  device set commands
-#      down, stop, up, set, sun-inst, sun-down, sup-up, position
-#
-# To work with Alexa module:
-#
-# attr roll_XX genericDeviceType blind
-# set roll_XX alexaName MY_NAME
-# set alexa restart
-# ...search for new devices with alexa app or by voice...
-#
-# TODO
-# - ...
-
+################################################################################
+## *experimental* FHEM module for Fernotron devices
+##
+##
+##  - file: /opt/fhem/FHEM/10_Tronferno.pm
+##  - needs IODev TronfernoMCU
+##  - to send command to Fernotron devices
+##  - to receive position status from tronferno-mcu hardware
+##  - currently it does not receive commands from Fernotron controllers (TODO)
+##
+################################################################################
+## Author: Bert Winkelmann <tf.zwiebert@online.de>
+## Project: https://github.com/zwiebert/tronferno-fhem
+## Related Hardware-Project: https://github.com/zwiebert/tronferno-mcu
+################################################################################
 
 use strict;
 use warnings;
@@ -366,44 +317,49 @@ package main {
 
 <h3>Tronferno</h3>
 
-<i>Tronferno</i> is a logic module to control shutters by sending commands to <i>Tronferno-MCU</i> via USB port or TCP/IP.
+<i>Tronferno</i> is a logic module to control Fernotron shutters by sending commands to <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a> micro controller hardware.
 
-<h4>Basics</h4>
+<ul>
+<li>Required I/O device: <i>TronfernoMCU</i></li>
+<li>Tronferno-MCU is a micro-controller to control Fernotron shutters via radio frequency. It can also programm the built-in timers.</li>
+<li>00_TronfernoMCU.pm is the FHEM I/O module which talks to the MCU via USB or TCP/IP (using FHEM's DevIo)
+<li>Pairing: Senders have 6 digit Hex-Numbers as ID.  To pair, the receiver learns IDs of its paired Senders.</li>
+<li>Sending directly: Motors have also an ID wich can be used to address messages to it without pairing.</li>
+</ul>
 
-Tronferno-MCU is a micro-controller to control Fernotron shutters. It can also programm the built-in timers.
-
-<p>00_TronfernoMCU.pm is the FHEM I/O module which talks to the MCU via USB or TCP/IP (using FHEM's DevIo)
 
 <h4>Defining Devices</h4>
 
-Each device may control a single shutter, but could also control an entire group.
-This depends on the ID and the group and member numbers.
+<h5>1. FHEM devices to control Fernotron devices</h5>
+
+Each output device may control a single shutter, or a group of shutters depending on the parameters given in the define statement.
 
 <p>
-				    
   <code>
     define <my_shutter> Tronferno [a=ID] [g=GN] [m=MN]<br>
   </code>			
 		
 <p> 
-  ID : the device ID.  A six digit hexadecimal number. 10xxxx=plain controller, 20xxxx=sun sensor, 80xxxx=central controller unit, 90xxxx=receiver. 0 (default for using the default central unit of Tronferno-MCU<br>
+  ID : the device ID.  A six digit hexadecimal number. 10xxxx=plain controller, 20xxxx=sun sensor, 80xxxx=central controller unit, 90xxxx=receiver. 0 (default) for using the default central unit of Tronferno-MCU<br>
   GN : group number (1-7) or 0 (default) for all groups<br>
   MN : member number  (1-7) or  0 (default) for all group members<br>
 
 <p>
-  'g' and  'm' can only be combined with a central controller type. 
+  'g' or  'n' are only useful combined with an ID of the central controller type.
 
-<h4>Different Kinds of Adressing</h4>
 
+<h4>Adressing and Pairing in Detail</h4>
+
+<h5>Three different methods to make messsages find their target Fernotron receiver</h5>
 <ol>
-  <li> Scanning physical controllers and use their IDs.
-    Example: Using the  ID of a  2411 controller to access shutters via group and member numbers.</li>
+  <li>Scan IDs of physical Fernotron controllers you own and copy their IDs in our FHEM output devices.  Use default Input device Fernotron_Scan to scan the ID first. Then use the ID to define your device. Here we have scanned the ID of our 2411 central resulting to 801234. Now define devices by using it
+  </li>
 
-  <li> Make up IDs and pair them with shutters.
-    Example: Pair shutter 1 with ID 100001, shutter  2 with 100002, ...</li>
+  <li>Define Fernotron devices using invented IDs (like 100001, 100002, ...). Then pair these devices by sending a STOP command from it while the physical Fernotron receiver/motor is in pairing-mode (aka set-mode).
+  </li>
 
-<li> Receiver IDs: RF controlled shutters may have a 5 digit code printed on or on a small cable sticker.
-  Prefix a 9 with it and you get an ID.</li>
+<li> Receiver IDs to send directly to without pairing: RF controlled shutters may have a 5 digit code printed on or on a small cable sticker.
+  Prefix that number with a 9 to get an valid ID for defining a device.</li>
 </ol>
 
 <h4>Making Groups</h4>
@@ -411,81 +367,65 @@ This depends on the ID and the group and member numbers.
 <ol>
   <li>groups and members are the same like in 2411. Groups are adressed using the 0 as wildcard.  (g=1 m=0 or g=0 m=1 or g=0 m=0) </li>
 
-  <li> Like with plain controllers. Example: a (virtual) plain controller paired with each shutter of the entire floor.</li>
+  <li> Like with plain controllers or sun sensors. Example: a (virtual) plain controller paired with each shutter of the entire floor.</li>
 
-  <li> not possible with reeiver IDs</li>
+  <li> not possible with receiver IDs</li>
 </ol>
 
-
-<h4>Kommandos</h4>
-
+<h4>Commands</h4>
 <ul>
   <li>up</li>
   <li>down</li>
   <li>stop</li>
-  <li>set  - make receiver ready to pair</li>
-  <li>sun-down - move down until sun position (but only, if sun automatic is enabled)</li>
+  <li>set  - activate set mode to make receiver ready to pair/unpair</li>
+  <li>sun-down - move to sun position (but only if sun automatic is enabled and shutter is currently above this position)</li>
+  <li>sun-up - when at sun-position the shutter will be fully opened with this command (does nothing when not at sun position)</li>
   <li>sun-inst - set the current position as sun position</li>
   <li>position - set position to 0 (down), 50 (sun-down), 100 (up), 99 (stop). (used  by alexa)</li>
   <li>xxx_pair - Lets MCU pair the next received sender to this shutter (Paired senders will influence the shutter position)</li>
   <li>xxx_unpair - Lets MCU unpair the next received Sender to this shutter</li>
 </ul>
 
+
 <h4>Examples</h4>
 
+
+<ul>
+      <li>first define the I/O device, so it exists before any rollo_xx devices which depends on it.<br>
+      <code>define tfmcu TronfernoMCU 192.168.1.123</code></li>
+</ul>
+
+<h5>Adressing and Pairing in Detail</h5>
 <ol>
-  <li><ul>
-      <li>first define the I/O device, so it exists before any rollo_xx devices which depends on it.</li>
-      <li><code>define tfmcu TronfernoMCU 192.168.1.123</code></li>
-  </ul></li>
+  <li>
+    <code>define myShutterGroup1 Tronferno a=801234 g=1 m=0</code><br>
+    <code>define myShutter11 Tronferno a=801234 g=1 m=1</code><br>
+    <code>define myShutter12 Tronferno a=801234 g=1 m=2</code><br>
+    ...
+    <code>define myShutterGroup2 Tronferno a=801234 g=2 m=0</code><br>
+    <code>define myShutter21 Tronferno a=801234 g=2 m=1</code><br>
+    <code>define myShutter22 Tronferno a=801234 g=2 m=2</code><br>
+      </li>
 
-  <li><ul>
-      <li><code>define rollo42 Tronferno g=4 m=2</code></li>
-  </ul></li>
+  <li>
+    <code>define myShutter1 Tronferno a=100001</code><br>
+    <code>define myShutter2 Tronferno a=100002</code><br>
+    Now activate Set-mode on the Fernotron receiver and send a STOP by the newly defined device you wish to pair with it.
+ ...</li>
 
-  <li><ul>
-      <li><code>define rollo1 Tronferno a=100001 </code></li>
-      <li>enable set mode on the receiver</li>
-      <li>press stop for rollo1</li>
-  </ul></li>
-
-  <li><ul>
-      <li><code>define rollo_0d123 Fernotron a=90d123</code></li>
-  </ul></li>
+<li><code>define myShutter__0d123 Tronferno a=90d123</code></li>
 </ol>
 
-<br>     Examples:
-<br>
-<br> 1) MCU module is connected via TCP/IP
-<br>
-<br>    define tfmcu TronfernoMCU  192.168.1.123
-<br>    define roll_11 Tronferno g=1 m=1
-<br>    define roll_12 Tronferno g=1 m=2
-<br>     ..
-<br>    define roll_77 Tronferno g=7 m=7
-<br>
-<br> 2) MCU module is connected via USB port /dev/ttyUSB1
-<br>
-<br>    define tfmcu TronfernoMCU /dev/ttyUSB1
-<br>    define roll_11 Tronferno g=1 m=1
-<br>    define roll_12 Tronferno g=1 m=2
-<br>     ..
-<br>    define roll_77 Tronferno g=7 m=7
-<br>
-<br> 3) Connect to multiple TronfernoMCU
-<br>
-<br>    define tfmcu_A TronfernoMCU /dev/tty/USB1
-<br>    define tfmcu_B TronfernoMCU 192.168.1.123
-<br>    define tfmcu_C TronfernoMCU computer.domain.com
-<br>
-<br>    define roll_A_11 Tronferno g=1 m=1 iodev=tfmcu_A
-<br>     ...
-<br>    define roll_B_11 Tronferno g=1 m=1 iodev=tfmcu_B
-<br>     ...
-<br>    define roll_C_11 Tronferno g=1 m=1 iodev=tfmcu_C
-<br>
-<br>  ### Make sure the I/O device tfmcu is defined before any roll_xx device ###
-<br>  ### Otherwise the roll_xx devices can't find their I/O device (because its not defined yet) ###
+<h5>More Examples</h5>
+<ul>
+<li>Attribute for alexa module:<br>
+<code>attr myShutter_42 genericDeviceType blind</code><br>
+<code>attr myShutter_42 alexaName bedroom shutter</code><br>
+</li>
+<li>GUI buttons<br>
+<code>attr myShutter_42 webCmd down:stop:up</code><br>
+</li>
+</ul>
 
 =end html
 

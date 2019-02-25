@@ -1,6 +1,7 @@
 ################################################################################
 ## *experimental* FHEM module for Fernotron devices
 ##
+##  - file: /opt/fhem/FHEM/10_Fernotron.pm
 ##  - needs IODev SIGNALduino v3.3.3
 ##  - to send commands to Fernotron devices
 ##  - to recveive commands from Fernotron controllers
@@ -10,6 +11,7 @@
 ################################################################################
 ## *experimentelles* FHEM Modul für Fernotron Geräte
 ##
+##  - Datei: /opt/fhem/FHEM/10_Fernotron.pm
 ##  - braucht IODev SIGNALduino v3.3.3
 ##  - zum Senden von Kommandos an Fernotron-Geräte
 ##  - zum Empfangen von Kommandos von Fernotron-Sendern
@@ -974,7 +976,7 @@ package main {
 <li>Required I/O device: <i>SIGNALduino</i></li>
 <li>Protocol limitations: It's uni-directional. No information of the receivers status is available. So it's not best suited for automation without user attention.</li>
 <li>Pairing: Senders have 6 digit Hex-Numbers as ID.  To pair, the receiver learns IDs of its paired Senders.</li>
-<li>Sending direclty: Motors have also an ID wich can be used to address messages to it without pairing.</li>
+<li>Sending directly: Motors have also an ID wich can be used to address messages to it without pairing.</li>
 <li>
 
 
@@ -1082,18 +1084,18 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 <h5>Adressing and Pairing in Detail</h5>
 <ol>
   <li>
-    <code>define myShutterGroup1 a=801234 g=1 m=0</code><br>
-    <code>define myShutter11 a=801234 g=1 m=1</code><br>
-    <code>define myShutter12 a=801234 g=1 m=2</code><br>
+    <code>define myShutterGroup1 Fernotron a=801234 g=1 m=0</code><br>
+    <code>define myShutter11 Fernotron a=801234 g=1 m=1</code><br>
+    <code>define myShutter12 Fernotron a=801234 g=1 m=2</code><br>
     ...
-    <code>define myShutterGroup2 a=801234 g=2 m=0</code><br>
-    <code>define myShutter21 a=801234 g=2 m=1</code><br>
-    <code>define myShutter22 a=801234 g=2 m=2</code><br>
+    <code>define myShutterGroup2 Fernotron a=801234 g=2 m=0</code><br>
+    <code>define myShutter21 Fernotron a=801234 g=2 m=1</code><br>
+    <code>define myShutter22 Fernotron a=801234 g=2 m=2</code><br>
       </li>
 
   <li>
-    <code>define myShutter1 a=100001</code><br>
-    <code>define myShutter2 a=100002</code><br>
+    <code>define myShutter1 Fernotron a=100001</code><br>
+    <code>define myShutter2 Fernotron a=100002</code><br>
     Now activate Set-mode on the Fernotron receiver and send a STOP by the newly defined device you wish to pair with it.
  ...</li>
 

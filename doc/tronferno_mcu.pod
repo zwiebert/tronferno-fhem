@@ -12,32 +12,20 @@
 <br> 1) MCU module is connected via TCP/IP
 <br>
 <br>    define tfmcu TronfernoMCU  192.168.1.123
-<br>    define roll_11 Tronferno g=1 m=1
-<br>    define roll_12 Tronferno g=1 m=2
+<br>    define shutter_11 Tronferno g=1 m=1
+<br>    define shutter_12 Tronferno g=1 m=2
 <br>     ..
-<br>    define roll_77 Tronferno g=7 m=7
+<br>    define shutter_77 Tronferno g=7 m=7
 <br>
 <br> 2) MCU module is connected via USB port /dev/ttyUSB1
 <br>
 <br>    define tfmcu TronfernoMCU /dev/ttyUSB1
-<br>    define roll_11 Tronferno g=1 m=1
-<br>    define roll_12 Tronferno g=1 m=2
+<br>    define shutter_11 Tronferno g=1 m=1
+<br>    define shutter_12 Tronferno g=1 m=2
 <br>     ..
-<br>    define roll_77 Tronferno g=7 m=7
+<br>    define shutter_77 Tronferno g=7 m=7
 <br>
-<br> 3) Connect to multiple TronfernoMCU
-<br>
-<br>    define tfmcu_A TronfernoMCU /dev/tty/USB1
-<br>    define tfmcu_B TronfernoMCU 192.168.1.123
-<br>    define tfmcu_C TronfernoMCU computer.domain.com
-<br>
-<br>    define roll_A_11 Tronferno g=1 m=1 iodev=tfmcu_A
-<br>     ...
-<br>    define roll_B_11 Tronferno g=1 m=1 iodev=tfmcu_B
-<br>     ...
-<br>    define roll_C_11 Tronferno g=1 m=1 iodev=tfmcu_C
-<br>
-<br>  ### Make sure the I/O device tfmcu is defined before any roll_xx device ###
-<br>  ### Otherwise the roll_xx devices can't find their I/O device (because its not defined yet) ###
+<br>  ### Make sure the I/O device tfmcu is defined before any shutter_xx device ###
+<br>  ### Otherwise the shutter_xx devices can't find their I/O device (because its not defined yet) ###
 
 =end html
