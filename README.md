@@ -12,16 +12,18 @@ Using Fernotron devices with FHEM
 
 This project contains two different FHEM modules for the purpose of controlling and utilizing physical Fernotron devices via radio frequency. Fernotron devices are shutters, plugs and  controllers, sensors for input. 
 
-1. FHEM module Fernotron controls Fernotron devices and utilizes Sensors and Switches for usage with FHEM.  It requires SIGNALduino as underlying IODev and RF transceiver hardware. The installation is described below. After that, please refer to the [module help text](doc/sduino_fernotron.pod).
 
-2. FHEM  Module Tronferno controls Fernotron devices. It has its own I/O device module TronfernoMCU. It requires the [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu) RF transceiver hardware. Installation is described below. Please refer to  [TronfernoMCU I/O  module help text](doc/tronferno_mcu.pod) and [Tronferno module help text](doc/tronferno.pod) for usage information after that.
+### 1. FHEM module Fernotron
+
+ * It controls Fernotron devices and utilizes Sensors and Switches for usage with FHEM.
+ * It requires SIGNALduino as underlying IODev and RF transceiver hardware.
+ * Please refer to the [module help text](doc/sduino_fernotron.pod).
+
+### Installation and Update
+
+ The module and commandref are installed by FHEM's update command:
 
 
-## Installation
-
-Installation and update of the modules and documentation is done by FHEM's update command:
-
-### Fernotron module for SIGNALduino
 ```
      update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/sduino/control.txt
 ```
@@ -37,30 +39,23 @@ get sduino raw CDR
 ```
 
 
-### Tronferno module for tronferno-mcu hardware
+
+
+
+
+### 2. FHEM  Module Tronferno
+
+ * It controls Fernotron devices.
+ * It has its own I/O device module TronfernoMCU.
+ * It requires the [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu) RF transceiver hardware.
+ * Please refer to  [TronfernoMCU I/O  module help text](doc/tronferno_mcu.pod) and [Tronferno module help text](doc/tronferno.pod) for usage information after that.
+
+### Installation and Update
+
+ The modules and commandref are installed by FHEM's update command:
+
 ```
      update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/tronferno/control.txt
 ```
 
-### Usage Examples for Tronferno/TronfernoMCU FHEM modules
 
-Please read the [English module help text](doc/tronferno.pod) for more information.
-
-* First, define IO device and chose if it connects to the hardware via USB or TCP/IP. 
-```
-...
-define tfmcu TronfernoMCU 192.168.1.61          # IODev for TCP/IP or ...
-define tfmcu TronfernoMCU /dev/ttyUSB1          # ... for USB
-```
-
-
-* Define devices to control shutters
-
-```
-...
-define roll22 Tronferno g=2 m=2                 # define device to control shutter 2 of  group 2
-attr roll22 webCmd down:stop:up                 # control buttons for web-interface
-attr roll22 genericDeviceType blind             # ... needed by alexa module
-attr roll22 alexaName SomeName                   # ... needed by alexa module
-...
-```
