@@ -1,7 +1,6 @@
 =begin html
 
 <a name="Fernotron"></a>
-
 <h3>Fernotron</h3>
 
 <i>Fernotron</i> is a logic FHEM module to 1) control shutters and power plugs using Fernotron protocol and 2) use Fernotron controllers and sensors as general switches in FHEM.

@@ -27,6 +27,14 @@ use strict;
 
 use 5.14.0;
 
+
+sub main::Log3;
+sub main::AssignIoPort;
+sub main::AttrVal;
+sub main::readingsSingleUpdate;
+sub main::ReadingsVal;
+sub main::IOWrite;
+
 package Fernotron::Protocol {
 ################################################################################
 ### 
@@ -963,11 +971,9 @@ package main {
 =item device
 =item summary controls shutters via Fernotron protocol
 =item summary_DE steuert Rolläden über Fernotron Protokoll
-
 =begin html
 
 <a name="Fernotron"></a>
-
 <h3>Fernotron</h3>
 
 <i>Fernotron</i> is a logic FHEM module to 1) control shutters and power plugs using Fernotron protocol and 2) use Fernotron controllers and sensors as general switches in FHEM.
@@ -1116,13 +1122,11 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 
 =end html
 
-
-
 =begin html_DE
+
 =encoding utf-8
 
 <a name="Fernotron"></a>
-
 <h3>Fernotron</h3>
 
 <i>Fernotron</i> ist ein logisches Modul zur Steuerung von Fernotron Rolläden und Funk-Steckdosen/Lampen

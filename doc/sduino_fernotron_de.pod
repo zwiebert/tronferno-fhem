@@ -1,8 +1,8 @@
 =begin html
+
 =encoding utf-8
 
 <a name="Fernotron"></a>
-
 <h3>Fernotron</h3>
 
 <i>Fernotron</i> ist ein logisches Modul zur Steuerung von Fernotron Rolläden und Funk-Steckdosen/Lampen
