@@ -1078,8 +1078,8 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 
 
 <h4>Examples</h4>
-<h4>Adressing and Pairing in Detail</h4>
 
+<h5>Adressing and Pairing in Detail</h5>
 <ol>
   <li>
     <code>define myShutterGroup1 a=801234 g=1 m=0</code><br>
@@ -1227,6 +1227,8 @@ Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann
 </ul>
 
 <h4>Beispiele</h4>
+
+<h5>Addressierung und Paring</h5>
 <ol>
   <li><ul>
       <li>scanne die ID der 2411: Den Stop Taster der 2411 einige Sekunden drücken. Im automatisch erzeugten Default-Eingabegerät "Fernotron_Scan" steht die ID unter Internals:received_HR.</li>

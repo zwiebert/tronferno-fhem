@@ -114,8 +114,8 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 
 
 <h4>Examples</h4>
-<h4>Adressing and Pairing in Detail</h4>
 
+<h5>Adressing and Pairing in Detail</h5>
 <ol>
   <li>
     <code>define myShutterGroup1 a=801234 g=1 m=0</code><br>

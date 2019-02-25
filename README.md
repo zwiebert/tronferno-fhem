@@ -47,7 +47,7 @@ get sduino raw CDR
 
 Please read the [English module help text](doc/sduino_fernotron.pod) for more information.
 
-A SIGNALduino needs do be defined first. Fernotron requires is as I/O Device to connect to physical Fernotron devices via RF.
+A SIGNALduino needs do be defined first. Fernotron requires it as I/O Device to connect to physical Fernotron devices via RF.
 
 * Define devices to control shutters
 
