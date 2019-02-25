@@ -1076,6 +1076,7 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
   <li>sun-down - move to sun position (but only if sun automatic is enabled and shutter is currently above this position)</li>
   <li>sun-up - when at sun-position the shutter will be fully opened with this command (does nothing when not at sun position)</li>
   <li>sun-inst - set the current position as sun position</li>
+  <li>position - set position to 0 (down), 50 (sun-down), 100 (up), 99 (stop). (used  by alexa)</li>
 </ul>
 
 
@@ -1226,6 +1227,7 @@ Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann
   <li>sun-down - Anfahren der Sonnenposition (nur bei aktiverter Sonnenautomatik und wenn Laden oberhalb dieser Position steht)</li>
   <li>sun-up - Wenn in Sonnenposition, dann fährt diese Kommando den Laden komplett hoch.</li>
   <li>sun-inst - aktuelle Position als Sonnenposition speichern</li>
+  <li>position - fahre zu position 0 (down), 50 (sun-down), 100 (up), 99 (stop). (für alexa)</li>
 </ul>
 
 <h4>Beispiele</h4>
