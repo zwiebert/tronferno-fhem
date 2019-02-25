@@ -44,11 +44,6 @@ package Fernotron::Protocol {
     my $d_pause_string = $d_float_string . 'PPPPPPP';
     my $fmt_dmsg_string = 'P82#%s%s#R%d';  # d_pause_string, data, repeats
 
-    # global configuration
-    my $C = {
-        'centralUnitID' => 0x8012ab,        # FIXME:-bw/23-Nov-17
-    };
-
     # the latest command for each target device is stored as array of 5 bytes
     # example: 0x8012ab => [0x80, 0x12, 0xab, 0x12, 0x34]
     # use: to implement rolling counter
