@@ -7,7 +7,7 @@
 
 Using Fernotron devices with FHEM
 
-## General
+### General
 
 
 This project contains two different FHEM modules for the purpose of controlling and utilizing physical Fernotron devices via radio frequency. Fernotron devices are shutters, plugs and  controllers, sensors for input. 
@@ -15,7 +15,8 @@ This project contains two different FHEM modules for the purpose of controlling 
 
 ### 1. FHEM module Fernotron
 
- * It controls Fernotron devices and utilizes Sensors and Switches for usage with FHEM.
+ * It controls Fernotron devices
+ * it makes available Fernotron sensors and switches for usage with FHEM.
  * It requires SIGNALduino as underlying IODev and RF transceiver hardware.
  * Please refer to the [module help text](doc/sduino_fernotron.pod).
 

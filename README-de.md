@@ -7,7 +7,7 @@
 
 Module zum Einbinden von Fernotron Geräten in FHEM Server
 
-## Allgemeines
+### Allgemeines
 
 Dieses Repository enthält zwei verschiedene FHEM Module um Fernotron Geräte via Funk zu steuern und/oder als Eingabegeräte zu nutzen. Fernotron Geräte sind u.a. Rohrmotoren bzw. Steuerrelais für diese, Funk-Steckdosen sowie sendende Geräte wie Handsender und Sonnensensoren.
 
