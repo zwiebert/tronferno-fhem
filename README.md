@@ -19,9 +19,9 @@ This project contains two different FHEM modules for the purpose of controlling 
  * It requires SIGNALduino as underlying IODev and RF transceiver hardware.
  * Please refer to the [module help text](doc/sduino_fernotron.pod).
 
-### Installation and Update
+#### Installation and Update
 
- The module and commandref are installed by FHEM's update command:
+ The module and commandref are installed and updated by FHEM's update command:
 
 
 ```
@@ -48,11 +48,11 @@ get sduino raw CDR
  * It controls Fernotron devices.
  * It has its own I/O device module TronfernoMCU.
  * It requires the [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu) RF transceiver hardware.
- * Please refer to  [TronfernoMCU I/O  module help text](doc/tronferno_mcu.pod) and [Tronferno module help text](doc/tronferno.pod) for usage information after that.
+ * Please refer to  [TronfernoMCU I/O  module help text](doc/tronferno_mcu.pod) and [Tronferno module help text](doc/tronferno.pod) for usage information.
 
-### Installation and Update
+#### Installation and Update
 
- The modules and commandref are installed by FHEM's update command:
+ The modules and commandref are installed and updated by FHEM's update command:
 
 ```
      update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/tronferno/control.txt
