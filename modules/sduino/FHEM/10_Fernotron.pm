@@ -1045,24 +1045,14 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 
 <h5>Three different methods to make messsages find their target Fernotron receiver</h5>
 <ol>
-  <li>Scan IDs of physical Fernotron controllers you own and copy their IDs in our FHEM output devices.  Use default Input device Fernotron_Scan to scan the ID first. Then use the ID to define your device. Here we have scanned the ID of our 2411 central resulting to 801234. Now define devices by using it<br>
-    <code>define myShutterGroup1 a=801234 g=1 m=0</code><br>
-    <code>define myShutter11 a=801234 g=1 m=1</code><br>
-    <code>define myShutter12 a=801234 g=1 m=2</code><br>
-    ...
-    <code>define myShutterGroup2 a=801234 g=2 m=0</code><br>
-    <code>define myShutter21 a=801234 g=2 m=1</code><br>
-    <code>define myShutter22 a=801234 g=2 m=2</code><br>
-      </li>
+  <li>Scan IDs of physical Fernotron controllers you own and copy their IDs in our FHEM output devices.  Use default Input device Fernotron_Scan to scan the ID first. Then use the ID to define your device. Here we have scanned the ID of our 2411 central resulting to 801234. Now define devices by using it
+  </li>
 
-  <li> Invent valid IDs and pair them with shutters. See above which IDs are needed for different kind of senders<br>
-    <code>define myShutter1 a=100001</code><br>
-    <code>define myShutter2 a=100002</code><br>
-    Now activate Set-mode on the Fernotron receiver and send a STOP by the newly defined device you wish to pair with it.
- ...</li>
+  <li>Define Fernotron devices using invented IDs (like 100001, 100002, ...). Then pair these devices by sending a STOP command from it while the physical Fernotron receiver/motor is in pairing-mode (aka set-mode).
+  </li>
 
-<li> Receiver IDs: RF controlled shutters may have a 5 digit code printed on or on a small cable sticker.
-  Prefix that number with a 9 to get an valid ID.</li>
+<li> Receiver IDs to send directly to without pairing: RF controlled shutters may have a 5 digit code printed on or on a small cable sticker.
+  Prefix that number with a 9 to get an valid ID for defining a device.</li>
 </ol>
 
 <h4>Making Groups</h4>
@@ -1086,13 +1076,38 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
   <li>sun-inst - set the current position as sun position</li>
 </ul>
 
+
+<h4>Examples</h4>
+<h4>Adressing and Pairing in Detail</h4>
+
+<ol>
+  <li>
+    <code>define myShutterGroup1 a=801234 g=1 m=0</code><br>
+    <code>define myShutter11 a=801234 g=1 m=1</code><br>
+    <code>define myShutter12 a=801234 g=1 m=2</code><br>
+    ...
+    <code>define myShutterGroup2 a=801234 g=2 m=0</code><br>
+    <code>define myShutter21 a=801234 g=2 m=1</code><br>
+    <code>define myShutter22 a=801234 g=2 m=2</code><br>
+      </li>
+
+  <li>
+    <code>define myShutter1 a=100001</code><br>
+    <code>define myShutter2 a=100002</code><br>
+    Now activate Set-mode on the Fernotron receiver and send a STOP by the newly defined device you wish to pair with it.
+ ...</li>
+
+<li><code>define myShutter__0d123 Fernotron a=90d123</code></li>
+</ol>
+
+
 <ul>
 <li>Attribute for alexa module:<br>
-<code>attr myRollo_42 genericDeviceType blind</code><br>
-<code>attr myRollo_42 alexaName Schlafzimmer Rollo</code><br>
+<code>attr myShutter_42 genericDeviceType blind</code><br>
+<code>attr myShutter_42 alexaName bedroom shutter</code><br>
 </li>
 <li>GUI buttons<br>
-<code>attr myRollo_42 webCmd down:stop:up</code><br>
+<code>attr myShutter_42 webCmd down:stop:up</code><br>
 </li>
 </ul>
 
@@ -1215,27 +1230,27 @@ Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann
 <ol>
   <li><ul>
       <li>scanne die ID der 2411: Den Stop Taster der 2411 einige Sekunden drücken. Im automatisch erzeugten Default-Eingabegerät "Fernotron_Scan" steht die ID unter Internals:received_HR.</li>
-      <li><code>define rollo42 Fernotron a=80abcd g=4 m=2</code></li>
+      <li><code>define myShutter_42 Fernotron a=80abcd g=4 m=2</code></li>
   </ul></li>
 
   <li><ul>
-      <li><code>define rollo1 Fernotron a=100001 </code></li>
+      <li><code>define myShutter_1 Fernotron a=100001 </code></li>
       <li>aktivere Set-Modus des gewünschten Motors</li>
-      <li><code>set rollo1 stop</code></li>
+      <li><code>set myShutter_1 stop</code></li>
   </ul></li>
 
   <li><ul>
-      <li><code>define rollo_0d123 Fernotron a=90d123</code></li>
+      <li><code>define myShutter__0d123 Fernotron a=90d123</code></li>
   </ul></li>
 </ol>
 
 <ul>
 <li>Attribute für alexa setzen:<br>
-<code>attr myRollo_42 genericDeviceType blind</code><br>
-<code>attr myRollo_42 alexaName Schlafzimmer Rollo</code><br>
+<code>attr myShutter_42 genericDeviceType blind</code><br>
+<code>attr myShutter_42 alexaName Schlafzimmer Rollo</code><br>
 </li>
 <li>GUI buttons<br>
-<code>attr myRollo_42 webCmd down:stop:up</code><br>
+<code>attr myShutter_42 webCmd down:stop:up</code><br>
 </li>
 </ul>
 

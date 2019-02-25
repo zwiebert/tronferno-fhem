@@ -113,27 +113,27 @@ Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann
 <ol>
   <li><ul>
       <li>scanne die ID der 2411: Den Stop Taster der 2411 einige Sekunden drücken. Im automatisch erzeugten Default-Eingabegerät "Fernotron_Scan" steht die ID unter Internals:received_HR.</li>
-      <li><code>define rollo42 Fernotron a=80abcd g=4 m=2</code></li>
+      <li><code>define myShutter_42 Fernotron a=80abcd g=4 m=2</code></li>
   </ul></li>
 
   <li><ul>
-      <li><code>define rollo1 Fernotron a=100001 </code></li>
+      <li><code>define myShutter_1 Fernotron a=100001 </code></li>
       <li>aktivere Set-Modus des gewünschten Motors</li>
-      <li><code>set rollo1 stop</code></li>
+      <li><code>set myShutter_1 stop</code></li>
   </ul></li>
 
   <li><ul>
-      <li><code>define rollo_0d123 Fernotron a=90d123</code></li>
+      <li><code>define myShutter__0d123 Fernotron a=90d123</code></li>
   </ul></li>
 </ol>
 
 <ul>
 <li>Attribute für alexa setzen:<br>
-<code>attr myRollo_42 genericDeviceType blind</code><br>
-<code>attr myRollo_42 alexaName Schlafzimmer Rollo</code><br>
+<code>attr myShutter_42 genericDeviceType blind</code><br>
+<code>attr myShutter_42 alexaName Schlafzimmer Rollo</code><br>
 </li>
 <li>GUI buttons<br>
-<code>attr myRollo_42 webCmd down:stop:up</code><br>
+<code>attr myShutter_42 webCmd down:stop:up</code><br>
 </li>
 </ul>
 
