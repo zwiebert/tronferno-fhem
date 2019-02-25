@@ -1086,6 +1086,16 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
   <li>sun-inst - set the current position as sun position</li>
 </ul>
 
+<ul>
+<li>Attribute for alexa module:<br>
+<code>attr myRollo_42 genericDeviceType blind</code><br>
+<code>attr myRollo_42 alexaName Schlafzimmer Rollo</code><br>
+</li>
+<li>GUI buttons<br>
+<code>attr myRollo_42 webCmd down:stop:up</code><br>
+</li>
+</ul>
+
 =end html
 
 
@@ -1218,6 +1228,16 @@ Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann
       <li><code>define rollo_0d123 Fernotron a=90d123</code></li>
   </ul></li>
 </ol>
+
+<ul>
+<li>Attribute für alexa setzen:<br>
+<code>attr myRollo_42 genericDeviceType blind</code><br>
+<code>attr myRollo_42 alexaName Schlafzimmer Rollo</code><br>
+</li>
+<li>GUI buttons<br>
+<code>attr myRollo_42 webCmd down:stop:up</code><br>
+</li>
+</ul>
 
 =end html_DE
 

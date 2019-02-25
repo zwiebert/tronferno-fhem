@@ -122,4 +122,14 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
   <li>sun-inst - set the current position as sun position</li>
 </ul>
 
+<ul>
+<li>Attribute for alexa module:<br>
+<code>attr myRollo_42 genericDeviceType blind</code><br>
+<code>attr myRollo_42 alexaName Schlafzimmer Rollo</code><br>
+</li>
+<li>GUI buttons<br>
+<code>attr myRollo_42 webCmd down:stop:up</code><br>
+</li>
+</ul>
+
 =end html
