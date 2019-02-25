@@ -17,7 +17,7 @@ Dieses Repository enthält zwei verschiedene FHEM Module um Fernotron Geräte vi
  * zum steuern von Fernotron Empfänger
  * zum Einbinden von Fernotron-Sendern in FHEM zur allgemeinen Verwendung.
  * Es benötigt SIGNALduino als I/O-Gerät und Radio-Hardware.
- * Beschreibung ind  [deutschen Moduldokumentation](doc/sduino_fernotron_de.pod). 
+ * Beschreibung in der  [deutschen Moduldokumentation](doc/sduino_fernotron_de.pod). 
 
 #### Installation und Aktualisierung
 
