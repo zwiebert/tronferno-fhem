@@ -15,11 +15,11 @@ This project contains two different FHEM modules for the purpose of controlling 
 
 ### 1. FHEM module Fernotron
 
- * It controls Fernotron devices
- * it makes available Fernotron sensors and switches for usage with FHEM.
- * It requires SIGNALduino as underlying IODev and RF transceiver hardware.
- * Please refer to the [module help text](doc/sduino_fernotron.pod).
-
+ * controls Fernotron devices
+ * makes Fernotron sensors and switches available in FHEM.
+ * requires SIGNALduino as underlying IODev and RF transceiver hardware.
+ * Read [module help text](doc/sduino_fernotron.pod).
+ 
 #### Installation and Update
 
  The module and commandref are installed and updated by FHEM's update command:
@@ -38,10 +38,6 @@ To be able to receive Fernotron commands you need to:
 get sduino raw CEO
 get sduino raw CDR
 ```
-
-
-
-
 
 
 ### 2. FHEM  Module Tronferno
