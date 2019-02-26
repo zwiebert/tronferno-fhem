@@ -27,13 +27,13 @@ use strict;
 
 use 5.14.0;
 
-
-sub main::Log3;
-sub main::AssignIoPort;
-sub main::AttrVal;
-sub main::readingsSingleUpdate;
-sub main::ReadingsVal;
-sub main::IOWrite;
+#FIXME: protos should be removed later
+sub main::Log3($$$);
+sub main::AssignIoPort($;$);
+sub main::AttrVal($$$);
+sub main::readingsSingleUpdate($$$$);
+sub main::ReadingsVal($$$);
+sub main::IOWrite($@);
 
 package Fernotron::Protocol {
 ################################################################################
@@ -587,7 +587,9 @@ package Fernotron::fhem {
 	    : Fernotron::Protocol::FSB_MODEL_IS_RECEIVER($fsb) ? $FDT_RECV
 	    : Fernotron::Protocol::FSB_MODEL_IS_SUNSENS($fsb) ? $FDT_SUN
 	    : Fernotron::Protocol::FSB_MODEL_IS_STANDARD($fsb) ? $FDT_PLAIN
-	    : 'unknown';
+	    : undef;
+
+        return undef unless $kind;
 	
 	my $a = sprintf('%02x%02x%02x', @$fsb);
         my $g = 0;
@@ -616,7 +618,7 @@ package Fernotron::fhem {
     }
 
     # update Reading of matching input device
-    sub inputMakeReading($$) { # TODO: not working for central?
+    sub inputMakeReading($$) {
 	my ($fsb, $hash) = @_;
 	
 	my $inputType = $hash->{helper}{ferInputType};
@@ -651,7 +653,9 @@ package Fernotron::fhem {
 	    : Fernotron::Protocol::FSB_MODEL_IS_RECEIVER($fsb) ? $FDT_RECV
 	    : Fernotron::Protocol::FSB_MODEL_IS_SUNSENS($fsb) ? $FDT_SUN
 	    : Fernotron::Protocol::FSB_MODEL_IS_STANDARD($fsb) ? $FDT_PLAIN
-	    : 'unknown';
+	    : undef;
+
+        return undef unless $kind;
 	
 	my $a = sprintf('%02x%02x%02x', @$fsb);
         my $g = 0;
@@ -695,7 +699,7 @@ package Fernotron::fhem {
 	    $hash->{debug} = $attrCreate;
 	    if ($attrCreate ne $ATT_CREATE_DEFAULT) {
 		my $is_input = $attrCreate eq $ATT_CREATE_IN;
-	        return makeAutoNameByFSB($fsb, $is_input); # autocreate specific input device 
+	        return makeAutoNameByFSB($fsb, $is_input); # autocreate specific input device or return undef
 	    }
 	}
 	
