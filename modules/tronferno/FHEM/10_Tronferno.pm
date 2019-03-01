@@ -171,6 +171,42 @@ package Tronferno {
 
         return "\"set $name\" needs at least one argument" unless (defined($cmd));
 
+        my $u = "unknown argument $cmd choose one of ";
+
+
+	# handle input devices here
+	my $inputType = $hash->{helper}{ferInputType};
+	if (defined($inputType)) {
+	    if ($cmd eq '?') {
+		if ($hash->{helper}{ferInputType} eq FDT_SUN) {
+		    return $u . 'on:noArg off:noArg';
+		} elsif ($hash->{helper}{ferInputType} eq FDT_PLAIN) {
+		    return $u . 'up:noArg down:noArg stop:noArg';
+		} elsif ($hash->{helper}{ferInputType} eq FDT_CENTRAL) {
+		    return $u . 'up:noArg down:noArg stop:noArg';
+		}
+		return $u; #default input device takes no arguments
+	    }
+
+	    if ($inputType eq FDT_PLAIN) {
+		if ($cmd eq 'stop' || $cmd eq 'up' || $cmd eq 'down') {
+		    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
+		}
+	    } elsif ($inputType eq FDT_CENTRAL) {
+		if ($cmd eq 'stop' || $cmd eq 'up' || $cmd eq 'down') {
+		    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
+		}
+	    } elsif ($inputType eq FDT_SUN) {
+		if ($cmd eq 'on' || $cmd eq 'off') {
+		    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
+		}
+	    } else {
+		return "unsupported input type: $inputType";
+	    }
+            return undef;    
+	}
+
+        #handle output devices here
         if ($cmd eq '?') {
             my $res = "unknown argument $cmd choose one of ";
             foreach my $key (get_commandlist()) {
