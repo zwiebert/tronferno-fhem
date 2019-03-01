@@ -126,63 +126,68 @@ package Fernotron::Protocol {
 
 ### some constants
 ##
-    my ($fer_dat_ADDR_2, $fer_dat_ADDR_1, $fer_dat_ADDR_0,    ## sender or receiver address
-        $fer_dat_TGL_and_MEMB,                                # key-press counter + some ID of the sender (like Member number, Type of sender, ...)
-        $fer_dat_GRP_and_CMD                                  # Group-ID of sender + the command code (0...0xF)
-    ) = qw(0 1 2 3 4);
+    use constant {
+	fer_dat_ADDR_2 => 0,
+	fer_dat_ADDR_1 => 1,
+	fer_dat_ADDR_0 => 2,         ## sender or receiver address
+        fer_dat_TGL_and_MEMB => 3,   # key-press counter + some ID of the sender (like Member number, Type of sender, ...)
+        fer_dat_GRP_and_CMD => 4     # Group-ID of sender + the command code (0...0xF)
+   };
 
 ## values of low nibble in data[fer_dat_GRP_and_CMD].
 ####/ Command Codes
-    my ($fer_cmd_None,
-        $fer_cmd_1,
-        $fer_cmd_2,
-        $fer_cmd_STOP,
-        $fer_cmd_UP,
-        $fer_cmd_DOWN,
-        $fer_cmd_SunDOWN,
-        $fer_cmd_SunUP,
-        $fer_cmd_SunINST,
-        $fer_cmd_EndPosUP,
-        $fer_cmd_endPosDOWN,
-        $fer_cmd_0xb,
-        $fer_cmd_0xc,
-        $fer_cmd_SET,
-        $fer_cmd_0xe,
-        $fer_cmd_Program    # Sun-Test (dat_MEMB=1), Time send (dat_Memb=0), Data send (dat_MEMB=member)
-    ) = qw (0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15);
+    use constant {
+	fer_cmd_None => 0,
+        fer_cmd_1 => 1,
+        fer_cmd_2 => 2,
+        fer_cmd_STOP => 3,
+        fer_cmd_UP => 4,
+        fer_cmd_DOWN => 5,
+        fer_cmd_SunDOWN => 6,
+        fer_cmd_SunUP => 7,
+        fer_cmd_SunINST => 8,
+        fer_cmd_EndPosUP => 9,
+        fer_cmd_endPosDOWN => 10,
+        fer_cmd_0xb => 11,
+        fer_cmd_0xc => 12,
+        fer_cmd_SET => 13,
+        fer_cmd_0xe => 14,
+        fer_cmd_Program => 15    # Sun-Test (dat_MEMB=1), Time send (dat_Memb=0), Data send (dat_MEMB=member)
+   };
 
-## values of high nibble in data[$fer_dat_GRP_and_CMD].
+    ## values of high nibble in data[$fer_dat_GRP_and_CMD].
 ####/ Sender IDs
-    my ($fer_grp_Broadcast,
-        $fer_grp_G1,
-        $fer_grp_G2,
-        $fer_grp_G3,
-        $fer_grp_G4,
-        $fer_grp_G5,
-        $fer_grp_G6,
-        $fer_grp_G7
+    use constant {
+	fer_grp_Broadcast => 0,
+        fer_grp_G1 => 1,
+        fer_grp_G2 => 2,
+        fer_grp_G3 => 3,
+        fer_grp_G4 => 4,
+        fer_grp_G5 => 5,
+        fer_grp_G6 => 6,
+        fer_grp_G7 => 7
 ### FIXME: only 3 bits used so far. Is the highest bit used for anything? */
+    };
 
-    ) = qw (0 1 2 3 4 5 6 7);
-
-## values of low nibble in data[$fer_dat_TGL_and_MEMB].
+## values of low nibble in data[fer_dat_TGL_and_MEMB].
 ####/ Sender IDs
-    my ($fer_memb_Broadcast,    # RTC data, ...
-        $fer_memb_SUN,          # sent by SunSensor
-        $fer_memb_SINGLE,       # sent by hand sender
-        $fer_memb_P3,
-        $fer_memb_P4,
-        $fer_memb_P5,
-        $fer_memb_P6,
-        $fer_memb_RecAddress,    # $fer_dat_ADDR contains address of the receiver (set function via motor code)
-        $fer_memb_M1,            #8
-        $fer_memb_M2,
-        $fer_memb_M3,
-        $fer_memb_M4,
-        $fer_memb_M5,
-        $fer_memb_M6,
-        $fer_memb_M7,
-    ) = qw (0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15);
+    use constant {
+	fer_memb_Broadcast => 0,    # RTC data, ...
+        fer_memb_SUN => 1,          # sent by SunSensor
+        fer_memb_SINGLE => 2,       # sent by hand sender
+        fer_memb_P3 => 3,
+        fer_memb_P4 => 4,
+        fer_memb_P5 => 5,
+        fer_memb_P6 => 6,
+        fer_memb_RecAddress => 7,    # fer_dat_ADDR contains address of the receiver (set function via motor code)
+        fer_memb_M1 => 8,            #8
+        fer_memb_M2 => 9,
+        fer_memb_M3 => 10,
+        fer_memb_M4 => 11,
+        fer_memb_M5 => 12,
+        fer_memb_M6 => 13,
+        fer_memb_M7 => 14,
+    };
 
 ###############################################
 ####
@@ -236,47 +241,47 @@ package Fernotron::Protocol {
    
     sub FSB_GET_DEVID($) {
         my ($fsb) = @_;
-        return $$fsb[$fer_dat_ADDR_2] << 16 | $$fsb[$fer_dat_ADDR_1] << 8 | $$fsb[$fer_dat_ADDR_0];
+        return $$fsb[fer_dat_ADDR_2] << 16 | $$fsb[fer_dat_ADDR_1] << 8 | $$fsb[fer_dat_ADDR_0];
     }
 
     sub FSB_GET_CMD($) {
         my ($fsb) = @_;
-        return ($$fsb[$fer_dat_GRP_and_CMD] & 0x0f);
+        return ($$fsb[fer_dat_GRP_and_CMD] & 0x0f);
     }
 
     sub FSB_GET_MEMB($) {
         my ($fsb) = @_;
-        return ($$fsb[$fer_dat_TGL_and_MEMB] & 0x0f);
+        return ($$fsb[fer_dat_TGL_and_MEMB] & 0x0f);
     }
 
     sub FSB_PUT_CMD($$) {
         my ($fsb, $cmd) = @_;
-        $$fsb[$fer_dat_GRP_and_CMD] = ($$fsb[$fer_dat_GRP_and_CMD] & 0xf0) | ($cmd & 0x0f);
+        $$fsb[fer_dat_GRP_and_CMD] = ($$fsb[fer_dat_GRP_and_CMD] & 0xf0) | ($cmd & 0x0f);
     }
 
     sub FSB_PUT_MEMB($$) {
         my ($fsb, $val) = @_;
-        $$fsb[$fer_dat_TGL_and_MEMB] = ($$fsb[$fer_dat_TGL_and_MEMB] & 0xf0) | ($val & 0x0f);
+        $$fsb[fer_dat_TGL_and_MEMB] = ($$fsb[fer_dat_TGL_and_MEMB] & 0xf0) | ($val & 0x0f);
     }
 
     sub FSB_GET_TGL($) {
         my ($fsb) = @_;
-        return 0x0f & ($$fsb[$fer_dat_TGL_and_MEMB] >> 4);
+        return 0x0f & ($$fsb[fer_dat_TGL_and_MEMB] >> 4);
     }
 
     sub FSB_PUT_GRP($$) {
         my ($fsb, $val) = @_;
-        $$fsb[$fer_dat_GRP_and_CMD] = (($val << 4) & 0xf0) | ($$fsb[$fer_dat_GRP_and_CMD] & 0x0f);
+        $$fsb[fer_dat_GRP_and_CMD] = (($val << 4) & 0xf0) | ($$fsb[fer_dat_GRP_and_CMD] & 0x0f);
     }
 
     sub FSB_GET_GRP($) {
         my ($fsb) = @_;
-        return 0x0f & ($$fsb[$fer_dat_GRP_and_CMD] >> 4);
+        return 0x0f & ($$fsb[fer_dat_GRP_and_CMD] >> 4);
     }
 
     sub FSB_PUT_TGL($$) {
         my ($fsb, $val) = @_;
-        $$fsb[$fer_dat_TGL_and_MEMB] = (($val << 4) & 0xf0) | ($$fsb[$fer_dat_TGL_and_MEMB] & 0x0f);
+        $$fsb[fer_dat_TGL_and_MEMB] = (($val << 4) & 0xf0) | ($$fsb[fer_dat_TGL_and_MEMB] & 0x0f);
     }
 ##
 ##
@@ -288,7 +293,7 @@ package Fernotron::Protocol {
         if (!FSB_MODEL_IS_CENTRAL($fsb)) {
             $step = 1;
         } elsif ($repeats > 0) {
-            $step = (FSB_GET_CMD($fsb) == $fer_cmd_STOP ? 1 : 0);
+            $step = (FSB_GET_CMD($fsb) == fer_cmd_STOP ? 1 : 0);
         } else {
             $step = 1;
         }
@@ -344,10 +349,10 @@ package Fernotron::Protocol {
 	
         my $m = FSB_GET_MEMB($fsb);
 
-        return ($m == $fer_memb_Broadcast || ($fer_memb_M1 <= $m && $m <= $fer_memb_M7)) if FSB_MODEL_IS_CENTRAL($fsb);
-        return ($m == $fer_memb_SUN)        if FSB_MODEL_IS_SUNSENS($fsb);
-        return ($m == $fer_memb_SINGLE)     if FSB_MODEL_IS_STANDARD($fsb);
-        return ($m == $fer_memb_RecAddress) if FSB_MODEL_IS_RECEIVER($fsb);
+        return ($m == fer_memb_Broadcast || (fer_memb_M1 <= $m && $m <= fer_memb_M7)) if FSB_MODEL_IS_CENTRAL($fsb);
+        return ($m == fer_memb_SUN)        if FSB_MODEL_IS_SUNSENS($fsb);
+        return ($m == fer_memb_SINGLE)     if FSB_MODEL_IS_STANDARD($fsb);
+        return ($m == fer_memb_RecAddress) if FSB_MODEL_IS_RECEIVER($fsb);
 
         return 0;
     }
@@ -456,13 +461,13 @@ package Fernotron::Protocol {
 ##
 ##
     my $map_fcmd = {
-        'up'       => $fer_cmd_UP,
-        'down'     => $fer_cmd_DOWN,
-        'stop'     => $fer_cmd_STOP,
-        'set'      => $fer_cmd_SET,
-        'sun-down' => $fer_cmd_SunDOWN,
-        'sun-up'   => $fer_cmd_SunUP,
-        'sun-inst' => $fer_cmd_SunINST,
+        'up'       => fer_cmd_UP,
+        'down'     => fer_cmd_DOWN,
+        'stop'     => fer_cmd_STOP,
+        'set'      => fer_cmd_SET,
+        'sun-down' => fer_cmd_SunDOWN,
+        'sun-up'   => fer_cmd_SunUP,
+        'sun-inst' => fer_cmd_SunINST,
     };
 
     my $last_error = '';
@@ -506,34 +511,34 @@ package Fernotron::Protocol {
         if (exists($$args{'g'})) {
             my $val = $$args{'g'};
             if (0 <= $val && $val <= 7) {
-                FSB_PUT_GRP($fsb, $fer_grp_Broadcast + $val);
+                FSB_PUT_GRP($fsb, fer_grp_Broadcast + $val);
             } else {
                 $last_error = "error: invalid group '$val'\n";
                 return -1;
             }
         } else {
-            FSB_PUT_GRP($fsb, $fer_grp_Broadcast);    # default
+            FSB_PUT_GRP($fsb, fer_grp_Broadcast);    # default
         }
 
         if (FSB_MODEL_IS_CENTRAL($fsb)) {
             my $val = 0;
             $val = $$args{'m'} if exists $$args{'m'};
             if ($val == 0) {
-                FSB_PUT_MEMB($fsb, $fer_memb_Broadcast);
+                FSB_PUT_MEMB($fsb, fer_memb_Broadcast);
             } elsif (1 <= $val && $val <= 7) {
-                FSB_PUT_MEMB($fsb, $fer_memb_M1 + $val - 1);
+                FSB_PUT_MEMB($fsb, fer_memb_M1 + $val - 1);
             } else {
                 $last_error = "error: invalid member '$val'\n";
                 return -1;
             }
         } elsif (FSB_MODEL_IS_RECEIVER($fsb)) {
-            FSB_PUT_MEMB($fsb, $fer_memb_RecAddress);
+            FSB_PUT_MEMB($fsb, fer_memb_RecAddress);
         } elsif (FSB_MODEL_IS_SUNSENS($fsb)) {
-            FSB_PUT_MEMB($fsb, $fer_memb_SUN);
+            FSB_PUT_MEMB($fsb, fer_memb_SUN);
         } elsif (FSB_MODEL_IS_STANDARD($fsb)) {
-            FSB_PUT_MEMB($fsb, $fer_memb_SINGLE);
+            FSB_PUT_MEMB($fsb, fer_memb_SINGLE);
         } else {
-            FSB_PUT_MEMB($fsb, $fer_memb_Broadcast);    # default
+            FSB_PUT_MEMB($fsb, fer_memb_Broadcast);    # default
         }
 
         fsb_doToggle($fsb);
@@ -543,17 +548,20 @@ package Fernotron::Protocol {
  	
 
 package Fernotron::fhem {
+    use constant MODNAME => 'Fernotron';
     # names for different kind of fernotron devices
-    my $FDT_SUN = 'sun';
-    my $FDT_PLAIN = 'plain';
-    my $FDT_CENTRAL = 'central';
-    my $FDT_RECV = 'receiver';
-    my $msb2fdt = { '10' => $FDT_PLAIN, '20' => $FDT_SUN, '80' => $FDT_CENTRAL,  '90' => $FDT_RECV };
-    my $DEF_INPUT_DEVICE = 'default';
-    my $ATT_CREATE_NAME = 'create';
-    my $ATT_CREATE_IN = 'in';
-    my $ATT_CREATE_OUT = 'out';
-    my $ATT_CREATE_DEFAULT = 'default';
+    use constant {
+	FDT_SUN => 'sun',
+	FDT_PLAIN => 'plain',
+	FDT_CENTRAL => 'central',
+	FDT_RECV => 'receiver',
+        DEF_INPUT_DEVICE => 'default',
+        ATTR_AUTOCREATE_NAME => 'create',
+        ATTR_AUTOCREATE_IN => 'in',
+        ATTR_AUTOCREATE_OUT => 'out',
+        ATTR_AUTOCREATE_DEFAULT => 'default',
+    };
+    my $msb2fdt = { '10' => FDT_PLAIN, '20' => FDT_SUN, '80' => FDT_CENTRAL,  '90' => FDT_RECV };
 
     sub makeInputKeyByFsb($) {
 	my ($fsb) = @_;
@@ -573,8 +581,8 @@ package Fernotron::fhem {
     sub getInputDeviceByFsb($) {
 	my ($fsb) = @_;
 	my $key = makeInputKeyByFsb($fsb);
-	my $hash = $main::modules{Fernotron}{defptr}{$key};
-	$hash =  $main::modules{Fernotron}{defptr}{$DEF_INPUT_DEVICE} unless defined($hash);
+	my $hash = $main::modules{MODNAME}{defptr}{$key};
+	$hash =  $main::modules{MODNAME}{defptr}{DEF_INPUT_DEVICE} unless defined($hash);
 	return $hash; # may be undef if no input device exists
     }
 
@@ -583,10 +591,10 @@ package Fernotron::fhem {
 	my ($fsb, $hash) = @_;
 
 	### convert message to human readable parts
-	my $kind = Fernotron::Protocol::FSB_MODEL_IS_CENTRAL($fsb) ? $FDT_CENTRAL
-	    : Fernotron::Protocol::FSB_MODEL_IS_RECEIVER($fsb) ? $FDT_RECV
-	    : Fernotron::Protocol::FSB_MODEL_IS_SUNSENS($fsb) ? $FDT_SUN
-	    : Fernotron::Protocol::FSB_MODEL_IS_STANDARD($fsb) ? $FDT_PLAIN
+	my $kind = Fernotron::Protocol::FSB_MODEL_IS_CENTRAL($fsb) ? FDT_CENTRAL
+	    : Fernotron::Protocol::FSB_MODEL_IS_RECEIVER($fsb) ? FDT_RECV
+	    : Fernotron::Protocol::FSB_MODEL_IS_SUNSENS($fsb) ? FDT_SUN
+	    : Fernotron::Protocol::FSB_MODEL_IS_STANDARD($fsb) ? FDT_PLAIN
 	    : undef;
 
         return undef unless $kind;
@@ -608,9 +616,9 @@ package Fernotron::fhem {
 	
         ### combine parts and update reading
 	my $human_readable = "$kind a=$a$gm c=$c";
-        my $state = "$kind:$a" . ($kind eq $FDT_CENTRAL ? "-$g-$m" : '')  . ":$c";
+        my $state = "$kind:$a" . ($kind eq FDT_CENTRAL ? "-$g-$m" : '')  . ":$c";
 	$state =~ tr/ /:/; # don't want spaces in reading
-	my $do_trigger =  !($kind eq $FDT_RECV || $kind eq 'unknown'); # unknown and receiver should not trigger events
+	my $do_trigger =  !($kind eq FDT_RECV || $kind eq 'unknown'); # unknown and receiver should not trigger events
 	
 	$hash->{received_HR} = $human_readable;
 	main::readingsSingleUpdate($hash, 'state',  $state, $do_trigger);
@@ -629,12 +637,12 @@ package Fernotron::fhem {
 	
         my $state = undef;
 	
-	if ($inputType eq $FDT_SUN) {
+	if ($inputType eq FDT_SUN) {
 	    $state = $c eq 'sun-down' ? 'on'
 		: $c eq 'sun-up' ? 'off' : undef;
-	} elsif ($inputType eq $FDT_PLAIN) {
+	} elsif ($inputType eq FDT_PLAIN) {
 	    $state = $c;
-	} elsif ($inputType eq $FDT_CENTRAL) {
+	} elsif ($inputType eq FDT_CENTRAL) {
 	    $state = $c;
 	}
 
@@ -649,10 +657,10 @@ package Fernotron::fhem {
 	my ($fsb, $is_input) = @_;
 
 	### convert message to human readable parts
-	my $kind = Fernotron::Protocol::FSB_MODEL_IS_CENTRAL($fsb) ? $FDT_CENTRAL
-	    : Fernotron::Protocol::FSB_MODEL_IS_RECEIVER($fsb) ? $FDT_RECV
-	    : Fernotron::Protocol::FSB_MODEL_IS_SUNSENS($fsb) ? $FDT_SUN
-	    : Fernotron::Protocol::FSB_MODEL_IS_STANDARD($fsb) ? $FDT_PLAIN
+	my $kind = Fernotron::Protocol::FSB_MODEL_IS_CENTRAL($fsb) ? FDT_CENTRAL
+	    : Fernotron::Protocol::FSB_MODEL_IS_RECEIVER($fsb) ? FDT_RECV
+	    : Fernotron::Protocol::FSB_MODEL_IS_SUNSENS($fsb) ? FDT_SUN
+	    : Fernotron::Protocol::FSB_MODEL_IS_STANDARD($fsb) ? FDT_PLAIN
 	    : undef;
 
         return undef unless $kind;
@@ -673,9 +681,9 @@ package Fernotron::fhem {
 	my $name = "UNDEFINED Fernotron";
 	$name .= "_${kind}" if ($is_input);
 	$name .= "_$a";
-	$name .= "_${g}_$m" if ($kind eq $FDT_CENTRAL);
+	$name .= "_${g}_$m" if ($kind eq FDT_CENTRAL);
 	$name .= " Fernotron a=$a";
-	$name .= " g=$g m=$m" if ($kind eq $FDT_CENTRAL);
+	$name .= " g=$g m=$m" if ($kind eq FDT_CENTRAL);
 	$name .= " input=$kind" if ($is_input);
 	return $name;
     }
@@ -692,18 +700,18 @@ package Fernotron::fhem {
         return $result if (ref($fsb) ne 'ARRAY'); # message format unknown
 
 	my $hash = getInputDeviceByFsb($fsb);
-	my $default =  $main::modules{Fernotron}{defptr}{$DEF_INPUT_DEVICE};
+	my $default =  $main::modules{MODNAME}{defptr}{DEF_INPUT_DEVICE};
 	
 	if ($hash and $hash == $default) {
-	    my $attrCreate = main::AttrVal($hash->{NAME}, $ATT_CREATE_NAME, $ATT_CREATE_DEFAULT);
+	    my $attrCreate = main::AttrVal($hash->{NAME}, ATTR_AUTOCREATE_NAME, ATTR_AUTOCREATE_DEFAULT);
 	    $hash->{debug} = $attrCreate;
-	    if ($attrCreate ne $ATT_CREATE_DEFAULT) {
-		my $is_input = $attrCreate eq $ATT_CREATE_IN;
+	    if ($attrCreate ne ATTR_AUTOCREATE_DEFAULT) {
+		my $is_input = $attrCreate eq ATTR_AUTOCREATE_IN;
 	        return makeAutoNameByFSB($fsb, $is_input); # autocreate specific input device or return undef
 	    }
 	}
 	
-	return 'UNDEFINED Fernotron_Scan Fernotron scan' unless $hash; # autocreate default input device
+	return 'UNDEFINED Fernotron_Scan Fernotron scan' unless ($default || $hash); # autocreate default input device
 	
 	
 	my $byteCount = scalar(@$fsb);
@@ -768,8 +776,8 @@ package Fernotron::fhem {
             } elsif ($key eq 'scan') {
                 $scan = 1;
 		
-		$main::modules{Fernotron}{defptr}{$DEF_INPUT_DEVICE} = $hash;
-		$hash->{helper}{inputKey} = $DEF_INPUT_DEVICE;
+		$main::modules{MODNAME}{defptr}{DEF_INPUT_DEVICE} = $hash;
+		$hash->{helper}{inputKey} = DEF_INPUT_DEVICE;
 
 		$hash->{helper}{ferInputType} = 'scan';
 
@@ -785,11 +793,11 @@ package Fernotron::fhem {
 	    my $value = $fdt;
 	    $fdt = getFDTypeByA($a) unless $fdt;
 	    
-	    return "$name: invalid input type: $value in define. Choose one of: sun, plain, central" unless (defined($fdt) and "$fdt" eq $FDT_SUN || "$fdt" eq $FDT_PLAIN || "$fdt" eq $FDT_CENTRAL);
+	    return "$name: invalid input type: $value in define. Choose one of: sun, plain, central" unless (defined($fdt) and "$fdt" eq FDT_SUN || "$fdt" eq FDT_PLAIN || "$fdt" eq FDT_CENTRAL);
 	    $hash->{helper}{ferInputType} = $fdt;
 	    my $key =  sprintf('%6x', $a);
-	    $key .= "-$g-$m" if ("$fdt" eq $FDT_CENTRAL);
-	    $main::modules{Fernotron}{defptr}{$key} = $hash;
+	    $key .= "-$g-$m" if ("$fdt" eq FDT_CENTRAL);
+	    $main::modules{MODNAME}{defptr}{$key} = $hash;
 	    $hash->{helper}{inputKey} = $key;
 	    $hash->{fernotron_type} = $fdt;
 	}
@@ -811,7 +819,7 @@ package Fernotron::fhem {
 
 	# remove deleted input devices from defptr
 	my $key = $hash->{helper}{inputKey};
-	delete $main::modules{Fernotron}{defptr}{$key} if (defined($key));
+	delete $main::modules{MODNAME}{defptr}{$key} if (defined($key));
 	
 	return undef;
     }
@@ -856,25 +864,25 @@ package Fernotron::fhem {
 	my $inputType = $hash->{helper}{ferInputType};
 	if (defined($inputType)) {
 	    if ($cmd eq '?') {
-		if ($hash->{helper}{ferInputType} eq $FDT_SUN) {
+		if ($hash->{helper}{ferInputType} eq FDT_SUN) {
 		    return $u . 'on:noArg off:noArg';
-		} elsif ($hash->{helper}{ferInputType} eq $FDT_PLAIN) {
+		} elsif ($hash->{helper}{ferInputType} eq FDT_PLAIN) {
 		    return $u . 'up:noArg down:noArg stop:noArg';
-		} elsif ($hash->{helper}{ferInputType} eq $FDT_CENTRAL) {
+		} elsif ($hash->{helper}{ferInputType} eq FDT_CENTRAL) {
 		    return $u . 'up:noArg down:noArg stop:noArg';
 		}
 		return $u; #default input device takes no arguments
 	    }
 
-	    if ($inputType eq $FDT_PLAIN) {
+	    if ($inputType eq FDT_PLAIN) {
 		if ($cmd eq 'stop' || $cmd eq 'up' || $cmd eq 'down') {
 		    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
 		}
-	    } elsif ($inputType eq $FDT_CENTRAL) {
+	    } elsif ($inputType eq FDT_CENTRAL) {
 		if ($cmd eq 'stop' || $cmd eq 'up' || $cmd eq 'down') {
 		    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
 		}
-	    } elsif ($inputType eq $FDT_SUN) {
+	    } elsif ($inputType eq FDT_SUN) {
 		if ($cmd eq 'on' || $cmd eq 'off') {
 		    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
 		}
@@ -937,9 +945,9 @@ package Fernotron::fhem {
             if ($attrName eq 'repeats') {
                 my $r = int($attrValue);
                 return "invalid argument '$attrValue'. Expected: 0..5" unless (0 <= $r and $r <= 5);
-            } elsif ($attrName eq $ATT_CREATE_NAME) {
+            } elsif ($attrName eq ATTR_AUTOCREATE_NAME) {
                 my $val = $attrValue;
-                return "invalid argument '$attrValue'. Expected: in out default" unless ($val eq $ATT_CREATE_IN || $val eq $ATT_CREATE_OUT || $val eq $ATT_CREATE_DEFAULT);
+                return "invalid argument '$attrValue'. Expected: in out default" unless ($val eq ATTR_AUTOCREATE_IN || $val eq ATTR_AUTOCREATE_OUT || $val eq ATTR_AUTOCREATE_DEFAULT);
             }
         }
         return undef;
