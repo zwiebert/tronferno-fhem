@@ -110,6 +110,9 @@ sub TronfernoMCU_Read($$)
       if ($line =~ /^U:position:\s*(.+);$/) {
 	  main::Log3 $name, 3, "TronfernoMCU ($name): position_update: $1";
 	  main::Dispatch($hash, "TFMCU#$line");
+      } elsif ($line =~ /^[Cc]:.*;$/) {
+	  main::Log3 $name, 3, "TronfernoMCU ($name): msg received $line";
+	  main::Dispatch($hash, "TFMCU#$line");
       }
   }
 

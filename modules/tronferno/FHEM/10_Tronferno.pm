@@ -21,6 +21,19 @@ use 5.14.0;
 use IO::Socket;
 
 package Tronferno {
+    use constant MODNAME => 'Tronferno';
+    use constant {
+	FDT_SUN => 'sun',
+	FDT_PLAIN => 'plain',
+	FDT_CENTRAL => 'central',
+	FDT_RECV => 'receiver',
+        DEF_INPUT_DEVICE => 'default',
+        ATTR_AUTOCREATE_NAME => 'create',
+        ATTR_AUTOCREATE_IN => 'in',
+        ATTR_AUTOCREATE_OUT => 'out',
+        ATTR_AUTOCREATE_DEFAULT => 'default',
+    };
+    my $msb2fdt = { '10' => FDT_PLAIN, '20' => FDT_SUN, '80' => FDT_CENTRAL,  '90' => FDT_RECV };
 
     my $def_mcuaddr = 'fernotron.fritz.box.';
 
@@ -32,7 +45,9 @@ package Tronferno {
 
         my ($a, $g, $m, $iodev, $mcu_addr) = (0, 0, 0, undef, $def_mcuaddr);
         my $u = 'wrong syntax: define <name> Tronferno a=ID [g=N] [m=N]';
-
+        my $scan = 0;
+        my $input = 0;
+        
         return $u if ($#a < 2);
 
         shift(@a);
@@ -49,9 +64,14 @@ package Tronferno {
                 $m = int($value);
                 return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
             } elsif ($key eq 'iodev') {
-		$iodev = $value;
+                $iodev = $value;
             } elsif ($key eq 'mcu_addr') {
-		$mcu_addr = $value;
+                $mcu_addr = $value;
+            } elsif ($key eq 'scan' or $key eq 'input' && $value eq 'all') {
+                $scan = 1;
+		$main::modules{MODNAME}{defptr}{DEF_INPUT_DEVICE} = $hash;
+		$hash->{helper}{inputKey} = DEF_INPUT_DEVICE;
+		$hash->{helper}{ferInputType} = 'scan';
             } else {
                 return "$name: unknown argument $o in define";    #FIXME add usage text
             }
@@ -62,26 +82,26 @@ package Tronferno {
         $hash->{helper}{ferid_m} = $m;
         $hash->{helper}{mcu_addr} = $mcu_addr;
 
-	main::AssignIoPort($hash, $iodev);
+        main::AssignIoPort($hash, $iodev);
 
-	my $def_match = "$a,$g,$m";
-	$hash->{helper}{def_match} = $def_match;
+        my $def_match = "$a,$g,$m";
+        $hash->{helper}{def_match} = $def_match;
 
-	$main::modules{Fernotron}{defptr}{$def_match} = $hash;
-	#main::Log3($hash, 0, "def_match: $def_match");
+        $main::modules{MODNAME}{defptr}{$def_match} = $hash;
+        #main::Log3($hash, 0, "def_match: $def_match");
 
         return undef;
     }
 
     
     sub Tronferno_Undef($$) {
-	my ($hash, $name) = @_;
+        my ($hash, $name) = @_;
 
-	my $def_match = $hash->{helper}{def_match};
-	
-	undef ($main::modules{Fernotron}{defptr}{$def_match});
+        # remove deleted input devices from defptr
+	my $key = $hash->{helper}{inputKey};
+	delete $main::modules{MODNAME}{defptr}{$key} if (defined($key));
 
-	return undef;
+        return undef;
     }
 
     sub Tronferno_transmit_by_socket($$$) {
@@ -96,24 +116,24 @@ package Tronferno {
         $socket->send($req . "\n");
         $socket->close();
 
-	return undef;
+        return undef;
 }
 
     sub Tronferno_transmit($$$) {
         my ($hash, $name, $req) = @_;
         my $io   = $hash->{IODev};
 
-	if (exists($io->{NAME})) {
-	    # send message to pyhsical I/O device TronfernoMCU
-	    return 'error: IO device not open' unless (main::ReadingsVal($io->{NAME}, 'state', '') eq 'opened');
-	    main::IOWrite($hash, 'mcu', $req);
-	    return undef;
-	} else {
-	    #no I/O device seems to be defined. send directly via TCP socket
-	    return Tronferno_transmit_by_socket ($hash, $name, $req);
-	}
-	
-	return undef;
+        if (exists($io->{NAME})) {
+            # send message to pyhsical I/O device TronfernoMCU
+            return 'error: IO device not open' unless (main::ReadingsVal($io->{NAME}, 'state', '') eq 'opened');
+            main::IOWrite($hash, 'mcu', $req);
+            return undef;
+        } else {
+            #no I/O device seems to be defined. send directly via TCP socket
+            return Tronferno_transmit_by_socket ($hash, $name, $req);
+        }
+        
+        return undef;
     }
 
     sub Tronferno_build_cmd($$$$) {
@@ -121,8 +141,8 @@ package Tronferno {
         my $a   = ($cmd eq 'pair') ? '?' : $hash->{helper}{ferid_a};
         my $g   = $hash->{helper}{ferid_g};
         my $m   = $hash->{helper}{ferid_m};
-	my $r   = int(main::AttrVal($name, 'repeats', '1'));
-	
+        my $r   = int(main::AttrVal($name, 'repeats', '1'));
+        
         my $msg = "$cmd a=$a g=$g m=$m c=$c r=$r mid=82;";
         main::Log3($hash, 3, "$name:command: $msg");
         return $msg;
@@ -157,27 +177,27 @@ package Tronferno {
                 $res .= " $key:noArg";
             }
             return $res .  ' position:slider,0,50,100';
-	  } elsif (exists $map_send_cmds->{$cmd}) {
+          } elsif (exists $map_send_cmds->{$cmd}) {
             my $req = Tronferno_build_cmd($hash, $name, 'send', $map_send_cmds->{$cmd});
             my $res = Tronferno_transmit($hash, $name, $req);
-	    return $res if ($res);
-	  } elsif (exists $map_pair_cmds->{$cmd}) {
+            return $res if ($res);
+          } elsif (exists $map_pair_cmds->{$cmd}) {
             my $req = Tronferno_build_cmd($hash, $name, 'pair', $map_pair_cmds->{$cmd});
             my $res = Tronferno_transmit($hash, $name, $req);
-	    return $res if ($res);
-	} elsif ($cmd eq 'position') {
-	    return "\"set $name $cmd\" needs one argument" unless (defined($args[0]));
-	    my $percent = $args[0];
-	    my $c = 'up';
-	    if ($percent eq '0') {
-		$c = 'down';
-	    } elsif ($percent eq '50') {
-		$c = 'sun-down';
-	    } elsif ($percent eq '99') {
-		$c = 'stop';
-	    }
+            return $res if ($res);
+        } elsif ($cmd eq 'position') {
+            return "\"set $name $cmd\" needs one argument" unless (defined($args[0]));
+            my $percent = $args[0];
+            my $c = 'up';
+            if ($percent eq '0') {
+                $c = 'down';
+            } elsif ($percent eq '50') {
+                $c = 'sun-down';
+            } elsif ($percent eq '99') {
+                $c = 'stop';
+            }
 
-	    
+            
             my $req = Tronferno_build_cmd($hash, $name, 'send', $c);
             my $res = Tronferno_transmit($hash, $name, $req);
         } else {
@@ -187,85 +207,153 @@ package Tronferno {
         return undef;
     }
 
-    sub Tronferno_Parse {
-      my ($io_hash, $message) = @_;
-      my $name = $io_hash->{NAME};
-      my ($a, $g, $m, $p, $mm) = (0, 0, 0, 0, undef);
-      my $result = undef;
-      
-      if ($message =~ /^TFMCU#U:position:\s*(.+);$/) {
-	foreach my $arg (split(/\s+/, $1)) {
-	  my ($key, $value) = split('=', $arg);
+    sub parse_position {
+        my ($io_hash, $data) = @_;
+        my $name = $io_hash->{NAME};
+        my ($a, $g, $m, $p, $mm) = (0, 0, 0, 0, undef);
+        my $result = undef;
+        foreach my $arg (split(/\s+/, $data)) {
+            my ($key, $value) = split('=', $arg);
 
-	  if ($key eq 'a') {
-	    $a = hex($value);
+            if ($key eq 'a') {
+                $a = hex($value);
 
-	  } elsif ($key eq 'g') {
-	    $g = int($value);
-	    return "out of range value $g for g. expected: 0..7" unless (0 <= $g && $g <= 7);
-	  } elsif ($key eq 'm') {
-	    $m = int($value);
-	    return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
-	  } elsif ($key eq 'mm') {
-	    my @mask_arr = split(/\,/, $value);
-	    $mm = \@mask_arr;
-	  return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
-	} elsif ($key eq 'p') {
-	  $p = $value;
-	  return "out of range value $p for p. expected: 0..100" unless (0 <= $p && $m <= 100);
-	}
-      }
+            } elsif ($key eq 'g') {
+                $g = int($value);
+                return "out of range value $g for g. expected: 0..7" unless (0 <= $g && $g <= 7);
+            } elsif ($key eq 'm') {
+                $m = int($value);
+                return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
+            } elsif ($key eq 'mm') {
+                my @mask_arr = split(/\,/, $value);
+                $mm = \@mask_arr;
+                return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
+            } elsif ($key eq 'p') {
+                $p = $value;
+                return "out of range value $p for p. expected: 0..100" unless (0 <= $p && $m <= 100);
+            }
+        }
+        if (defined ($mm)) {
+            for $g (0..7) {
+                my $gm =hex($$mm[$g]);
+                for $m (0..7) {
+                    if ($gm & (1 << $m)) {
+                        my $def_match = "0,$g,$m";
+                        my $hash = $main::modules{MODNAME}{defptr}{$def_match}; #FIXME: add support for $a different than zero
+                        if ($hash) {
+                            main::readingsSingleUpdate($hash, 'state',  $p, 0);
+                            $result = $hash->{NAME};
+                        }
+                    }
+                }
+            }
 
-      if (defined ($mm)) {
-	for $g (0..7) {
-	  my $gm =hex($$mm[$g]);
-	  for $m (0..7) {
-	    if ($gm & (1 << $m)) {
-	      my $def_match = "0,$g,$m";
-	      my $hash = $main::modules{Fernotron}{defptr}{$def_match}; #FIXME: add support for $a different than zero
-	      if ($hash) {
-		main::readingsSingleUpdate($hash, 'state',  $p, 0);
-		$result = $hash->{NAME};
-	      }
-	    }
-	  }
-	}
+            return $result;
 
-	return $result;
+        } else {
+            my $def_match = "0,$g,$m";
+            #main::Log3($io_hash, 3, "def_match: $def_match");
+            my $hash = $main::modules{MODNAME}{defptr}{$def_match}; #FIXME: add support for $a different than zero
 
-      } else {
-	my $def_match = "0,$g,$m";
-	#main::Log3($io_hash, 3, "def_match: $def_match");
-	my $hash = $main::modules{Fernotron}{defptr}{$def_match}; #FIXME: add support for $a different than zero
-
-	if ($hash) {
-	  main::readingsSingleUpdate($hash, 'state',  $p, 0);
-	  # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
-	  return $hash->{NAME};
-	} elsif ($g == 0) {
-	  for $g (1..7) {
-	    for $m (1..7) {
-	      my $hash = $main::modules{Fernotron}{defptr}{"0,$g,$m"};
-	      if ($hash) {
-		main::readingsSingleUpdate($hash, 'state',  $p, 0);
-		$result = $hash->{NAME};
-	      }
-	    }
-	  }
-	  return $result;
-	} elsif ($m == 0) {
-	  for $m (1..7) {
-	    my $hash = $main::modules{Fernotron}{defptr}{"0,$g,$m"};
-	    if ($hash) {
-	      main::readingsSingleUpdate($hash, 'state',  $p, 0);
-	      $result = $hash->{NAME};
-	    }
-	  }
-	  return $result;
-	}
-      }
+            if ($hash) {
+                main::readingsSingleUpdate($hash, 'state',  $p, 0);
+                # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
+                return $hash->{NAME};
+            } elsif ($g == 0) {
+                for $g (1..7) {
+                    for $m (1..7) {
+                        my $hash = $main::modules{MODNAME}{defptr}{"0,$g,$m"};
+                        if ($hash) {
+                            main::readingsSingleUpdate($hash, 'state',  $p, 0);
+                            $result = $hash->{NAME};
+                        }
+                    }
+                }
+                return $result;
+            } elsif ($m == 0) {
+                for $m (1..7) {
+                    my $hash = $main::modules{MODNAME}{defptr}{"0,$g,$m"};
+                    if ($hash) {
+                        main::readingsSingleUpdate($hash, 'state',  $p, 0);
+                        $result = $hash->{NAME};
+                    }
+                }
+                return $result;
+            }
+        }
+        return undef;
     }
-    return undef;
+    
+    # update Reading of default input device, if there was no matching input device
+    sub defaultInputMakeReading($$$$$$) {
+	my ($hash, $fdt, $a, $g, $m, $c) = @_;
+
+        my $kind = $fdt;
+        $a = sprintf("%06x", $a);
+        
+        return undef unless $kind;
+	
+	my $gm = $kind eq FDT_CENTRAL ? " g=$g m=$m" : '';
+	
+        ### combine parts and update reading
+	my $human_readable = "$kind a=$a$gm c=$c";
+        my $state = "$kind:$a" . ($kind eq FDT_CENTRAL ? "-$g-$m" : '')  . ":$c";
+	$state =~ tr/ /:/; # don't want spaces in reading
+	my $do_trigger =  !($kind eq FDT_RECV || $kind eq 'unknown'); # unknown and receiver should not trigger events
+	
+	$hash->{received_HR} = $human_readable;
+	main::readingsSingleUpdate($hash, 'state',  $state, $do_trigger);
+	return 1;
+    }
+
+    sub parse_c {
+        my ($io_hash, $data) = @_;
+        my $name = $io_hash->{NAME};
+        my ($a, $g, $m, $p, $fdt, $c) = (0, 0, 0, 0, "", "");
+        my $result = undef;
+        foreach my $arg (split(/\s+/, $data)) {
+            my ($key, $value) = split('=', $arg);
+
+            if ($key eq 'a') {
+                $a = hex($value);
+            } elsif ($key eq 'g') {
+                $g = int($value);
+                return "out of range value $g for g. expected: 0..7" unless (0 <= $g && $g <= 7);
+            } elsif ($key eq 'm') {
+                $m = int($value);
+                return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
+            } elsif ($key eq 'c') {
+                $c = $value;
+            } elsif ($key eq 'type') {
+                $fdt = $value;
+            }
+        }
+
+	my $default =  $main::modules{MODNAME}{defptr}{DEF_INPUT_DEVICE};
+        my $hash = $default;# getInputDeviceByA($a);
+
+        return 'UNDEFINED Tronferno_Scan Tronferno scan' unless ($default || $hash); # autocreate default input device
+
+        if ($hash->{helper}{ferInputType} eq 'scan') {
+            defaultInputMakeReading($default, $fdt, $a, $g, $m, $c) or return undef;
+	} else {
+	    #inputMakeReading($fsb, $hash) or return undef;
+	}
+        return $hash->{NAME}
+    }
+
+    
+    sub Tronferno_Parse {
+        my ($io_hash, $message) = @_;
+        my $name = $io_hash->{NAME};
+        my $result = undef;
+        
+        if ($message =~ /^TFMCU#U:position:\s*(.+);$/) {
+            return parse_position($io_hash, $1);
+        } elsif ($message =~ /^TFMCU#[Cc]:(.+);$/) {
+            return parse_c($io_hash, $1);
+        }
+        return undef;
     }
 
 
@@ -300,8 +388,8 @@ package main {
         $hash->{UndefFn} = 'Tronferno::Tronferno_Undef';
         $hash->{AttrFn}  =  'Tronferno::Tronferno_Attr';
 
-	$hash->{AttrList} = 'IODev repeats:0,1,2,3,4,5';
-	$hash->{Match} = '^TFMCU#.+';
+        $hash->{AttrList} = 'IODev repeats:0,1,2,3,4,5';
+        $hash->{Match} = '^TFMCU#.+';
     }
 }
 
@@ -336,8 +424,8 @@ Each output device may control a single shutter, or a group of shutters dependin
 <p>
   <code>
     define <my_shutter> Tronferno [a=ID] [g=GN] [m=MN]<br>
-  </code>			
-		
+  </code>
+
 <p> 
   ID : the device ID.  A six digit hexadecimal number. 10xxxx=plain controller, 20xxxx=sun sensor, 80xxxx=central controller unit, 90xxxx=receiver. 0 (default) for using the default central unit of Tronferno-MCU<br>
   GN : group number (1-7) or 0 (default) for all groups<br>
