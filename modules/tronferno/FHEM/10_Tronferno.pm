@@ -69,7 +69,7 @@ package Tronferno {
                 $mcu_addr = $value;
             } elsif ($key eq 'scan' or $key eq 'input' && $value eq 'all') {
                 $scan = 1;
-		$main::modules{MODNAME}{defptr}{DEF_INPUT_DEVICE} = $hash;
+		$main::modules{+MODNAME}{defptr}{+DEF_INPUT_DEVICE} = $hash;
 		$hash->{helper}{inputKey} = DEF_INPUT_DEVICE;
 		$hash->{helper}{ferInputType} = 'scan';
             } else {
@@ -87,7 +87,7 @@ package Tronferno {
         my $def_match = "$a,$g,$m";
         $hash->{helper}{def_match} = $def_match;
 
-        $main::modules{MODNAME}{defptr}{$def_match} = $hash;
+        $main::modules{+MODNAME}{defptr}{$def_match} = $hash;
         #main::Log3($hash, 0, "def_match: $def_match");
 
         return undef;
@@ -99,7 +99,7 @@ package Tronferno {
 
         # remove deleted input devices from defptr
 	my $key = $hash->{helper}{inputKey};
-	delete $main::modules{MODNAME}{defptr}{$key} if (defined($key));
+	delete $main::modules{+MODNAME}{defptr}{$key} if (defined($key));
 
         return undef;
     }
@@ -275,7 +275,7 @@ package Tronferno {
                 for $m (0..7) {
                     if ($gm & (1 << $m)) {
                         my $def_match = "0,$g,$m";
-                        my $hash = $main::modules{MODNAME}{defptr}{$def_match}; #FIXME: add support for $a different than zero
+                        my $hash = $main::modules{+MODNAME}{defptr}{$def_match}; #FIXME: add support for $a different than zero
                         if ($hash) {
                             main::readingsSingleUpdate($hash, 'state',  $p, 0);
                             $result = $hash->{NAME};
@@ -289,7 +289,7 @@ package Tronferno {
         } else {
             my $def_match = "0,$g,$m";
             #main::Log3($io_hash, 3, "def_match: $def_match");
-            my $hash = $main::modules{MODNAME}{defptr}{$def_match}; #FIXME: add support for $a different than zero
+            my $hash = $main::modules{+MODNAME}{defptr}{$def_match}; #FIXME: add support for $a different than zero
 
             if ($hash) {
                 main::readingsSingleUpdate($hash, 'state',  $p, 0);
@@ -298,7 +298,7 @@ package Tronferno {
             } elsif ($g == 0) {
                 for $g (1..7) {
                     for $m (1..7) {
-                        my $hash = $main::modules{MODNAME}{defptr}{"0,$g,$m"};
+                        my $hash = $main::modules{+MODNAME}{defptr}{"0,$g,$m"};
                         if ($hash) {
                             main::readingsSingleUpdate($hash, 'state',  $p, 0);
                             $result = $hash->{NAME};
@@ -308,7 +308,7 @@ package Tronferno {
                 return $result;
             } elsif ($m == 0) {
                 for $m (1..7) {
-                    my $hash = $main::modules{MODNAME}{defptr}{"0,$g,$m"};
+                    my $hash = $main::modules{+MODNAME}{defptr}{"0,$g,$m"};
                     if ($hash) {
                         main::readingsSingleUpdate($hash, 'state',  $p, 0);
                         $result = $hash->{NAME};
@@ -365,7 +365,7 @@ package Tronferno {
             }
         }
 
-	my $default =  $main::modules{MODNAME}{defptr}{DEF_INPUT_DEVICE};
+	my $default =  $main::modules{+MODNAME}{defptr}{+DEF_INPUT_DEVICE};
         my $hash = $default;# getInputDeviceByA($a);
 
         return 'UNDEFINED Tronferno_Scan Tronferno scan' unless ($default || $hash); # autocreate default input device

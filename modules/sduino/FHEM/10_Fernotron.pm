@@ -581,8 +581,8 @@ package Fernotron::fhem {
     sub getInputDeviceByFsb($) {
 	my ($fsb) = @_;
 	my $key = makeInputKeyByFsb($fsb);
-	my $hash = $main::modules{MODNAME}{defptr}{$key};
-	$hash =  $main::modules{MODNAME}{defptr}{DEF_INPUT_DEVICE} unless defined($hash);
+	my $hash = $main::modules{+MODNAME}{defptr}{$key};
+	$hash =  $main::modules{+MODNAME}{defptr}{+DEF_INPUT_DEVICE} unless defined($hash);
 	return $hash; # may be undef if no input device exists
     }
 
@@ -700,7 +700,7 @@ package Fernotron::fhem {
         return $result if (ref($fsb) ne 'ARRAY'); # message format unknown
 
 	my $hash = getInputDeviceByFsb($fsb);
-	my $default =  $main::modules{MODNAME}{defptr}{DEF_INPUT_DEVICE};
+	my $default =  $main::modules{+MODNAME}{defptr}{+DEF_INPUT_DEVICE};
 	
 	if ($hash and $hash == $default) {
 	    my $attrCreate = main::AttrVal($hash->{NAME}, ATTR_AUTOCREATE_NAME, ATTR_AUTOCREATE_DEFAULT);
@@ -776,7 +776,7 @@ package Fernotron::fhem {
             } elsif ($key eq 'scan') {
                 $scan = 1;
 		
-		$main::modules{MODNAME}{defptr}{DEF_INPUT_DEVICE} = $hash;
+		$main::modules{+MODNAME}{defptr}{+DEF_INPUT_DEVICE} = $hash;
 		$hash->{helper}{inputKey} = DEF_INPUT_DEVICE;
 
 		$hash->{helper}{ferInputType} = 'scan';
@@ -797,7 +797,7 @@ package Fernotron::fhem {
 	    $hash->{helper}{ferInputType} = $fdt;
 	    my $key =  sprintf('%6x', $a);
 	    $key .= "-$g-$m" if ("$fdt" eq FDT_CENTRAL);
-	    $main::modules{MODNAME}{defptr}{$key} = $hash;
+	    $main::modules{+MODNAME}{defptr}{$key} = $hash;
 	    $hash->{helper}{inputKey} = $key;
 	    $hash->{fernotron_type} = $fdt;
 	}
@@ -819,7 +819,7 @@ package Fernotron::fhem {
 
 	# remove deleted input devices from defptr
 	my $key = $hash->{helper}{inputKey};
-	delete $main::modules{MODNAME}{defptr}{$key} if (defined($key));
+	delete $main::modules{+MODNAME}{defptr}{$key} if (defined($key));
 	
 	return undef;
     }
