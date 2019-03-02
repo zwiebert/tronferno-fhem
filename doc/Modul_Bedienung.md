@@ -1,6 +1,8 @@
 FHEM Modul Fernotron - Benutzung
 ================================
 
+!! Eine aktuellere Dokumentation befindet sich in der automatisch erzeugten Datei [doc/sduino_fernotron_de](sduino_fernotron_de.pod) !!
+
 Grundlagen
 ----------
 
