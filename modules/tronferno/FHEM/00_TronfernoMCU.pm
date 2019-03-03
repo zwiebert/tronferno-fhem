@@ -21,6 +21,38 @@ package TronfernoMCU {
     my $mcu_port = 7777;
     my $mcu_baud = 115200;
 
+my $mcfg_prefix = 'mcu-config.';
+my $mco = {
+    MCFG_CU => 'cu',
+    MCFG_RTC => 'rtc',
+    MCFG_BAUD => 'baud',
+    MCFG_WLAN_SSID => 'wlan-ssid',
+    MCFG_WLAN_PASSWD => 'wlan-password',
+    MCFG_LONGITUDE => 'longitude',
+    MCFG_LATITUDE => 'latitude',
+    MCFG_TZ => 'tz',
+    MCFG_VERBOSE => 'verbose',
+    MCFG_RESTART => 'restart',
+};
+    
+my $mcof = {};
+my $mcor = {};
+my $usage = '';
+
+    while(my($k, $v) = each %$mco) {
+        my $vp = $mcfg_prefix.$v;
+        $mcof->{$vp} = $v;
+        $mcor->{$v} = $vp;
+        if ($k eq 'MCFG_VERBOSE') {
+            $usage .= " $vp:0,1,2,3,4,5";
+        } elsif ($k eq 'MCFG_RESTART') {
+            $usage .= " $vp:1";
+        } else {
+            $usage .= " $vp";
+        }
+    }
+
+
 # called when a new definition is created (by hand or from configuration read on FHEM startup)
 sub TronfernoMCU_Define($$)
 {
@@ -113,36 +145,68 @@ sub TronfernoMCU_Read($$)
       } elsif ($line =~ /^[Cc]:.*;$/) {
 	  main::Log3 $name, 3, "TronfernoMCU ($name): msg received $line";
 	  main::Dispatch($hash, "TFMCU#$line");
+      } elsif ($line =~ /^config (.*);$/) {
+          for my $kv (split (' ', $1)) {
+              my ($k, $v) = split('=', $kv);
+              $k = $mcor->{$k};
+              $hash->{$k} = $v;
+          }
       }
   }
 
   $hash->{PARTIAL} = $remain;
 }
 
+sub mcu_read_all_config($) {
+    my ($hash) = @_;
+    main::DevIo_SimpleWrite($hash, "config longitude=? latitude=? tz=? wlan-ssid=?;", 2);
+    main::DevIo_SimpleWrite($hash, "config cu=? baud=? verbose=?;", 2);
+
+}
+
+sub mcu_read_config($$) {
+    my ($hash, @args) = @_;
+    my $msg = "";
+    for my $o (@args) {
+        $msg .= "$o=?";
+    }
+    main::DevIo_SimpleWrite($hash, "config $msg;", 2);
+}
+
+sub mcu_config($$$) {
+    my ($hash, $opt, $arg) = @_;
+    main::DevIo_SimpleWrite($hash, "config $opt=$arg $opt=?;", 2);
+}
+
+    
+    
 # called if set command is executed
 sub TronfernoMCU_Set($$@)
 {
-    my ($hash, $name, $cmd) = @_;
-    
-    my $usage = "unknown argument $cmd, choose one of statusRequest:noArg on:noArg off:noArg";
-    $usage = "unknown argument $cmd";
+    my ($hash, $name, $cmd, @args) = @_;
+    my ($a1, $a2, $a3, $a4) = @args;
 
-    if($cmd eq "statusRequest")
-    {
+    return "\"set $name\" needs at least one argument" unless (defined($cmd));
+
+    my $u = "unknown argument $cmd choose one of ";
+
+
+    
+    if ($cmd eq '?') {
+        return $u . $usage;
+    } elsif($mcof->{$cmd}) {
+        mcu_config($hash, $mcof->{$cmd}, $a1); 
+    } elsif($cmd eq "statusRequest") {
          #main::DevIo_SimpleWrite($hash, "get_status\r\n", 2);
-    }
-    elsif($cmd eq "on")
-    {
+    } elsif($cmd eq "on") {
          #main::DevIo_SimpleWrite($hash, "on\r\n", 2);
-    }
-    elsif($cmd eq "off")
-    {
+    } elsif($cmd eq "off") {
          #main::DevIo_SimpleWrite($hash, "off\r\n", 2);
+    } else {
+        return $u . $usage;
     }
-    else
-    {
-        return $usage;
-    }
+    
+    return undef;
 }
     
 # will be executed upon successful connection establishment (see main::DevIo_OpenDev())
@@ -151,8 +215,8 @@ sub TronfernoMCU_Init($)
     my ($hash) = @_;
 
     # send a status request to the device
-    main::DevIo_SimpleWrite($hash, "mcu cs=?;\n", 2);  #FIXME: need better cli option for this
-    
+    main::DevIo_SimpleWrite($hash, "mcu cs=?;", 2);  #FIXME: need better cli option for this
+    mcu_read_all_config($hash);
     return undef; 
 }
 
@@ -184,9 +248,9 @@ package main {
     sub TronfernoMCU_Initialize($) {
         my ($hash) = @_;
 
-        $hash->{SetFn}    = 'TronfernoMCU::TronfernoMCU_Set';
-        $hash->{DefFn} = 'TronfernoMCU::TronfernoMCU_Define';
-        $hash->{ReadFn} = 'TronfernoMCU::TronfernoMCU_Read';
+        $hash->{SetFn}   = 'TronfernoMCU::TronfernoMCU_Set';
+        $hash->{DefFn}   = 'TronfernoMCU::TronfernoMCU_Define';
+        $hash->{ReadFn}  = 'TronfernoMCU::TronfernoMCU_Read';
         $hash->{ReadyFn} = 'TronfernoMCU::TronfernoMCU_Ready';
         $hash->{WriteFn} = 'TronfernoMCU::TronfernoMCU_Write';
         $hash->{UndefFn} = 'TronfernoMCU::TronfernoMCU_Undef';
