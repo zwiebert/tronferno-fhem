@@ -37,7 +37,7 @@ package Tronferno {
 
     my $def_mcuaddr = 'fernotron.fritz.box.';
 
-    sub Tronferno_Define($$) {
+    sub X_Define($$) {
         my ($hash, $def) = @_;
         my @a       = split("[ \t][ \t]*", $def);
         my $name    = $a[0];
@@ -94,7 +94,7 @@ package Tronferno {
     }
 
     
-    sub Tronferno_Undef($$) {
+    sub X_Undef($$) {
         my ($hash, $name) = @_;
 
         # remove deleted input devices from defptr
@@ -104,7 +104,7 @@ package Tronferno {
         return undef;
     }
 
-    sub Tronferno_transmit_by_socket($$$) {
+    sub transmit_by_socket($$$) {
         my ($hash, $name, $req) = @_;
         my $socket = IO::Socket::INET->new(
             Proto    => 'tcp',
@@ -119,7 +119,7 @@ package Tronferno {
         return undef;
 }
 
-    sub Tronferno_transmit($$$) {
+    sub transmit($$$) {
         my ($hash, $name, $req) = @_;
         my $io   = $hash->{IODev};
 
@@ -130,13 +130,13 @@ package Tronferno {
             return undef;
         } else {
             #no I/O device seems to be defined. send directly via TCP socket
-            return Tronferno_transmit_by_socket ($hash, $name, $req);
+            return transmit_by_socket ($hash, $name, $req);
         }
         
         return undef;
     }
 
-    sub Tronferno_build_cmd($$$$) {
+    sub build_cmd($$$$) {
         my ($hash, $name, $cmd, $c) = @_;
         my $a   = ($cmd eq 'pair') ? '?' : $hash->{helper}{ferid_a};
         my $g   = $hash->{helper}{ferid_g};
@@ -166,7 +166,7 @@ package Tronferno {
 
     sub get_commandlist()   { return keys %$map_send_cmds, keys %$map_pair_cmds; }
 
-    sub Tronferno_Set($$@) {
+    sub X_Set($$@) {
         my ($hash, $name, $cmd, @args) = @_;
 
         return "\"set $name\" needs at least one argument" unless (defined($cmd));
@@ -214,12 +214,12 @@ package Tronferno {
             }
             return $res .  ' position:slider,0,50,100';
           } elsif (exists $map_send_cmds->{$cmd}) {
-            my $req = Tronferno_build_cmd($hash, $name, 'send', $map_send_cmds->{$cmd});
-            my $res = Tronferno_transmit($hash, $name, $req);
+            my $req = build_cmd($hash, $name, 'send', $map_send_cmds->{$cmd});
+            my $res = transmit($hash, $name, $req);
             return $res if ($res);
           } elsif (exists $map_pair_cmds->{$cmd}) {
-            my $req = Tronferno_build_cmd($hash, $name, 'pair', $map_pair_cmds->{$cmd});
-            my $res = Tronferno_transmit($hash, $name, $req);
+            my $req = build_cmd($hash, $name, 'pair', $map_pair_cmds->{$cmd});
+            my $res = transmit($hash, $name, $req);
             return $res if ($res);
         } elsif ($cmd eq 'position') {
             return "\"set $name $cmd\" needs one argument" unless (defined($args[0]));
@@ -234,8 +234,8 @@ package Tronferno {
             }
 
             
-            my $req = Tronferno_build_cmd($hash, $name, 'send', $c);
-            my $res = Tronferno_transmit($hash, $name, $req);
+            my $req = build_cmd($hash, $name, 'send', $c);
+            my $res = transmit($hash, $name, $req);
         } else {
             return "unknown argument $cmd choose one of " . join(' ', get_commandlist()) . 'position';
         }
@@ -379,7 +379,7 @@ package Tronferno {
     }
 
     
-    sub Tronferno_Parse {
+    sub X_Parse {
         my ($io_hash, $message) = @_;
         my $name = $io_hash->{NAME};
         my $result = undef;
@@ -394,7 +394,7 @@ package Tronferno {
 
 
     
-    sub Tronferno_Attr(@) {
+    sub X_Attr(@) {
         my ($cmd, $name, $attrName, $attrValue) = @_;
 
         # $cmd  - Vorgangsart - kann die Werte "del" (löschen) oder "set" (setzen) annehmen
@@ -418,14 +418,13 @@ package main {
     sub Tronferno_Initialize($) {
         my ($hash) = @_;
 
-        $hash->{DefFn} = 'Tronferno::Tronferno_Define';
-        $hash->{SetFn} = 'Tronferno::Tronferno_Set';
-        $hash->{ParseFn} = 'Tronferno::Tronferno_Parse';
-        $hash->{UndefFn} = 'Tronferno::Tronferno_Undef';
-        $hash->{AttrFn}  =  'Tronferno::Tronferno_Attr';
-
+        $hash->{DefFn}    = 'Tronferno::X_Define';
+        $hash->{SetFn}    = 'Tronferno::X_Set';
+        $hash->{ParseFn}  = 'Tronferno::X_Parse';
+        $hash->{UndefFn}  = 'Tronferno::X_Undef';
+        $hash->{AttrFn}   =  'Tronferno::X_Attr';
         $hash->{AttrList} = 'IODev repeats:0,1,2,3,4,5';
-        $hash->{Match} = '^TFMCU#.+';
+        $hash->{Match}    = '^TFMCU#.+';
     }
 }
 

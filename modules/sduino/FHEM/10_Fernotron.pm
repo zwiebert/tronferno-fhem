@@ -690,7 +690,7 @@ package Fernotron::fhem {
 
 	
 #dev-33: dmsg: P82#F0000000101F0000000110F1001001001F1001001010F1011101001F1011101010F1001111001F1001111010F1100010001F1100010010F010000110
-    sub Fernotron_Parse {
+    sub X_Parse {
         my ($io_hash, $message) = @_;
 	my $result = undef;
 	
@@ -745,7 +745,7 @@ package Fernotron::fhem {
 	return $fdt;
     }
 
-    sub Fernotron_Define($$) {
+    sub X_Define($$) {
         my ($hash, $def) = @_;
         my @args       = split("[ \t][ \t]*", $def);
         my $name    = $args[0];
@@ -814,7 +814,7 @@ package Fernotron::fhem {
         return undef;
     }
 
-    sub Fernotron_Undef($$) {
+    sub X_Undef($$) {
 	my ($hash, $name) = @_;
 
 	# remove deleted input devices from defptr
@@ -824,7 +824,7 @@ package Fernotron::fhem {
 	return undef;
     }
 
-    sub Fernotron_transmit($$$) {
+    sub transmit($$$) {
         my ($hash, $command, $c) = @_;
         my $name = $hash->{NAME};
         my $io   = $hash->{IODev};
@@ -854,7 +854,7 @@ package Fernotron::fhem {
 
     my $cmd2pos = { up => 100, down => 0, 'sun-down' => 50  };
     
-    sub Fernotron_Set($$@) {
+    sub X_Set($$@) {
         my ($hash, $name, $cmd, @args) = @_;
         return "\"set $name\" needs at least one argument" unless (defined($cmd));
         my $u = "unknown argument $cmd choose one of ";
@@ -906,7 +906,7 @@ package Fernotron::fhem {
 	
 
         if (Fernotron::Protocol::is_command_valid($cmd)) {
-            my $res = Fernotron_transmit($hash, 'send', $cmd);
+            my $res = transmit($hash, 'send', $cmd);
 	    unless ($res) {
 		my $pos = $$cmd2pos{$cmd};
 		
@@ -925,7 +925,7 @@ package Fernotron::fhem {
 		$c = 'stop';
 	    }
 
-            my $res = Fernotron_transmit($hash, 'send', $c);
+            my $res = transmit($hash, 'send', $c);
             return $res if ($res);
         } else {
             return "unknown argument $cmd choose one of " . join(' ', Fernotron::Protocol::get_commandlist(), 'position');
@@ -934,7 +934,7 @@ package Fernotron::fhem {
         return undef;
     }
 
-    sub Fernotron_Attr(@) {
+    sub X_Attr(@) {
         my ($cmd, $name, $attrName, $attrValue) = @_;
 
         # $cmd  - Vorgangsart - kann die Werte "del" (löschen) oder "set" (setzen) annehmen
@@ -961,11 +961,11 @@ package main {
         $hash->{Match}    = '^P82#.+';
         $hash->{AttrList} = 'IODev repeats:0,1,2,3,4,5 create:default,out,in';
 
-        $hash->{DefFn}   = 'Fernotron::fhem::Fernotron_Define';
-	$hash->{UndefFn} = 'Fernotron::fhem::Fernotron_Undef';
-        $hash->{SetFn}   = 'Fernotron::fhem::Fernotron_Set';
-        $hash->{ParseFn} = 'Fernotron::fhem::Fernotron_Parse';
-        $hash->{AttrFn}  = 'Fernotron::fhem::Fernotron_Attr';
+        $hash->{DefFn}   = 'Fernotron::fhem::X_Define';
+	$hash->{UndefFn} = 'Fernotron::fhem::X_Undef';
+        $hash->{SetFn}   = 'Fernotron::fhem::X_Set';
+        $hash->{ParseFn} = 'Fernotron::fhem::X_Parse';
+        $hash->{AttrFn}  = 'Fernotron::fhem::X_Attr';
 
 	#$hash->{AutoCreate} = {'Fernotron_Scan'  => {noAutocreatedFilelog => 1} };
     }

@@ -54,7 +54,7 @@ my $usage = '';
 
 
 # called when a new definition is created (by hand or from configuration read on FHEM startup)
-sub TronfernoMCU_Define($$)
+sub X_Define($$)
 {
   my ($hash, $def) = @_;
   my @a = split("[ \t]+", $def);
@@ -86,14 +86,14 @@ sub TronfernoMCU_Define($$)
   main::DevIo_CloseDev($hash) if(main::DevIo_IsOpen($hash));  
   
   # open connection with custom init and error callback function (non-blocking connection establishment)
-  main::DevIo_OpenDev($hash, 0, "TronfernoMCU::TronfernoMCU_Init", "TronfernoMCU::TronfernoMCU_Callback"); 
+  main::DevIo_OpenDev($hash, 0, "TronfernoMCU::X_Init", "TronfernoMCU::X_Callback"); 
  
   return undef;
 }
 
 # called when definition is undefined 
 # (config reload, shutdown or delete of definition)
-sub TronfernoMCU_Undef($$)
+sub X_Undef($$)
 {
   my ($hash, $name) = @_;
  
@@ -104,22 +104,22 @@ sub TronfernoMCU_Undef($$)
 }
 
 # called repeatedly if device disappeared
-sub TronfernoMCU_Ready($)
+sub X_Ready($)
 {
   my ($hash) = @_;
   
   # try to reopen the connection in case the connection is lost
-  return main::DevIo_OpenDev($hash, 1, "TronfernoMCU::TronfernoMCU_Init", "TronfernoMCU::TronfernoMCU_Callback"); 
+  return main::DevIo_OpenDev($hash, 1, "TronfernoMCU::X_Init", "TronfernoMCU::X_Callback"); 
 }
 
 # called when data was received
-sub TronfernoMCU_Read($$)
+sub X_Read($$)
 {
   # if DevIo_Expect() returns something we call this function with an additional argument
   my ($hash, $data) = @_;
   my $name = $hash->{NAME};
 
-  # read the available data (or don't if called from TronfernoMCU_Set)
+  # read the available data (or don't if called from X_Set)
   $data = main::DevIo_SimpleRead($hash) unless (defined($data));
   # stop processing if no data is available (device disconnected)
   return if(!defined($data));
@@ -179,9 +179,12 @@ sub mcu_config($$$) {
 }
 
     
+    $usage .= ' xxx.flash-firmware.esp32:no,latest-version,restore';
+    $usage .= ' xxx.flash-firmware.esp8266:no,latest-version,restore';
+    $usage .= ' xxx.flash-firmware.atmega328:no,latest-version,restore';
     
 # called if set command is executed
-sub TronfernoMCU_Set($$@)
+sub X_Set($$@)
 {
     my ($hash, $name, $cmd, @args) = @_;
     my ($a1, $a2, $a3, $a4) = @args;
@@ -189,28 +192,34 @@ sub TronfernoMCU_Set($$@)
     return "\"set $name\" needs at least one argument" unless (defined($cmd));
 
     my $u = "unknown argument $cmd choose one of ";
-
-
+    $u .= $usage;
     
     if ($cmd eq '?') {
-        return $u . $usage;
+        return $u;
     } elsif($mcof->{$cmd}) {
-        mcu_config($hash, $mcof->{$cmd}, $a1); 
-    } elsif($cmd eq "statusRequest") {
+        mcu_config($hash, $mcof->{$cmd}, $a1) if defined($a1); 
+    } elsif($cmd eq 'xxx.flash-firmware.esp32') {
+    } elsif($cmd eq 'xxx.flash-firmware.esp8266') {
+    } elsif($cmd eq 'xxx.flash-firmware.atmega328') {
+    } elsif($cmd eq '') {
+    } elsif($cmd eq '') {
+    } elsif($cmd eq '') {
+    } elsif($cmd eq '') {
+     } elsif($cmd eq "statusRequest") {
          #main::DevIo_SimpleWrite($hash, "get_status\r\n", 2);
     } elsif($cmd eq "on") {
          #main::DevIo_SimpleWrite($hash, "on\r\n", 2);
     } elsif($cmd eq "off") {
          #main::DevIo_SimpleWrite($hash, "off\r\n", 2);
     } else {
-        return $u . $usage;
+        return $u;
     }
     
     return undef;
 }
     
 # will be executed upon successful connection establishment (see main::DevIo_OpenDev())
-sub TronfernoMCU_Init($)
+sub X_Init($)
 {
     my ($hash) = @_;
 
@@ -221,7 +230,7 @@ sub TronfernoMCU_Init($)
 }
 
 # will be executed if connection establishment fails (see main::DevIo_OpenDev())
-sub TronfernoMCU_Callback($)
+sub X_Callback($)
 {
     my ($hash, $error) = @_;
     my $name = $hash->{NAME};
@@ -232,7 +241,7 @@ sub TronfernoMCU_Callback($)
     return undef; 
 }
 
-sub TronfernoMCU_Write ($$)
+sub X_Write ($$)
 {
 	my ( $hash, $addr, $msg) = @_;
 	my $name = $hash->{NAME};
@@ -248,12 +257,12 @@ package main {
     sub TronfernoMCU_Initialize($) {
         my ($hash) = @_;
 
-        $hash->{SetFn}   = 'TronfernoMCU::TronfernoMCU_Set';
-        $hash->{DefFn}   = 'TronfernoMCU::TronfernoMCU_Define';
-        $hash->{ReadFn}  = 'TronfernoMCU::TronfernoMCU_Read';
-        $hash->{ReadyFn} = 'TronfernoMCU::TronfernoMCU_Ready';
-        $hash->{WriteFn} = 'TronfernoMCU::TronfernoMCU_Write';
-        $hash->{UndefFn} = 'TronfernoMCU::TronfernoMCU_Undef';
+        $hash->{SetFn}   = 'TronfernoMCU::X_Set';
+        $hash->{DefFn}   = 'TronfernoMCU::X_Define';
+        $hash->{ReadFn}  = 'TronfernoMCU::X_Read';
+        $hash->{ReadyFn} = 'TronfernoMCU::X_Ready';
+        $hash->{WriteFn} = 'TronfernoMCU::X_Write';
+        $hash->{UndefFn} = 'TronfernoMCU::X_Undef';
 
 	$hash->{Clients} = 'Tronferno';
 	$hash->{MatchList} = { '1:Tronferno' => '^TFMCU#.+' };
