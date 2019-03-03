@@ -1,12 +1,103 @@
 =begin html
 
 <a name="TronfernoMCU"></a>
-
 <h3>TronfernoMCU</h3>
 
-<i>TronfernoMCU</i> is a physical module to talk to <i>Tronferno-MCU</i> via USB or TCP/IP using FHEM's DevIo mechanism.
-<br>
-<br>
+
+<p><i>TronfernoMCU</i> is a physical Device for the purpose of 1) controlling Fernotron devices or 2) utilizing Fernotron controllers into FHEM.
+<ul>
+ <li>Provides the IODev requiered by Tronferno logical devices</li>
+ <li>Requiered MCU/RF-hardware: <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a></li>
+ <li>Can flash the MCU (ESP32 or ESP8266) using the respective SET command. (if conected to FHEM by USB)</i>
+ <li>Can configure the MCU using SET commands</li>
+ <li>Can connect to MCU by 1) USB or 2) WLAN.</li>
+</ul> 
+
+<p>
+<a name="TronfernoMCUset"></a>
+<h4>SET</h4>
+<ul>
+
+  <a name="mcu-config.baud"></a>
+  <li>mcu-config.baud<br>
+    Baud rate of MCU's serial interface</li><br>
+
+  <a name="mcu-config.cu"></a>
+  <li>mcu-config.cu<br>
+   Central-Unit ID used by the MCU (six digit hex number)</li><br>
+
+
+  <a name="mcu-config.latitude"></a>
+  <li>mcu-config.latitude<br>
+   geographical coordinates are used to calculate civil dusk for astro-timer (decimal degree, e.g. 52.5)</li><br>
+
+  <a name="mcu-config.longitude"></a>
+  <li>mcu-config.longitude<br>
+   geographical coordinates are used to calculate civil dusk for astro-timer (decimal degree, e.g. 13,4)</li><br>
+
+  <a name="mcu-config.restart"></a>
+  <li>mcu-config.restart<br>
+    causes the MCU to reastart. required after changing wlan configuration</li><br>
+
+  <a name="mcu-config.rtc"></a>
+  <li>mcu-config.rtc<br>
+    Set MCU's internal real time clock by ISO date/time string (e.g. 1999-12-31T23:59:00). If possible, the MCU will use NTP instead.</li><br>
+
+  <a name="mcu-config.rtc"></a>
+  <li>mcu-config.rtc<br>
+    Set MCU's internal real time clock by ISO date/time string (e.g. 1999-12-31T23:59:00). If possible, the MCU will use NTP instead.</li><br>
+
+  <a name="mcu-config.tz"></a>
+  <li>mcu-config.tz<br>
+    Time-zone in POSIX (TZ) format</li><br>
+
+  <a name="mcu-config.rtc"></a>
+  <li>mcu-config.rtc<br>
+    </li><br>
+
+  <a name="mcu-config.verbose"></a>
+  <li>mcu-config.verbose<br>
+    Verbosity level of MCU's diagnose output (0 .. 5)</li><br>
+
+  <a name="mcu-config.wlan-password"></a>
+  <li>mcu-config.wlan-passord<br>
+    Password used by MCU to connect to WLAN/WiFi </li><br>
+
+  <a name="mcu-config.wlan-ssid"></a>
+  <li>mcu-config.wlan-ssid<br>
+    WLAN/WiFi SSID to connect to</li><br>
+
+  <a name="xxx.flash-firmware.esp32"></a>
+  <li>xxx.flash-firmware.esp32<br>
+   Fetch and flash latest MCU firmware from tronferno-mcu-bin gitub repository.
+    <ol>
+     <li>download<br>
+         Download firware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
+         Required tools: wget</li><br>
+     <li>flash<br>
+         Flash downloaded firmware to serial port used in definition of this device.<br>
+         Required Tools: python, python-serial<br>
+         The port will be reconnected 45s after the flash has started.</li><br>
+    </ol>
+    </li><br>
+
+  <a name="xxx.flash-firmware.esp8266"></a>
+  <li>xxx.flash-firmware.esp8266<br>
+   Fetch and flash latest MCU firmware from tronferno-mcu-bin gitub repository.
+    <ol>
+     <li>download<br>
+         Download firware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
+         Required tools: wget</li><br>
+     <li>flash<br>
+         Flash downloaded firmware to serial port used in definition of this device.<br>
+         Required Tools: python, python-serial<br>
+         The port will be reconnected 45s after the flash has started.</li><br>
+    </ol>
+    </li><br>
+
+
+</ul>
+
 <br>     Examples:
 <br>
 <br> 1) MCU module is connected via TCP/IP
@@ -27,5 +118,7 @@
 <br>
 <br>  ### Make sure the I/O device tfmcu is defined before any shutter_xx device ###
 <br>  ### Otherwise the shutter_xx devices can't find their I/O device (because its not defined yet) ###
+
+<p>
 
 =end html
