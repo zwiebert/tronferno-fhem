@@ -10,7 +10,11 @@
 ################################################################################
 
 
-use DevIo;
+require DevIo;
+#require HttpUtils;
+require File::Path;
+require File::Basename;
+
 use strict;
 use warnings;
 use 5.14.0;
@@ -52,6 +56,25 @@ while(my($k, $v) = each %$mco) {
     }
 }
 
+sub devio_open_device($) {
+    my ($hash) = @_;
+    # open connection with custom init and error callback function (non-blocking connection establishment)
+    main::DevIo_OpenDev($hash, 0, "TronfernoMCU::X_Init", "TronfernoMCU::X_Callback"); 
+}
+
+sub devio_close_device($) {
+    my ($hash) = @_;
+    # close connection if maybe open (on definition modify)
+    main::DevIo_CloseDev($hash) if(main::DevIo_IsOpen($hash));  
+}
+
+sub devio_get_serial_device_name($) {
+    my ($hash) = @_;
+    my $devname = $hash->{DeviceName};
+    return undef unless index($devname, '@') > 0;
+    my ($dev, $baud) = split('@', $devname);
+    return $dev;
+}
 
 # called when a new definition is created (by hand or from configuration read on FHEM startup)
 sub X_Define($$)
@@ -71,7 +94,7 @@ sub X_Define($$)
     return "no device given" unless($dev);
 
     #append default baudrate / portnumber
-    if (index($dev, '/dev/') == 0) {
+    if (index($dev, '/') != -1) {
         #serial device
         $dev .= '@' . "$mcu_baud" if (index($dev, '@') < 0);
     } else {
@@ -83,10 +106,10 @@ sub X_Define($$)
     $hash->{DeviceName} = $dev;
     
     # close connection if maybe open (on definition modify)
-    main::DevIo_CloseDev($hash) if(main::DevIo_IsOpen($hash));  
+    devio_close_device($hash);
     
     # open connection with custom init and error callback function (non-blocking connection establishment)
-    main::DevIo_OpenDev($hash, 0, "TronfernoMCU::X_Init", "TronfernoMCU::X_Callback"); 
+    devio_open_device($hash);
     
     return undef;
 }
@@ -182,13 +205,130 @@ sub mcu_download_firmware($) {
     my ($hash) = @_;
 }
 
-$usage .= ' xxx.flash-firmware.esp32:no,latest-version,restore';
-$usage .= ' xxx.flash-firmware.esp8266:no,latest-version,restore';
-$usage .= ' xxx.flash-firmware.atmega328:no,latest-version,restore';
+my $firmware;
+{
+    my $fw = {};
+    $firmware = $fw;
+    
+    my $fwe = {};
+    my $fwe8 = {};
+    my $fwa = {};
+    
+    $fw->{'xxx.flash-firmware.esp32'} = $fwe;
+    $fw->{'xxx.flash-firmware.esp8266'} = $fwe8;
+   # $fw->{'xxx.flash-firmware.atmega328'} = $fwa;
+
+    $fwe->{args} = ':download,flash';
+    # FIXME: file ist should better be fetched from server
+    $fwe->{files} = ['firmware/esp32/tronferno-mcu.bin',
+                     'firmware/esp32/bootloader.bin',
+                     'firmware/esp32/partitions.bin',
+                     'tools/esptool.py',
+                     'flash_esp32.sh'];
+    $fwe->{tgtdir} = '/tmp/TronfernoMCU/';
+    $fwe->{uri} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/master/';
+    $fwe->{flash_cmd} = '/bin/sh flash_esp32.sh %s';
+
+
+    $fwe8->{args} = ':download,flash';
+    # FIXME: file ist should better be fetched from server
+    $fwe8->{files} = ['firmware/esp8266/blank.bin',
+                     'firmware/esp8266/eagle.flash.bin',
+                     'firmware/esp8266/eagle.irom0text.bin',
+                     'firmware/esp8266/esp_init_data_default_v08.bin',
+                     'tools/esptool.py',
+                     'flash_esp8266.sh'];
+    $fwe8->{tgtdir} = '/tmp/TronfernoMCU/';
+    $fwe8->{uri} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/master/';
+    $fwe8->{flash_cmd} = '/bin/sh flash_esp8266.sh %s';
+
+}
+
+# append to X_Set() usage text
+while(my($k, $v) = each %$firmware) {
+    $usage .= " $k".$v->{args};
+}
+
+=pod
+
+sub get_fw_cb($$$) {
+    my ($param, $err, $data) = @_;
+    my $hash = $param->{hash};
+    my $name = $hash->{NAME};
+}
+
+
+sub get_fw2($$) {
+    my($hash, $fw) = @_;
+    my $uri = $fw->{uri};
+    my $tgtdir =  $fw->{tgtdir};
+
+    for my $f (@{$fw->{files}}) {
+        my $dir = $tgtdir . File::Basename::dirname($f); # compose dir path
+        File::Path::make_path($dir, {mode => 0755}); # create dir
+
+        my $param = {
+            url        => $uri.$f,
+            timeout    => 5, 
+            hash       => $hash,
+            method     => "GET",
+            header     => "User-Agent: TeleHeater/2.2.3\r\nAccept: application/json", # Den Header gemäß abzufragender Daten ändern
+            callback   => \&get_fw_cb # Diese Funktion soll das Ergebnis dieser HTTP Anfrage bearbeiten
+                };
+
+        main::HttpUtils_NonblockingGet($param);
+        
+        print "----->dir=$dir file:$uri$f\n";
+    }
+}
+
+=cut
+
+sub fw_mk_list_file($$) {
+    my($hash, $fw) = @_;
+    my $tgtdir =  $fw->{tgtdir};
+    my $fname = $tgtdir.'files.txt';
+    File::Path::make_path($tgtdir, {mode => 0755}); # create dir
+    my $of;
+    if (open ($of,'>',$fname)) {
+        print $of join ("\n", @{$fw->{files}});
+        close ($of);
+    }
+}
+
+my $wget_log = 'wget.txt';
+my $flash_log = 'flash.txt';
+
+sub fw_get($$) {
+    my($hash, $fw) = @_;
+    my $uri = $fw->{uri};
+    my $tgtdir =  $fw->{tgtdir};
+    my $sc = "wget --base=$uri -i files.txt -x -nH --cut-dirs 3 --preserve-permissions";
+
+    fw_mk_list_file($hash, $fw);
+    my $command = "(cd $tgtdir && $sc) &>$tgtdir$wget_log &";
+    system($command);
+    $hash->{'mcu-firmware.get-cmd'} = $command;
+}
+
+sub fw_flash($$) {
+    my($hash, $fw) = @_;
+    my $tgtdir =  $fw->{tgtdir};
+    my $ser_dev = devio_get_serial_device_name($hash);
+    return unless $ser_dev;
+    
+    my $sc = sprintf($fw->{flash_cmd}, $ser_dev);
+    my $command = "(cd $tgtdir && $sc) &>$tgtdir$flash_log &";
+    devio_close_device($hash);
+    system($command);
+     # delay reoping device until flasher has opened port / or is already done
+    main::InternalTimer(main::gettimeofday() + 45, 'TronfernoMCU::devio_open_device', $hash);
+    
+    $hash->{'mcu-firmware.flash-cmd'} = $command;
+}
 
 # called if set command is executed
-sub X_Set($$@)
-{
+sub X_Set($$@) {
     my ($hash, $name, $cmd, @args) = @_;
     my ($a1, $a2, $a3, $a4) = @args;
 
@@ -201,7 +341,12 @@ sub X_Set($$@)
         return $u;
     } elsif($mcof->{$cmd}) {
         mcu_config($hash, $mcof->{$cmd}, $a1) if defined($a1); 
-    } elsif($cmd eq 'xxx.flash-firmware.esp32') {
+    } elsif($firmware->{$cmd}) {
+        if ($a1 eq 'download') {
+            fw_get($hash, $firmware->{$cmd});
+        } elsif ($a1 eq 'flash') {
+            fw_flash($hash, $firmware->{$cmd});
+        }
     } elsif($cmd eq 'xxx.flash-firmware.esp8266') {
     } elsif($cmd eq 'xxx.flash-firmware.atmega328') {
     } elsif($cmd eq '') {
@@ -221,7 +366,7 @@ sub X_Set($$@)
     return undef;
 }
 
-# will be executed upon successful connection establishment (see main::DevIo_OpenDev())
+# will be executed upon shuccessful connection establishment (see main::DevIo_OpenDev())
 sub X_Init($)
 {
     my ($hash) = @_;
@@ -232,7 +377,6 @@ sub X_Init($)
     return undef; 
 }
 
-# will be executed if connection establishment fails (see main::DevIo_OpenDev())
 sub X_Callback($)
 {
     my ($hash, $error) = @_;
