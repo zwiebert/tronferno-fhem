@@ -513,10 +513,10 @@ sub TronfernoMCU_Initialize($) {
     <ol>
      <li>download<br>
          Download firware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
-         Required tools: wget</li>
+         Required tools: wget (apt install wget)</li>
      <li>flash<br>
          Flash downloaded firmware to serial port used in definition of this device.<br>
-         Required Tools: python, python-serial<br>
+         Required Tools: python, pyserial (apt install python  python-serial)<br>
          The port will be reconnected 45s after the flash has started.</li>
     </ol>
     </li>
