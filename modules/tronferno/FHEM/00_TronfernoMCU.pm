@@ -15,11 +15,11 @@ use strict;
 use warnings;
 use 5.14.0;
 
-package TronfernoMCU {
+package TronfernoMCU;
 
-    my $def_mcuaddr = 'fernotron.fritz.box.';
-    my $mcu_port = 7777;
-    my $mcu_baud = 115200;
+my $def_mcuaddr = 'fernotron.fritz.box.';
+my $mcu_port = 7777;
+my $mcu_baud = 115200;
 
 my $mcfg_prefix = 'mcu-config.';
 my $mco = {
@@ -34,127 +34,127 @@ my $mco = {
     MCFG_VERBOSE => 'verbose',
     MCFG_RESTART => 'restart',
 };
-    
+
 my $mcof = {};
 my $mcor = {};
 my $usage = '';
 
-    while(my($k, $v) = each %$mco) {
-        my $vp = $mcfg_prefix.$v;
-        $mcof->{$vp} = $v;
-        $mcor->{$v} = $vp;
-        if ($k eq 'MCFG_VERBOSE') {
-            $usage .= " $vp:0,1,2,3,4,5";
-        } elsif ($k eq 'MCFG_RESTART') {
-            $usage .= " $vp:1";
-        } else {
-            $usage .= " $vp";
-        }
+while(my($k, $v) = each %$mco) {
+    my $vp = $mcfg_prefix.$v;
+    $mcof->{$vp} = $v;
+    $mcor->{$v} = $vp;
+    if ($k eq 'MCFG_VERBOSE') {
+        $usage .= " $vp:0,1,2,3,4,5";
+    } elsif ($k eq 'MCFG_RESTART') {
+        $usage .= " $vp:1";
+    } else {
+        $usage .= " $vp";
     }
+}
 
 
 # called when a new definition is created (by hand or from configuration read on FHEM startup)
 sub X_Define($$)
 {
-  my ($hash, $def) = @_;
-  my @a = split("[ \t]+", $def);
+    my ($hash, $def) = @_;
+    my @a = split("[ \t]+", $def);
 
-  my $name = $a[0];
-  
-  # $a[1] is always equals the module name "MY_MODULE"
-  
-  # first argument is the hostname or IP address of the device (e.g. "192.168.1.120")
-  my $dev = $a[2];
-  
-  $dev = $def_mcuaddr unless($dev); # FIXME: remove this line
+    my $name = $a[0];
+    
+    # $a[1] is always equals the module name "MY_MODULE"
+    
+    # first argument is the hostname or IP address of the device (e.g. "192.168.1.120")
+    my $dev = $a[2];
+    
+    $dev = $def_mcuaddr unless($dev); # FIXME: remove this line
 
-  return "no device given" unless($dev);
+    return "no device given" unless($dev);
 
-  #append default baudrate / portnumber
-  if (index($dev, '/dev/') == 0) {
-      #serial device
-      $dev .= '@' . "$mcu_baud" if (index($dev, '@') < 0);
-  } else {
-      #TCP/IP connection
-      $dev .= ":$mcu_port" if(index($dev, ':') < 0);
-  }
- 
-  
-  $hash->{DeviceName} = $dev;
-  
-  # close connection if maybe open (on definition modify)
-  main::DevIo_CloseDev($hash) if(main::DevIo_IsOpen($hash));  
-  
-  # open connection with custom init and error callback function (non-blocking connection establishment)
-  main::DevIo_OpenDev($hash, 0, "TronfernoMCU::X_Init", "TronfernoMCU::X_Callback"); 
- 
-  return undef;
+    #append default baudrate / portnumber
+    if (index($dev, '/dev/') == 0) {
+        #serial device
+        $dev .= '@' . "$mcu_baud" if (index($dev, '@') < 0);
+    } else {
+        #TCP/IP connection
+        $dev .= ":$mcu_port" if(index($dev, ':') < 0);
+    }
+    
+    
+    $hash->{DeviceName} = $dev;
+    
+    # close connection if maybe open (on definition modify)
+    main::DevIo_CloseDev($hash) if(main::DevIo_IsOpen($hash));  
+    
+    # open connection with custom init and error callback function (non-blocking connection establishment)
+    main::DevIo_OpenDev($hash, 0, "TronfernoMCU::X_Init", "TronfernoMCU::X_Callback"); 
+    
+    return undef;
 }
 
 # called when definition is undefined 
 # (config reload, shutdown or delete of definition)
 sub X_Undef($$)
 {
-  my ($hash, $name) = @_;
- 
-  # close the connection 
-  main::DevIo_CloseDev($hash);
-  
-  return undef;
+    my ($hash, $name) = @_;
+    
+    # close the connection 
+    main::DevIo_CloseDev($hash);
+    
+    return undef;
 }
 
 # called repeatedly if device disappeared
 sub X_Ready($)
 {
-  my ($hash) = @_;
-  
-  # try to reopen the connection in case the connection is lost
-  return main::DevIo_OpenDev($hash, 1, "TronfernoMCU::X_Init", "TronfernoMCU::X_Callback"); 
+    my ($hash) = @_;
+    
+    # try to reopen the connection in case the connection is lost
+    return main::DevIo_OpenDev($hash, 1, "TronfernoMCU::X_Init", "TronfernoMCU::X_Callback"); 
 }
 
 # called when data was received
 sub X_Read($$)
 {
-  # if DevIo_Expect() returns something we call this function with an additional argument
-  my ($hash, $data) = @_;
-  my $name = $hash->{NAME};
+    # if DevIo_Expect() returns something we call this function with an additional argument
+    my ($hash, $data) = @_;
+    my $name = $hash->{NAME};
 
-  # read the available data (or don't if called from X_Set)
-  $data = main::DevIo_SimpleRead($hash) unless (defined($data));
-  # stop processing if no data is available (device disconnected)
-  return if(!defined($data));
+    # read the available data (or don't if called from X_Set)
+    $data = main::DevIo_SimpleRead($hash) unless (defined($data));
+    # stop processing if no data is available (device disconnected)
+    return if(!defined($data));
 
-  my $buf = $hash->{PARTIAL} . $data;
-  
-  main::Log3 $name, 5, "TronfernoMCU ($name) - received data: >>>$data<<<"; 
+    my $buf = $hash->{PARTIAL} . $data;
+    
+    main::Log3 $name, 5, "TronfernoMCU ($name) - received data: >>>$data<<<"; 
 
-  my $remain = '';
-  foreach my $line (split(/^/m, $buf)) {
-      if (index($line, "\n") < 0) {
-          $remain = $line;
-          last;
-      }
+    my $remain = '';
+    foreach my $line (split(/^/m, $buf)) {
+        if (index($line, "\n") < 0) {
+            $remain = $line;
+            last;
+        }
 
-      $line =~ tr/\r\n//d;
+        $line =~ tr/\r\n//d;
 
-      main::Log3 $name, 4, "TronfernoMCU ($name) - received line: >>>>>$line<<<<<"; 
+        main::Log3 $name, 4, "TronfernoMCU ($name) - received line: >>>>>$line<<<<<"; 
 
-      if ($line =~ /^U:position:\s*(.+);$/) {
-          main::Log3 $name, 3, "TronfernoMCU ($name): position_update: $1";
-          main::Dispatch($hash, "TFMCU#$line");
-      } elsif ($line =~ /^[Cc]:.*;$/) {
-          main::Log3 $name, 3, "TronfernoMCU ($name): msg received $line";
-          main::Dispatch($hash, "TFMCU#$line");
-      } elsif ($line =~ /^config (.*);$/) {
-          for my $kv (split (' ', $1)) {
-              my ($k, $v) = split('=', $kv);
-              $k = $mcor->{$k};
-              $hash->{$k} = $v;
-          }
-      }
-  }
+        if ($line =~ /^U:position:\s*(.+);$/) {
+            main::Log3 $name, 3, "TronfernoMCU ($name): position_update: $1";
+            main::Dispatch($hash, "TFMCU#$line");
+        } elsif ($line =~ /^[Cc]:.*;$/) {
+            main::Log3 $name, 3, "TronfernoMCU ($name): msg received $line";
+            main::Dispatch($hash, "TFMCU#$line");
+        } elsif ($line =~ /^config (.*);$/) {
+            for my $kv (split (' ', $1)) {
+                my ($k, $v) = split('=', $kv);
+                $k = $mcor->{$k};
+                $hash->{$k} = $v;
+            }
+        }
+    }
 
-  $hash->{PARTIAL} = $remain;
+    $hash->{PARTIAL} = $remain;
 }
 
 sub mcu_read_all_config($) {
@@ -178,11 +178,14 @@ sub mcu_config($$$) {
     main::DevIo_SimpleWrite($hash, "config $opt=$arg $opt=?;", 2);
 }
 
-    
-    $usage .= ' xxx.flash-firmware.esp32:no,latest-version,restore';
-    $usage .= ' xxx.flash-firmware.esp8266:no,latest-version,restore';
-    $usage .= ' xxx.flash-firmware.atmega328:no,latest-version,restore';
-    
+sub mcu_download_firmware($) {
+    my ($hash) = @_;
+}
+
+$usage .= ' xxx.flash-firmware.esp32:no,latest-version,restore';
+$usage .= ' xxx.flash-firmware.esp8266:no,latest-version,restore';
+$usage .= ' xxx.flash-firmware.atmega328:no,latest-version,restore';
+
 # called if set command is executed
 sub X_Set($$@)
 {
@@ -205,19 +208,19 @@ sub X_Set($$@)
     } elsif($cmd eq '') {
     } elsif($cmd eq '') {
     } elsif($cmd eq '') {
-     } elsif($cmd eq "statusRequest") {
-         #main::DevIo_SimpleWrite($hash, "get_status\r\n", 2);
+    } elsif($cmd eq "statusRequest") {
+        #main::DevIo_SimpleWrite($hash, "get_status\r\n", 2);
     } elsif($cmd eq "on") {
-         #main::DevIo_SimpleWrite($hash, "on\r\n", 2);
+        #main::DevIo_SimpleWrite($hash, "on\r\n", 2);
     } elsif($cmd eq "off") {
-         #main::DevIo_SimpleWrite($hash, "off\r\n", 2);
+        #main::DevIo_SimpleWrite($hash, "off\r\n", 2);
     } else {
         return $u;
     }
     
     return undef;
 }
-    
+
 # will be executed upon successful connection establishment (see main::DevIo_OpenDev())
 sub X_Init($)
 {
@@ -243,31 +246,32 @@ sub X_Callback($)
 
 sub X_Write ($$)
 {
-        my ( $hash, $addr, $msg) = @_;
-        my $name = $hash->{NAME};
+    my ( $hash, $addr, $msg) = @_;
+    my $name = $hash->{NAME};
 
-        main::Log3 $name, 5, "TronfernoMCU ($name) _Write(): $addr: $msg";
-        main::DevIo_SimpleWrite($hash, $msg, 2, 1);
-        return undef;
-}
-    
+    main::Log3 $name, 5, "TronfernoMCU ($name) _Write(): $addr: $msg";
+    main::DevIo_SimpleWrite($hash, $msg, 2, 1);
+    return undef;
 }
 
-package main {
-    sub TronfernoMCU_Initialize($) {
-        my ($hash) = @_;
 
-        $hash->{SetFn}   = 'TronfernoMCU::X_Set';
-        $hash->{DefFn}   = 'TronfernoMCU::X_Define';
-        $hash->{ReadFn}  = 'TronfernoMCU::X_Read';
-        $hash->{ReadyFn} = 'TronfernoMCU::X_Ready';
-        $hash->{WriteFn} = 'TronfernoMCU::X_Write';
-        $hash->{UndefFn} = 'TronfernoMCU::X_Undef';
 
-        $hash->{Clients} = 'Tronferno';
-        $hash->{MatchList} = { '1:Tronferno' => '^TFMCU#.+' };
-    }
+package main;
+
+sub TronfernoMCU_Initialize($) {
+    my ($hash) = @_;
+
+    $hash->{SetFn}   = 'TronfernoMCU::X_Set';
+    $hash->{DefFn}   = 'TronfernoMCU::X_Define';
+    $hash->{ReadFn}  = 'TronfernoMCU::X_Read';
+    $hash->{ReadyFn} = 'TronfernoMCU::X_Ready';
+    $hash->{WriteFn} = 'TronfernoMCU::X_Write';
+    $hash->{UndefFn} = 'TronfernoMCU::X_Undef';
+
+    $hash->{Clients} = 'Tronferno';
+    $hash->{MatchList} = { '1:Tronferno' => '^TFMCU#.+' };
 }
+
 
 1;
 
