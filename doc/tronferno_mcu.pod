@@ -20,52 +20,52 @@
 
   <a name="mcu-config.baud"></a>
   <li>mcu-config.baud<br>
-    Baud rate of MCU's serial interface</li><br>
+    Baud rate of MCU's serial interface</li>
 
   <a name="mcu-config.cu"></a>
   <li>mcu-config.cu<br>
-   Central-Unit ID used by the MCU (six digit hex number)</li><br>
+   Central-Unit ID used by the MCU (six digit hex number)</li>
 
 
   <a name="mcu-config.latitude"></a>
   <li>mcu-config.latitude<br>
-   geographical coordinates are used to calculate civil dusk for astro-timer (decimal degree, e.g. 52.5)</li><br>
+   geographical coordinates are used to calculate civil dusk for astro-timer (decimal degree, e.g. 52.5)</li>
 
   <a name="mcu-config.longitude"></a>
   <li>mcu-config.longitude<br>
-   geographical coordinates are used to calculate civil dusk for astro-timer (decimal degree, e.g. 13,4)</li><br>
+   geographical coordinates are used to calculate civil dusk for astro-timer (decimal degree, e.g. 13,4)</li>
 
   <a name="mcu-config.restart"></a>
   <li>mcu-config.restart<br>
-    causes the MCU to reastart. required after changing wlan configuration</li><br>
+    causes the MCU to reastart. required after changing wlan configuration</li>
 
   <a name="mcu-config.rtc"></a>
   <li>mcu-config.rtc<br>
-    Set MCU's internal real time clock by ISO date/time string (e.g. 1999-12-31T23:59:00). If possible, the MCU will use NTP instead.</li><br>
+    Set MCU's internal real time clock by ISO date/time string (e.g. 1999-12-31T23:59:00). If possible, the MCU will use NTP instead.</li>
 
   <a name="mcu-config.rtc"></a>
   <li>mcu-config.rtc<br>
-    Set MCU's internal real time clock by ISO date/time string (e.g. 1999-12-31T23:59:00). If possible, the MCU will use NTP instead.</li><br>
+    Set MCU's internal real time clock by ISO date/time string (e.g. 1999-12-31T23:59:00). If possible, the MCU will use NTP instead.</li>
 
   <a name="mcu-config.tz"></a>
   <li>mcu-config.tz<br>
-    Time-zone in POSIX (TZ) format</li><br>
+    Time-zone in POSIX (TZ) format</li>
 
   <a name="mcu-config.rtc"></a>
   <li>mcu-config.rtc<br>
-    </li><br>
+    </li>
 
   <a name="mcu-config.verbose"></a>
   <li>mcu-config.verbose<br>
-    Verbosity level of MCU's diagnose output (0 .. 5)</li><br>
+    Verbosity level of MCU's diagnose output (0 .. 5)</li>
 
   <a name="mcu-config.wlan-password"></a>
   <li>mcu-config.wlan-passord<br>
-    Password used by MCU to connect to WLAN/WiFi </li><br>
+    Password used by MCU to connect to WLAN/WiFi </li>
 
   <a name="mcu-config.wlan-ssid"></a>
   <li>mcu-config.wlan-ssid<br>
-    WLAN/WiFi SSID to connect to</li><br>
+    WLAN/WiFi SSID to connect to</li>
 
   <a name="xxx.flash-firmware.esp32"></a>
   <li>xxx.flash-firmware.esp32<br>
@@ -73,13 +73,13 @@
     <ol>
      <li>download<br>
          Download firware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
-         Required tools: wget</li><br>
+         Required tools: wget</li>
      <li>flash<br>
          Flash downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, python-serial<br>
-         The port will be reconnected 45s after the flash has started.</li><br>
+         The port will be reconnected 45s after the flash has started.</li>
     </ol>
-    </li><br>
+    </li>
 
   <a name="xxx.flash-firmware.esp8266"></a>
   <li>xxx.flash-firmware.esp8266<br>
@@ -87,13 +87,13 @@
     <ol>
      <li>download<br>
          Download firware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
-         Required tools: wget</li><br>
+         Required tools: wget</li>
      <li>flash<br>
          Flash downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, python-serial<br>
-         The port will be reconnected 45s after the flash has started.</li><br>
+         The port will be reconnected 45s after the flash has started.</li>
     </ol>
-    </li><br>
+    </li>
 
 
 </ul>
