@@ -30,13 +30,13 @@ Dies wird durch die verwendete ID und Gruppen und Empfängernummer bestimmt.
   <code>
     define <MeinRolladen> Fernotron a=ID [g=GN] [m=MN]<br>
   </code>
-			
-		
+                        
+                
 <p>  
   ID : Die Geräte ID. Eine  sechstellige hexadezimale Zahl.  10xxxx=Handsender, 20xxxx=Sonnensensor, 80xxxx=Zentraleinheit, 90xxxx=Empfänger<br>
   GN : Gruppennummer (1-7) oder 0 (default) für alle Gruppen<br>
   MN : Empfängernummer (1-) oder 0 (default) für alle Empfänger<br>
-			
+                        
 <p>
   'g' und 'n' sind nur sinnvoll, wenn als ID eine Zentraleinheit angegeben wurde 
 

@@ -23,10 +23,10 @@ use IO::Socket;
 package Tronferno {
     use constant MODNAME => 'Tronferno';
     use constant {
-	FDT_SUN => 'sun',
-	FDT_PLAIN => 'plain',
-	FDT_CENTRAL => 'central',
-	FDT_RECV => 'receiver',
+        FDT_SUN => 'sun',
+        FDT_PLAIN => 'plain',
+        FDT_CENTRAL => 'central',
+        FDT_RECV => 'receiver',
         DEF_INPUT_DEVICE => 'default',
         ATTR_AUTOCREATE_NAME => 'create',
         ATTR_AUTOCREATE_IN => 'in',
@@ -69,9 +69,9 @@ package Tronferno {
                 $mcu_addr = $value;
             } elsif ($key eq 'scan' or $key eq 'input' && $value eq 'all') {
                 $scan = 1;
-		$main::modules{+MODNAME}{defptr}{+DEF_INPUT_DEVICE} = $hash;
-		$hash->{helper}{inputKey} = DEF_INPUT_DEVICE;
-		$hash->{helper}{ferInputType} = 'scan';
+                $main::modules{+MODNAME}{defptr}{+DEF_INPUT_DEVICE} = $hash;
+                $hash->{helper}{inputKey} = DEF_INPUT_DEVICE;
+                $hash->{helper}{ferInputType} = 'scan';
             } else {
                 return "$name: unknown argument $o in define";    #FIXME add usage text
             }
@@ -98,8 +98,8 @@ package Tronferno {
         my ($hash, $name) = @_;
 
         # remove deleted input devices from defptr
-	my $key = $hash->{helper}{inputKey};
-	delete $main::modules{+MODNAME}{defptr}{$key} if (defined($key));
+        my $key = $hash->{helper}{inputKey};
+        delete $main::modules{+MODNAME}{defptr}{$key} if (defined($key));
 
         return undef;
     }
@@ -174,37 +174,37 @@ package Tronferno {
         my $u = "unknown argument $cmd choose one of ";
 
 
-	# handle input devices here
-	my $inputType = $hash->{helper}{ferInputType};
-	if (defined($inputType)) {
-	    if ($cmd eq '?') {
-		if ($hash->{helper}{ferInputType} eq FDT_SUN) {
-		    return $u . 'on:noArg off:noArg';
-		} elsif ($hash->{helper}{ferInputType} eq FDT_PLAIN) {
-		    return $u . 'up:noArg down:noArg stop:noArg';
-		} elsif ($hash->{helper}{ferInputType} eq FDT_CENTRAL) {
-		    return $u . 'up:noArg down:noArg stop:noArg';
-		}
-		return $u; #default input device takes no arguments
-	    }
+        # handle input devices here
+        my $inputType = $hash->{helper}{ferInputType};
+        if (defined($inputType)) {
+            if ($cmd eq '?') {
+                if ($hash->{helper}{ferInputType} eq FDT_SUN) {
+                    return $u . 'on:noArg off:noArg';
+                } elsif ($hash->{helper}{ferInputType} eq FDT_PLAIN) {
+                    return $u . 'up:noArg down:noArg stop:noArg';
+                } elsif ($hash->{helper}{ferInputType} eq FDT_CENTRAL) {
+                    return $u . 'up:noArg down:noArg stop:noArg';
+                }
+                return $u; #default input device takes no arguments
+            }
 
-	    if ($inputType eq FDT_PLAIN) {
-		if ($cmd eq 'stop' || $cmd eq 'up' || $cmd eq 'down') {
-		    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
-		}
-	    } elsif ($inputType eq FDT_CENTRAL) {
-		if ($cmd eq 'stop' || $cmd eq 'up' || $cmd eq 'down') {
-		    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
-		}
-	    } elsif ($inputType eq FDT_SUN) {
-		if ($cmd eq 'on' || $cmd eq 'off') {
-		    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
-		}
-	    } else {
-		return "unsupported input type: $inputType";
-	    }
+            if ($inputType eq FDT_PLAIN) {
+                if ($cmd eq 'stop' || $cmd eq 'up' || $cmd eq 'down') {
+                    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
+                }
+            } elsif ($inputType eq FDT_CENTRAL) {
+                if ($cmd eq 'stop' || $cmd eq 'up' || $cmd eq 'down') {
+                    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
+                }
+            } elsif ($inputType eq FDT_SUN) {
+                if ($cmd eq 'on' || $cmd eq 'off') {
+                    main::readingsSingleUpdate($hash, 'state', $cmd, 1)
+                }
+            } else {
+                return "unsupported input type: $inputType";
+            }
             return undef;    
-	}
+        }
 
         #handle output devices here
         if ($cmd eq '?') {
@@ -322,24 +322,24 @@ package Tronferno {
     
     # update Reading of default input device, if there was no matching input device
     sub defaultInputMakeReading($$$$$$) {
-	my ($hash, $fdt, $a, $g, $m, $c) = @_;
+        my ($hash, $fdt, $a, $g, $m, $c) = @_;
 
         my $kind = $fdt;
         $a = sprintf("%06x", $a);
         
         return undef unless $kind;
-	
-	my $gm = $kind eq FDT_CENTRAL ? " g=$g m=$m" : '';
-	
+        
+        my $gm = $kind eq FDT_CENTRAL ? " g=$g m=$m" : '';
+        
         ### combine parts and update reading
-	my $human_readable = "$kind a=$a$gm c=$c";
+        my $human_readable = "$kind a=$a$gm c=$c";
         my $state = "$kind:$a" . ($kind eq FDT_CENTRAL ? "-$g-$m" : '')  . ":$c";
-	$state =~ tr/ /:/; # don't want spaces in reading
-	my $do_trigger =  !($kind eq FDT_RECV || $kind eq 'unknown'); # unknown and receiver should not trigger events
-	
-	$hash->{received_HR} = $human_readable;
-	main::readingsSingleUpdate($hash, 'state',  $state, $do_trigger);
-	return 1;
+        $state =~ tr/ /:/; # don't want spaces in reading
+        my $do_trigger =  !($kind eq FDT_RECV || $kind eq 'unknown'); # unknown and receiver should not trigger events
+        
+        $hash->{received_HR} = $human_readable;
+        main::readingsSingleUpdate($hash, 'state',  $state, $do_trigger);
+        return 1;
     }
 
     sub parse_c {
@@ -365,16 +365,16 @@ package Tronferno {
             }
         }
 
-	my $default =  $main::modules{+MODNAME}{defptr}{+DEF_INPUT_DEVICE};
+        my $default =  $main::modules{+MODNAME}{defptr}{+DEF_INPUT_DEVICE};
         my $hash = $default;# getInputDeviceByA($a);
 
         return 'UNDEFINED Tronferno_Scan Tronferno scan' unless ($default || $hash); # autocreate default input device
 
         if ($hash->{helper}{ferInputType} eq 'scan') {
             defaultInputMakeReading($default, $fdt, $a, $g, $m, $c) or return undef;
-	} else {
-	    #inputMakeReading($fsb, $hash) or return undef;
-	}
+        } else {
+            #inputMakeReading($fsb, $hash) or return undef;
+        }
         return $hash->{NAME}
     }
 

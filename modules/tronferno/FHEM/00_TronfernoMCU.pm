@@ -131,8 +131,8 @@ sub X_Read($$)
   my $remain = '';
   foreach my $line (split(/^/m, $buf)) {
       if (index($line, "\n") < 0) {
-	  $remain = $line;
-	  last;
+          $remain = $line;
+          last;
       }
 
       $line =~ tr/\r\n//d;
@@ -140,11 +140,11 @@ sub X_Read($$)
       main::Log3 $name, 4, "TronfernoMCU ($name) - received line: >>>>>$line<<<<<"; 
 
       if ($line =~ /^U:position:\s*(.+);$/) {
-	  main::Log3 $name, 3, "TronfernoMCU ($name): position_update: $1";
-	  main::Dispatch($hash, "TFMCU#$line");
+          main::Log3 $name, 3, "TronfernoMCU ($name): position_update: $1";
+          main::Dispatch($hash, "TFMCU#$line");
       } elsif ($line =~ /^[Cc]:.*;$/) {
-	  main::Log3 $name, 3, "TronfernoMCU ($name): msg received $line";
-	  main::Dispatch($hash, "TFMCU#$line");
+          main::Log3 $name, 3, "TronfernoMCU ($name): msg received $line";
+          main::Dispatch($hash, "TFMCU#$line");
       } elsif ($line =~ /^config (.*);$/) {
           for my $kv (split (' ', $1)) {
               my ($k, $v) = split('=', $kv);
@@ -243,12 +243,12 @@ sub X_Callback($)
 
 sub X_Write ($$)
 {
-	my ( $hash, $addr, $msg) = @_;
-	my $name = $hash->{NAME};
+        my ( $hash, $addr, $msg) = @_;
+        my $name = $hash->{NAME};
 
-	main::Log3 $name, 5, "TronfernoMCU ($name) _Write(): $addr: $msg";
-	main::DevIo_SimpleWrite($hash, $msg, 2, 1);
-	return undef;
+        main::Log3 $name, 5, "TronfernoMCU ($name) _Write(): $addr: $msg";
+        main::DevIo_SimpleWrite($hash, $msg, 2, 1);
+        return undef;
 }
     
 }
@@ -264,8 +264,8 @@ package main {
         $hash->{WriteFn} = 'TronfernoMCU::X_Write';
         $hash->{UndefFn} = 'TronfernoMCU::X_Undef';
 
-	$hash->{Clients} = 'Tronferno';
-	$hash->{MatchList} = { '1:Tronferno' => '^TFMCU#.+' };
+        $hash->{Clients} = 'Tronferno';
+        $hash->{MatchList} = { '1:Tronferno' => '^TFMCU#.+' };
     }
 }
 
