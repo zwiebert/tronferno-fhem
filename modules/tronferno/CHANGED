@@ -3,9 +3,11 @@
 # Do not insert empty lines here, update check depends on it.
 ################################################################################
 - 2019-03-04
-  -feature: 10_TronfernoMCU: download and flash MCU firmware.
+  -feature: 00_TronfernoMCU: new flash option 'erase-flash'
+  -bugfix:  00_TronfernoMCU: closing serial port before flashing was unreliable
+  -feature: 00_TronfernoMCU: download and flash MCU firmware.
   -change:  10_Tronferno: direct help for set and attributes
-  -change:  10_TronfernoMCU: direct help for set
+  -change:  00_TronfernoMCU: direct help for set
 
 - 2019-03-03
-  -feature: 10_TronfernoMCU: show and modify MCU config
+  -feature: 00_TronfernoMCU: show and modify MCU config

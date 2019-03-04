@@ -65,7 +65,7 @@ sub devio_open_device($) {
 sub devio_close_device($) {
     my ($hash) = @_;
     # close connection if maybe open (on definition modify)
-    main::DevIo_CloseDev($hash) if(main::DevIo_IsOpen($hash));  
+    main::DevIo_CloseDev($hash); # if(main::DevIo_IsOpen($hash));  
 }
 
 sub devio_get_serial_device_name($) {
@@ -210,38 +210,41 @@ my $firmware;
     my $fw = {};
     $firmware = $fw;
     
-    my $fwe = {};
-    my $fwe8 = {};
-    my $fwa = {};
-    
-    $fw->{'xxx.flash-firmware.esp32'} = $fwe;
-    $fw->{'xxx.flash-firmware.esp8266'} = $fwe8;
-   # $fw->{'xxx.flash-firmware.atmega328'} = $fwa;
+    {
+        my $fwe = {};
+        $fw->{'xxx.flash-firmware.esp32'} = $fwe;
 
-    $fwe->{args} = ':download,flash';
-    # FIXME: file ist should better be fetched from server
-    $fwe->{files} = ['firmware/esp32/tronferno-mcu.bin',
-                     'firmware/esp32/bootloader.bin',
-                     'firmware/esp32/partitions.bin',
-                     'tools/esptool.py',
-                     'flash_esp32.sh'];
-    $fwe->{tgtdir} = '/tmp/TronfernoMCU/';
-    $fwe->{uri} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/master/';
-    $fwe->{flash_cmd} = '/bin/sh flash_esp32.sh %s';
+        $fwe->{args} = ':download,erase-flash,flash';
+        # FIXME: file ist should better be fetched from server
+        $fwe->{files} = ['firmware/esp32/tronferno-mcu.bin',
+                         'firmware/esp32/bootloader.bin',
+                         'firmware/esp32/partitions.bin',
+                         'tools/esptool.py',
+                         'flash_esp32.sh'];
+        $fwe->{tgtdir} = '/tmp/TronfernoMCU/';
+        $fwe->{uri} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/master/';
+        $fwe->{flash_cmd} = '/bin/sh flash_esp32.sh %s';
+        $fwe->{erase_flash_cmd} = 'python tools/esptool.py --port %s --chip esp32 erase_flash';
+    }
+
+    {
+        my $fwe8 = {};
+        $fw->{'xxx.flash-firmware.esp8266'} = $fwe8;
 
 
-    $fwe8->{args} = ':download,flash';
-    # FIXME: file ist should better be fetched from server
-    $fwe8->{files} = ['firmware/esp8266/blank.bin',
-                     'firmware/esp8266/eagle.flash.bin',
-                     'firmware/esp8266/eagle.irom0text.bin',
-                     'firmware/esp8266/esp_init_data_default_v08.bin',
-                     'tools/esptool.py',
-                     'flash_esp8266.sh'];
-    $fwe8->{tgtdir} = '/tmp/TronfernoMCU/';
-    $fwe8->{uri} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/master/';
-    $fwe8->{flash_cmd} = '/bin/sh flash_esp8266.sh %s';
-
+        $fwe8->{args} = ':download,erase-flash,flash';
+        # FIXME: file ist should better be fetched from server
+        $fwe8->{files} = ['firmware/esp8266/blank.bin',
+                          'firmware/esp8266/eagle.flash.bin',
+                          'firmware/esp8266/eagle.irom0text.bin',
+                          'firmware/esp8266/esp_init_data_default_v08.bin',
+                          'tools/esptool.py',
+                          'flash_esp8266.sh'];
+        $fwe8->{tgtdir} = '/tmp/TronfernoMCU/';
+        $fwe8->{uri} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/master/';
+        $fwe8->{flash_cmd} = '/bin/sh flash_esp8266.sh %s';
+        $fwe8->{erase_flash_cmd} = 'python tools/esptool.py --port %s --chip esp8266 erase_flash';
+    }
 }
 
 # append to X_Set() usage text
@@ -298,15 +301,16 @@ sub fw_mk_list_file($$) {
 
 my $wget_log = 'wget.txt';
 my $flash_log = 'flash.txt';
+my $erase_flash_log = 'erase_flash.txt';
 
 sub fw_get($$) {
     my($hash, $fw) = @_;
     my $uri = $fw->{uri};
     my $tgtdir =  $fw->{tgtdir};
-    my $sc = "wget --base=$uri -i files.txt -x -nH --cut-dirs 3 --preserve-permissions";
+    my $sc = "wget --no-verbose --base=$uri -i files.txt -x -nH --cut-dirs 3 --preserve-permissions";
 
     fw_mk_list_file($hash, $fw);
-    my $command = "(cd $tgtdir && $sc) &>$tgtdir$wget_log &";
+    my $command = "(cd $tgtdir && $sc) &>>$tgtdir$wget_log &";
     system($command);
     $hash->{'mcu-firmware.get-cmd'} = $command;
 }
@@ -316,15 +320,33 @@ sub fw_flash($$) {
     my $tgtdir =  $fw->{tgtdir};
     my $ser_dev = devio_get_serial_device_name($hash);
     return unless $ser_dev;
+    return unless $fw->{flash_cmd};
     
     my $sc = sprintf($fw->{flash_cmd}, $ser_dev);
-    my $command = "(cd $tgtdir && $sc) &>$tgtdir$flash_log &";
+    my $command = "(cd $tgtdir && $sc) &>>$tgtdir$flash_log &";
     devio_close_device($hash);
     system($command);
      # delay reoping device until flasher has opened port / or is already done
     main::InternalTimer(main::gettimeofday() + 45, 'TronfernoMCU::devio_open_device', $hash);
     
     $hash->{'mcu-firmware.flash-cmd'} = $command;
+}
+
+sub fw_erase_flash($$) {
+    my($hash, $fw) = @_;
+    my $tgtdir =  $fw->{tgtdir};
+    my $ser_dev = devio_get_serial_device_name($hash);
+    return unless $ser_dev;
+    return unless $fw->{erase_flash_cmd};
+    
+    my $sc = sprintf($fw->{erase_flash_cmd}, $ser_dev);
+    my $command = "(cd $tgtdir && $sc) &>>$tgtdir$flash_log &";
+    devio_close_device($hash);
+    system($command);
+     # delay reoping device until flasher has opened port / or is already done
+    main::InternalTimer(main::gettimeofday() + 45, 'TronfernoMCU::devio_open_device', $hash);
+    
+    $hash->{'mcu-firmware.erase-flash-cmd'} = $command;
 }
 
 # called if set command is executed
@@ -346,6 +368,8 @@ sub X_Set($$@) {
             fw_get($hash, $firmware->{$cmd});
         } elsif ($a1 eq 'flash') {
             fw_flash($hash, $firmware->{$cmd});
+        } elsif ($a1 eq 'erase-flash') {
+            fw_erase_flash($hash, $firmware->{$cmd});
         }
     } elsif($cmd eq 'xxx.flash-firmware.esp8266') {
     } elsif($cmd eq 'xxx.flash-firmware.atmega328') {
@@ -500,10 +524,15 @@ sub TronfernoMCU_Initialize($) {
      <li>download<br>
          Download firware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
          Required tools: wget <code>apt install wget</code></li>
+     <li>erase-flash<br>
+          Optional Step: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
+         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
+         The USB-port will be reconnected 45s after the erasing had started.</li>
      <li>flash<br>
          Flash downloaded firmware to serial port used in definition of this device.<br>
-         Required Tools: python, pyserial <code>apt install python  python-serial</code><br>
-         The port will be reconnected 45s after the flash has started.</li>
+         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
+         Expected MCU: Plain ESP32 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
+         The USB-port will be reconnected 45s after the flash had started.</li>
     </ol>
     </li>
 
@@ -514,10 +543,15 @@ sub TronfernoMCU_Initialize($) {
      <li>download<br>
          Download firware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
          Required tools: wget <code>apt install wget</code></li>
+     <li>erase-flash<br>
+         Optional Step: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
+         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
+         The USB-port will be reconnected 45s after the erasing had started.</li>
      <li>flash<br>
          Flash downloaded firmware to serial port used in definition of this device.<br>
-         Required Tools: python, pyserial <code>apt install python  python-serial</code><br>
-         The port will be reconnected 45s after the flash has started.</li>
+         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
+         Expected MCU: Plain ESP8266 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
+         The USB-port will be reconnected 45s after the flash had started.</li>
     </ol>
     </li>
 
@@ -551,5 +585,6 @@ sub TronfernoMCU_Initialize($) {
 
 # Local Variables:
 # compile-command: "perl -cw -MO=Lint ./00_TronfernoMCU.pm"
+# eval: (my-buffer-local-set-key (kbd "C-c C-c") (lambda () (interactive) (shell-command "cd ../../.. && ./build.sh")))
 # End:
 
