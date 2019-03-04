@@ -495,17 +495,37 @@ Each output device may control a single shutter, or a group of shutters dependin
   <li> not possible with receiver IDs</li>
 </ol>
 
-<h4>Commands</h4>
+<a name=Tronfernoset></a>
+<h4>Set Commands</h4>
 <ul>
-  <li>up</li>
-  <li>down</li>
-  <li>stop</li>
-  <li>set  - activate set mode to make receiver ready to pair/unpair</li>
-  <li>sun-down - move to sun position (but only if sun automatic is enabled and shutter is currently above this position)</li>
+  <a name=up></a>
+  <li>up - open shutter</li>
+
+  <a name=down></a>
+  <li>down - close shutter</li>
+
+  <a name=stop></a>
+  <li>stop - stop moving shutter</li>
+
+  <a name=set></a>
+  <li>set  - activate pair/unpair mode on Fernotron receiver</li>
+
+  <a name=sun-down></a>
+  <li>sun-down - move shutter to sun position (but only if sun automatic is enabled and not below sun position)</li>
+
+  <a name=sun-up></a>
   <li>sun-up - when at sun-position the shutter will be fully opened with this command (does nothing when not at sun position)</li>
+
+  <a name=sun-inst></a>
   <li>sun-inst - set the current position as sun position</li>
+
+  <a name=position></a>
   <li>position - set position to 0 (down), 50 (sun-down), 100 (up), 99 (stop). (used  by alexa)</li>
+
+  <a name=xxx_pair></a>
   <li>xxx_pair - Lets MCU pair the next received sender to this shutter (Paired senders will influence the shutter position)</li>
+
+  <a name=xxx_unpair></a>
   <li>xxx_unpair - Lets MCU unpair the next received Sender to this shutter</li>
 </ul>
 
