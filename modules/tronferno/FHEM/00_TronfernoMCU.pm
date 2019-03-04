@@ -102,12 +102,10 @@ sub X_Define($$)
         $dev .= ":$mcu_port" if(index($dev, ':') < 0);
     }
     
-    
-    $hash->{DeviceName} = $dev;
-    
-    # close connection if maybe open (on definition modify)
+    # first close connection if maybe open (on definition modify)
     devio_close_device($hash);
-    
+    # now change old device name to new one
+    $hash->{DeviceName} = $dev;
     # open connection with custom init and error callback function (non-blocking connection establishment)
     devio_open_device($hash);
     
