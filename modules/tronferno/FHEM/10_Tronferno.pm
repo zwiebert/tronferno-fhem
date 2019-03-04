@@ -149,6 +149,20 @@ sub build_cmd($$$$) {
     return $msg;
 }
 
+sub build_timer($) {
+    my ($hash) = @_;
+    my $name = $hash->{NAME};
+    
+    my $a   = $hash->{helper}{ferid_a};
+    my $g   = $hash->{helper}{ferid_g};
+    my $m   = $hash->{helper}{ferid_m};
+    #my $r   = int(main::AttrVal($name, 'repeats', '1'));
+    
+    my $msg = "timer a=$a g=$g m=$m mid=82;";
+    main::Log3($hash, 3, "$name:command: $msg");
+    return $msg;
+}
+
 my $map_send_cmds = {
     up         => 'up',
     down       => 'down',
@@ -213,7 +227,9 @@ sub X_Set($$@) {
         foreach my $key (get_commandlist()) {
             $res .= " $key:noArg";
         }
-        return $res .  ' position:slider,0,50,100';
+        return $res
+            . ' position:slider,0,50,100'
+            . ' manual:0,1';
     } elsif (exists $map_send_cmds->{$cmd}) {
         my $req = build_cmd($hash, $name, 'send', $map_send_cmds->{$cmd});
         my $res = transmit($hash, $name, $req);
@@ -233,12 +249,16 @@ sub X_Set($$@) {
         } elsif ($percent eq '99') {
             $c = 'stop';
         }
-
-        
         my $req = build_cmd($hash, $name, 'send', $c);
         my $res = transmit($hash, $name, $req);
+    } elsif ($cmd eq 'manual') {
+        my $manual = $args[0] eq '1';
+        my $req = build_timer($hash);
+        my $f = "f=" . $manual ? 'a' : 'A';
+        my $res = transmit($hash, $name, $req);
+        return $res if ($res);
     } else {
-        return "unknown argument $cmd choose one of " . join(' ', get_commandlist()) . 'position';
+        return "unknown argument $cmd choose one of " . join(' ', get_commandlist()) . 'position' . 'manual';
     }
 
     return undef;
@@ -530,6 +550,14 @@ Each output device may control a single shutter, or a group of shutters dependin
   <a name=position></a>
   <li>position - set position to 0 (down), 50 (sun-down), 100 (up), 99 (stop). (used  by alexa)</li>
 
+  <a name=manual></a>
+  <li>manual - disable automatic shutter movement<br>
+     <ul>
+        <li> 0 - enables automatic shutter movement by internal timers and sun automatic</li>
+        <li> 1 - disables automatic shutter movement by internal timers and sun automatic</li>
+     </ul>
+    This works by sending saving the timners inside the MCU and sending empty timers to the Fernotron device. The original 2411 central unit does it the same way.</li>
+
   <a name=xxx_pair></a>
   <li>xxx_pair - Lets MCU pair the next received sender to this shutter (Paired senders will influence the shutter position)</li>
 
@@ -582,4 +610,5 @@ Each output device may control a single shutter, or a group of shutters dependin
 
 # Local Variables:
 # compile-command: "perl -cw -MO=Lint ./10_Tronferno.pm"
+# eval: (my-buffer-local-set-key (kbd "C-c C-c") (lambda () (interactive) (shell-command "cd ../../.. && ./build.sh")))
 # End:
