@@ -105,8 +105,10 @@ sub X_Undef($$) {
     return undef;
 }
 
-sub transmit_by_socket($$$) {
-    my ($hash, $name, $req) = @_;
+sub transmit_by_socket($$) {
+    my ($hash, $req) = @_;
+    my $name = $hash->{NAME};
+
     my $socket = IO::Socket::INET->new(
         Proto    => 'tcp',
         PeerPort => 7777,
@@ -120,9 +122,11 @@ sub transmit_by_socket($$$) {
     return undef;
 }
 
-sub transmit($$$) {
-    my ($hash, $name, $req) = @_;
+sub transmit($$) {
+    my ($hash, $req) = @_;
     my $io   = $hash->{IODev};
+    my $name = $hash->{NAME};
+
 
     if (exists($io->{NAME})) {
         # send message to pyhsical I/O device TronfernoMCU
@@ -131,14 +135,16 @@ sub transmit($$$) {
         return undef;
     } else {
         #no I/O device seems to be defined. send directly via TCP socket
-        return transmit_by_socket ($hash, $name, $req);
+        return transmit_by_socket ($hash, $req);
     }
     
     return undef;
 }
 
-sub build_cmd($$$$) {
-    my ($hash, $name, $cmd, $c) = @_;
+sub build_cmd($$$) {
+    my ($hash, $cmd, $c) = @_;
+    my $name = $hash->{NAME};
+
     my $a   = ($cmd eq 'pair') ? '?' : $hash->{helper}{ferid_a};
     my $g   = $hash->{helper}{ferid_g};
     my $m   = $hash->{helper}{ferid_m};
@@ -231,12 +237,12 @@ sub X_Set($$@) {
             . ' position:slider,0,50,100'
             . ' manual:0,1';
     } elsif (exists $map_send_cmds->{$cmd}) {
-        my $req = build_cmd($hash, $name, 'send', $map_send_cmds->{$cmd});
-        my $res = transmit($hash, $name, $req);
+        my $req = build_cmd($hash, 'send', $map_send_cmds->{$cmd});
+        my $res = transmit($hash, $req);
         return $res if ($res);
     } elsif (exists $map_pair_cmds->{$cmd}) {
-        my $req = build_cmd($hash, $name, 'pair', $map_pair_cmds->{$cmd});
-        my $res = transmit($hash, $name, $req);
+        my $req = build_cmd($hash, 'pair', $map_pair_cmds->{$cmd});
+        my $res = transmit($hash, $req);
         return $res if ($res);
     } elsif ($cmd eq 'position') {
         return "\"set $name $cmd\" needs one argument" unless (defined($args[0]));
@@ -249,13 +255,13 @@ sub X_Set($$@) {
         } elsif ($percent eq '99') {
             $c = 'stop';
         }
-        my $req = build_cmd($hash, $name, 'send', $c);
-        my $res = transmit($hash, $name, $req);
+        my $req = build_cmd($hash, 'send', $c);
+        my $res = transmit($hash, $req);
     } elsif ($cmd eq 'manual') {
         my $manual = $args[0] eq '1';
         my $req = build_timer($hash);
         my $f = "f=" . $manual ? 'a' : 'A';
-        my $res = transmit($hash, $name, $req);
+        my $res = transmit($hash, $req);
         return $res if ($res);
     } else {
         return "unknown argument $cmd choose one of " . join(' ', get_commandlist()) . 'position' . 'manual';
@@ -611,4 +617,5 @@ Each output device may control a single shutter, or a group of shutters dependin
 # Local Variables:
 # compile-command: "perl -cw -MO=Lint ./10_Tronferno.pm"
 # eval: (my-buffer-local-set-key (kbd "C-c C-c") (lambda () (interactive) (shell-command "cd ../../.. && ./build.sh")))
+# eval: (my-buffer-local-set-key (kbd "C-c c") 'compile)
 # End:
