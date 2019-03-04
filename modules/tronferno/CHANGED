@@ -3,9 +3,8 @@
 # Do not insert empty lines here, update check depends on it.
 ################################################################################
 - 2019-03-04
-  -feature: 00_TronfernoMCU: new flash option 'erase-flash'
-  -bugfix:  00_TronfernoMCU: closing serial port before flashing was unreliable
-  -feature: 00_TronfernoMCU: download and flash MCU firmware.
+  -feature: 00_TronfernoMCU: firmware set commands for download, erase, write
+  -bugfix:  00_TronfernoMCU: problem with DevIo after defmod: endless disconnect
   -change:  10_Tronferno: direct help for set and attributes
   -change:  00_TronfernoMCU: direct help for set
 

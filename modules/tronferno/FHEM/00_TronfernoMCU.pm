@@ -58,19 +58,23 @@ while(my($k, $v) = each %$mco) {
 
 sub devio_open_device($) {
     my ($hash) = @_;
+    my $dn = $hash->{DeviceName} // 'undef'; 
     # open connection with custom init and error callback function (non-blocking connection establishment)
-    main::DevIo_OpenDev($hash, 0, "TronfernoMCU::X_Init", "TronfernoMCU::X_Callback"); 
+    main::Log3 $hash->{NAME}, 5, "tronferno-mcu devio_open_device() for ($dn)"; 
+    return main::DevIo_OpenDev($hash, 0, "TronfernoMCU::X_Init", "TronfernoMCU::X_Callback"); 
 }
 
 sub devio_close_device($) {
     my ($hash) = @_;
+    my $dn = $hash->{DeviceName} // 'undef'; 
     # close connection if maybe open (on definition modify)
-    main::DevIo_CloseDev($hash); # if(main::DevIo_IsOpen($hash));  
+    main::Log3 $hash->{NAME}, 5, "tronferno-mcu devio_close_device() for ($dn)"; 
+    return main::DevIo_CloseDev($hash); # if(main::DevIo_IsOpen($hash));  
 }
 
 sub devio_get_serial_device_name($) {
     my ($hash) = @_;
-    my $devname = $hash->{DeviceName};
+    my $devname = $hash->{DeviceName} // '';
     return undef unless index($devname, '@') > 0;
     my ($dev, $baud) = split('@', $devname);
     return $dev;
@@ -117,9 +121,9 @@ sub X_Define($$)
 sub X_Undef($$)
 {
     my ($hash, $name) = @_;
-    
+    main::Log3 $hash->{NAME}, 5, "tronferno-mcu X_Undef()"; 
     # close the connection 
-    main::DevIo_CloseDev($hash);
+    devio_close_device($hash);
     
     return undef;
 }
@@ -128,9 +132,10 @@ sub X_Undef($$)
 sub X_Ready($)
 {
     my ($hash) = @_;
-    
+
+    main::Log3 $hash->{NAME}, 5, "tronferno-mcu X_Ready()"; 
     # try to reopen the connection in case the connection is lost
-    return main::DevIo_OpenDev($hash, 1, "TronfernoMCU::X_Init", "TronfernoMCU::X_Callback"); 
+    return devio_open_device($hash);
 }
 
 # called when data was received
@@ -196,7 +201,11 @@ sub mcu_read_config($$) {
 
 sub mcu_config($$$) {
     my ($hash, $opt, $arg) = @_;
-    main::DevIo_SimpleWrite($hash, "config $opt=$arg $opt=?;", 2);
+    my $msg =  "$opt=$arg";
+    $msg .=  " $opt=?" unless ($arg eq '?' || $opt eq 'wlan-password');
+    $msg .= ' restart=1' if 0 == index($opt, 'wlan-'); # do restart after changing any wlan option
+
+    main::DevIo_SimpleWrite($hash, "config $msg;", 2);
 }
 
 sub mcu_download_firmware($) {
@@ -210,9 +219,9 @@ my $firmware;
     
     {
         my $fwe = {};
-        $fw->{'xxx.flash-firmware.esp32'} = $fwe;
+        $fw->{'xxx.mcu-firmware.esp32'} = $fwe;
 
-        $fwe->{args} = ':download,erase-flash,flash';
+        $fwe->{args} = ':download,erase-flash,write-flash';
         # FIXME: file ist should better be fetched from server
         $fwe->{files} = ['firmware/esp32/tronferno-mcu.bin',
                          'firmware/esp32/bootloader.bin',
@@ -221,16 +230,16 @@ my $firmware;
                          'flash_esp32.sh'];
         $fwe->{tgtdir} = '/tmp/TronfernoMCU/';
         $fwe->{uri} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/master/';
-        $fwe->{flash_cmd} = '/bin/sh flash_esp32.sh %s';
+        $fwe->{write_flash_cmd} = '/bin/sh flash_esp32.sh %s';
         $fwe->{erase_flash_cmd} = 'python tools/esptool.py --port %s --chip esp32 erase_flash';
     }
 
     {
         my $fwe8 = {};
-        $fw->{'xxx.flash-firmware.esp8266'} = $fwe8;
+        $fw->{'xxx.mcu-firmware.esp8266'} = $fwe8;
 
 
-        $fwe8->{args} = ':download,erase-flash,flash';
+        $fwe8->{args} = ':download,erase-flash,write-flash';
         # FIXME: file ist should better be fetched from server
         $fwe8->{files} = ['firmware/esp8266/blank.bin',
                           'firmware/esp8266/eagle.flash.bin',
@@ -240,7 +249,7 @@ my $firmware;
                           'flash_esp8266.sh'];
         $fwe8->{tgtdir} = '/tmp/TronfernoMCU/';
         $fwe8->{uri} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/master/';
-        $fwe8->{flash_cmd} = '/bin/sh flash_esp8266.sh %s';
+        $fwe8->{write_flash_cmd} = '/bin/sh flash_esp8266.sh %s';
         $fwe8->{erase_flash_cmd} = 'python tools/esptool.py --port %s --chip esp8266 erase_flash';
     }
 }
@@ -298,7 +307,7 @@ sub fw_mk_list_file($$) {
 }
 
 my $wget_log = 'wget.txt';
-my $flash_log = 'flash.txt';
+my $write_flash_log = 'write_flash.txt';
 my $erase_flash_log = 'erase_flash.txt';
 
 sub fw_get($$) {
@@ -313,21 +322,21 @@ sub fw_get($$) {
     $hash->{'mcu-firmware.get-cmd'} = $command;
 }
 
-sub fw_flash($$) {
+sub fw_write_flash($$) {
     my($hash, $fw) = @_;
     my $tgtdir =  $fw->{tgtdir};
     my $ser_dev = devio_get_serial_device_name($hash);
     return unless $ser_dev;
-    return unless $fw->{flash_cmd};
+    return unless $fw->{write_flash_cmd};
     
-    my $sc = sprintf($fw->{flash_cmd}, $ser_dev);
-    my $command = "(cd $tgtdir && $sc) &>>$tgtdir$flash_log &";
+    my $sc = sprintf($fw->{write_flash_cmd}, $ser_dev);
+    my $command = "(cd $tgtdir && $sc) &>>$tgtdir$write_flash_log &";
     devio_close_device($hash);
     system($command);
      # delay reoping device until flasher has opened port / or is already done
     main::InternalTimer(main::gettimeofday() + 45, 'TronfernoMCU::devio_open_device', $hash);
     
-    $hash->{'mcu-firmware.flash-cmd'} = $command;
+    $hash->{'mcu-firmware.write-flash-cmd'} = $command;
 }
 
 sub fw_erase_flash($$) {
@@ -338,7 +347,7 @@ sub fw_erase_flash($$) {
     return unless $fw->{erase_flash_cmd};
     
     my $sc = sprintf($fw->{erase_flash_cmd}, $ser_dev);
-    my $command = "(cd $tgtdir && $sc) &>>$tgtdir$flash_log &";
+    my $command = "(cd $tgtdir && $sc) &>>$tgtdir$erase_flash_log &";
     devio_close_device($hash);
     system($command);
      # delay reoping device until flasher has opened port / or is already done
@@ -364,13 +373,13 @@ sub X_Set($$@) {
     } elsif($firmware->{$cmd}) {
         if ($a1 eq 'download') {
             fw_get($hash, $firmware->{$cmd});
-        } elsif ($a1 eq 'flash') {
-            fw_flash($hash, $firmware->{$cmd});
+        } elsif ($a1 eq 'write-flash') {
+            fw_write_flash($hash, $firmware->{$cmd});
         } elsif ($a1 eq 'erase-flash') {
             fw_erase_flash($hash, $firmware->{$cmd});
         }
-    } elsif($cmd eq 'xxx.flash-firmware.esp8266') {
-    } elsif($cmd eq 'xxx.flash-firmware.atmega328') {
+    } elsif($cmd eq 'xxx.mcu-firmware.esp8266') {
+    } elsif($cmd eq 'xxx.mcu-firmware.atmega328') {
     } elsif($cmd eq '') {
     } elsif($cmd eq '') {
     } elsif($cmd eq '') {
@@ -485,7 +494,7 @@ sub TronfernoMCU_Initialize($) {
 
   <a name="mcu-config.restart"></a>
   <li>mcu-config.restart<br>
-    causes the MCU to reastart. required after changing wlan configuration</li>
+    Retart the MCU.</li>
 
   <a name="mcu-config.rtc"></a>
   <li>mcu-config.rtc<br>
@@ -509,34 +518,36 @@ sub TronfernoMCU_Initialize($) {
 
   <a name="mcu-config.wlan-password"></a>
   <li>mcu-config.wlan-passord<br>
-    Password used by MCU to connect to WLAN/WiFi </li>
+    Password used by MCU to connect to WLAN/WiFi<br>
+    Note: MCU will be restarted after setting this option </li>
 
   <a name="mcu-config.wlan-ssid"></a>
   <li>mcu-config.wlan-ssid<br>
-    WLAN/WiFi SSID to connect to</li>
+    WLAN/WiFi SSID to connect to<br>
+    Note: MCU will be restarted after setting this option</li>
 
-  <a name="xxx.flash-firmware.esp32"></a>
-  <li>xxx.flash-firmware.esp32<br>
-   Fetch and flash latest MCU firmware from tronferno-mcu-bin gitub repository.
+  <a name="xxx.mcu-firmware.esp32"></a>
+  <li>xxx.mcu-firmware.esp32<br>
+   Fetch and write latest MCU firmware from tronferno-mcu-bin gitub repository.
     <ol>
      <li>download<br>
-         Download firware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
+         Download firmware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
          Required tools: wget <code>apt install wget</code></li>
      <li>erase-flash<br>
           Optional Step: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          The USB-port will be reconnected 45s after the erasing had started.</li>
-     <li>flash<br>
-         Flash downloaded firmware to serial port used in definition of this device.<br>
+     <li>write-flash<br>
+         Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Expected MCU: Plain ESP32 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
          The USB-port will be reconnected 45s after the flash had started.</li>
     </ol>
     </li>
 
-  <a name="xxx.flash-firmware.esp8266"></a>
-  <li>xxx.flash-firmware.esp8266<br>
-   Fetch and flash latest MCU firmware from tronferno-mcu-bin gitub repository.
+  <a name="xxx.mcu-firmware.esp8266"></a>
+  <li>xxx.mcu-firmware.esp8266<br>
+   Fetch and write latest MCU firmware from tronferno-mcu-bin gitub repository.
     <ol>
      <li>download<br>
          Download firware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
@@ -545,8 +556,8 @@ sub TronfernoMCU_Initialize($) {
          Optional Step: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          The USB-port will be reconnected 45s after the erasing had started.</li>
-     <li>flash<br>
-         Flash downloaded firmware to serial port used in definition of this device.<br>
+     <li>write-flash<br>
+         Write downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Expected MCU: Plain ESP8266 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
          The USB-port will be reconnected 45s after the flash had started.</li>
