@@ -58,6 +58,14 @@ Each output device may control a single shutter, or a group of shutters dependin
   <li> not possible with receiver IDs</li>
 </ol>
 
+<a name="Tronfernoattr"></a>
+<h6>Attributes</h6>
+<ul>
+  <li><a name="repeats">repeats N</a><br>
+        repeat sent messages N additional times to increase the chance of successfull delivery (default: 1 repeat)
+  </li>
+</ul>
+
 <a name=Tronfernoset></a>
 <h4>Set Commands</h4>
 <ul>

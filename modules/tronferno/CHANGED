@@ -1,0 +1,10 @@
+################################################################################
+# Add changes at the top of the list. Keep it in ASCII, and 80-char wide.
+# Do not insert empty lines here, update check depends on it.
+################################################################################
+- 2019-03-04
+  -feature: 10_Tronferno: download and flash MCU firmware.
+  -change:  10_Tronferno: direct help for set and attributes
+
+- 2019-03-03
+  -feature: 10_Tronferno: show and modify MCU config

@@ -33,20 +33,6 @@ Each output device may control a single shutter, or a group of shutters dependin
 <p>
   'g' or  'n' are only useful combined with an ID of the central controller type.
 
-<a name="Fernotronattr"></a>
-<h6>Attributes</h6>
-<ul>
-  <li><a name="repeats">repeats N</a><br>
-        repeat sent messages N additional times to increase the chance of successfull delivery (default: 1 repeat)
-  </li>
-  <li><a name="create">create (default|in|out)</a><br>
-       This attribute has only effect on the Fernotron default input device Fernotron_Scan or whatever you named it (default name used to be scanFerno).
-       It enables auto-creating devices for input, output or none expect the default input device itself.
-       Hit the STOP button on a Fernotron controller to add it as a device to FHEM.
-       You may rename the created devices using rename command.
-  </li>
-</ul>
-
 
 <h5>2. FHEM Devices controlled by Fernotron senders</h5>
 
@@ -99,6 +85,21 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 
   <li> not possible with receiver IDs</li>
 </ol>
+
+<a name="Fernotronattr"></a>
+<h6>Attributes</h6>
+<ul>
+  <li><a name="repeats">repeats N</a><br>
+        repeat sent messages N additional times to increase the chance of successfull delivery (default: 1 repeat)
+  </li>
+
+  <li><a name="create">create (default|in|out)</a><br>
+       This attribute has only effect on the Fernotron default input device Fernotron_Scan or whatever you named it (default name used to be scanFerno).
+       It enables auto-creating devices for input, output or none expect the default input device itself.
+       Hit the STOP button on a Fernotron controller to add it as a device to FHEM.
+       You may rename the created devices using rename command.
+  </li>
+</ul>
 
 
 <a name=Fernotronset></a>
