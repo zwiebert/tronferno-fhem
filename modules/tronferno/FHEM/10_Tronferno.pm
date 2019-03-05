@@ -557,12 +557,12 @@ Each output device may control a single shutter, or a group of shutters dependin
   <li>position - set position to 0 (down), 50 (sun-down), 100 (up), 99 (stop). (used  by alexa)</li>
 
   <a name=manual></a>
-  <li>manual - disable automatic shutter movement<br>
+  <li>*experimental* manual - disable automatic shutter movement (doest not really work yet)<br>
      <ul>
         <li> 0 - enables automatic shutter movement by internal timers and sun automatic</li>
         <li> 1 - disables automatic shutter movement by internal timers and sun automatic</li>
      </ul>
-    This works by sending saving the timners inside the MCU and sending empty timers to the Fernotron device. The original 2411 central unit does it the same way.</li>
+    Unfortunally, there is no manual flag inside Fernotron devices. This tries to emulate this (like the 2411 does) by saving all timer data in the MCU and sends empty timers to the device. If the user disables manual mode again, the saved timers will be sent to the device again. (This behavior collides with sending timers to entire groups (which is (therefore?) not implementd by the 2411)</li>
 
   <a name=xxx_pair></a>
   <li>xxx_pair - Lets MCU pair the next received sender to this shutter (Paired senders will influence the shutter position)</li>

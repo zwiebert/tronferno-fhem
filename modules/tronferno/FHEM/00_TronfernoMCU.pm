@@ -221,7 +221,7 @@ my $firmware;
         my $fwe = {};
         $fw->{'xxx.mcu-firmware.esp32'} = $fwe;
 
-        $fwe->{args} = ':download,erase-flash,write-flash';
+        $fwe->{args} = ':download,write-flash,xxx.erase-flash';
         # FIXME: file ist should better be fetched from server
         $fwe->{files} = ['firmware/esp32/tronferno-mcu.bin',
                          'firmware/esp32/bootloader.bin',
@@ -239,7 +239,7 @@ my $firmware;
         $fw->{'xxx.mcu-firmware.esp8266'} = $fwe8;
 
 
-        $fwe8->{args} = ':download,erase-flash,write-flash';
+        $fwe8->{args} = ':download,write-flash,xxx.erase-flash';
         # FIXME: file ist should better be fetched from server
         $fwe8->{files} = ['firmware/esp8266/blank.bin',
                           'firmware/esp8266/eagle.flash.bin',
@@ -375,7 +375,7 @@ sub X_Set($$@) {
             fw_get($hash, $firmware->{$cmd});
         } elsif ($a1 eq 'write-flash') {
             fw_write_flash($hash, $firmware->{$cmd});
-        } elsif ($a1 eq 'erase-flash') {
+        } elsif ($a1 eq 'xxx.erase-flash') {
             fw_erase_flash($hash, $firmware->{$cmd});
         }
     } elsif($cmd eq 'xxx.mcu-firmware.esp8266') {
@@ -533,15 +533,15 @@ sub TronfernoMCU_Initialize($) {
      <li>download<br>
          Download firmware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
          Required tools: wget <code>apt install wget</code></li>
-     <li>erase-flash<br>
-          Optional Step: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
-         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         The USB-port will be reconnected 45s after the erasing had started.</li>
      <li>write-flash<br>
          Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Expected MCU: Plain ESP32 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
          The USB-port will be reconnected 45s after the flash had started.</li>
+     <li>xxx.erase-flash<br>
+          Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
+         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
+         The USB-port will be reconnected 45s after the erasing had started.</li>
     </ol>
     </li>
 
@@ -552,16 +552,15 @@ sub TronfernoMCU_Initialize($) {
      <li>download<br>
          Download firware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
          Required tools: wget <code>apt install wget</code></li>
-     <li>erase-flash<br>
-         Optional Step: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
-         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         The USB-port will be reconnected 45s after the erasing had started.</li>
      <li>write-flash<br>
          Write downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Expected MCU: Plain ESP8266 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
          The USB-port will be reconnected 45s after the flash had started.</li>
-    </ol>
+     <li>xxx.erase-flash<br>
+         Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
+         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
+         The USB-port will be reconnected 45s after the erasing had started.</li>    </ol>
     </li>
 
 

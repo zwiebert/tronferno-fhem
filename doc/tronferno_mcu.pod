@@ -76,15 +76,15 @@
      <li>download<br>
          Download firmware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
          Required tools: wget <code>apt install wget</code></li>
-     <li>erase-flash<br>
-          Optional Step: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
-         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         The USB-port will be reconnected 45s after the erasing had started.</li>
      <li>write-flash<br>
          Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Expected MCU: Plain ESP32 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
          The USB-port will be reconnected 45s after the flash had started.</li>
+     <li>xxx.erase-flash<br>
+          Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
+         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
+         The USB-port will be reconnected 45s after the erasing had started.</li>
     </ol>
     </li>
 
@@ -95,16 +95,15 @@
      <li>download<br>
          Download firware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
          Required tools: wget <code>apt install wget</code></li>
-     <li>erase-flash<br>
-         Optional Step: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
-         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         The USB-port will be reconnected 45s after the erasing had started.</li>
      <li>write-flash<br>
          Write downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Expected MCU: Plain ESP8266 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
          The USB-port will be reconnected 45s after the flash had started.</li>
-    </ol>
+     <li>xxx.erase-flash<br>
+         Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
+         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
+         The USB-port will be reconnected 45s after the erasing had started.</li>    </ol>
     </li>
 
 
