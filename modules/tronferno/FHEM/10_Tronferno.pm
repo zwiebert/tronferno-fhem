@@ -265,9 +265,9 @@ sub X_Set($$@) {
         my $req = build_cmd($hash, 'send', $c);
         my $res = transmit($hash, $req);
     } elsif ($cmd eq 'manual') {
-        return transmit($hash, build_timer($hash, ($a1 eq '1') ? 'f=ka' : 'f=kA'));
-     } elsif ($cmd eq 'sun-auto') {
-         return transmit($hash, build_timer($hash, $is_on ? 'f=kS' : 'f=ks'));
+        return transmit($hash, build_timer($hash, $is_on ? 'f=ka' : 'f=kA'));
+    } elsif ($cmd eq 'sun-auto') {
+        return transmit($hash, build_timer($hash, $is_on ? 'f=kS' : 'f=ks'));
     } elsif ($cmd eq 'random') {
         return transmit($hash, build_timer($hash, $is_on ? 'f=kR' : 'f=kr'));
     } else {

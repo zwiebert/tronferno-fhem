@@ -2,7 +2,7 @@
 # Add changes at the top of the list. Keep it in ASCII, and 80-char wide.
 # Do not insert empty lines here, update check depends on it.
 ################################################################################
-- 2019-03-04
+- 2019-03-05
   -feature: 10_Tronferno: new set opts: sun-auto, random. needs latest firmware
   -bugfix:  10_Tronferno: set option manual was not working
 - 2019-03-04
@@ -11,6 +11,5 @@
   -bugfix:  00_TronfernoMCU: problem with DevIo after defmod: endless disconnect
   -change:  10_Tronferno: direct help for set and attributes
   -change:  00_TronfernoMCU: direct help for set
-
 - 2019-03-03
   -feature: 00_TronfernoMCU: show and modify MCU config
