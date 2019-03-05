@@ -3,6 +3,7 @@
 # Do not insert empty lines here, update check depends on it.
 ################################################################################
 - 2019-03-05
+  -bugfix:  00_TronfernoMCU: shell command redirections
   -feature: 10_Tronferno: new set opts: sun-auto, random. needs latest firmware
   -bugfix:  10_Tronferno: set option manual was not working
 - 2019-03-04

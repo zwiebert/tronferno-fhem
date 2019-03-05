@@ -317,7 +317,7 @@ sub fw_get($$) {
     my $sc = "wget --no-verbose --base=$uri -i files.txt -x -nH --cut-dirs 3 --preserve-permissions";
 
     fw_mk_list_file($hash, $fw);
-    my $command = "(cd $tgtdir && $sc) &>>$tgtdir$wget_log &";
+    my $command = "(cd $tgtdir && $sc) 1>$tgtdir$wget_log 2>&1 &";
     system($command);
     $hash->{'mcu-firmware.get-cmd'} = $command;
 }
@@ -330,7 +330,7 @@ sub fw_write_flash($$) {
     return unless $fw->{write_flash_cmd};
     
     my $sc = sprintf($fw->{write_flash_cmd}, $ser_dev);
-    my $command = "(cd $tgtdir && $sc) &>>$tgtdir$write_flash_log &";
+    my $command = "(cd $tgtdir && $sc) 1>$tgtdir$write_flash_log 2>&1 &";
     devio_close_device($hash);
     system($command);
      # delay reoping device until flasher has opened port / or is already done
@@ -347,7 +347,7 @@ sub fw_erase_flash($$) {
     return unless $fw->{erase_flash_cmd};
     
     my $sc = sprintf($fw->{erase_flash_cmd}, $ser_dev);
-    my $command = "(cd $tgtdir && $sc) &>>$tgtdir$erase_flash_log &";
+    my $command = "(cd $tgtdir && $sc) 1>$tgtdir$erase_flash_log 2>&1 &";
     devio_close_device($hash);
     system($command);
      # delay reoping device until flasher has opened port / or is already done

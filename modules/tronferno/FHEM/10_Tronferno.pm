@@ -190,7 +190,7 @@ sub get_commandlist()   { return keys %$map_send_cmds, keys %$map_pair_cmds; }
 sub X_Set($$@) {
     my ($hash, $name, $cmd, @args) = @_;
     my ($a1, $a2, $a3) = @args;
-    my $is_on = $a1 eq '1';
+    my $is_on = ($a1 // 0) eq '1';
     my $result = undef;
 
     return "\"set $name\" needs at least one argument" unless (defined($cmd));
