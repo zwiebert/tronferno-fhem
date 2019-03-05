@@ -93,6 +93,12 @@ Each output device may control a single shutter, or a group of shutters dependin
   <a name=position></a>
   <li>position - set position to 0 (down), 50 (sun-down), 100 (up), 99 (stop). (used  by alexa)</li>
 
+  <a name=sun-auto></a>
+  <li>sun-auto - enables/disables sun-automatic of the shutter</li>
+
+  <a name=random></a>
+  <li>random - enables/disables random timer of the shutter</li>
+
   <a name=manual></a>
   <li>*experimental* manual - disable automatic shutter movement<br>
      <ul>

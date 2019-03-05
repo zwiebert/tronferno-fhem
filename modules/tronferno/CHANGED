@@ -3,7 +3,10 @@
 # Do not insert empty lines here, update check depends on it.
 ################################################################################
 - 2019-03-04
-  -feature: 10_Tronferno: new set option 'manual'
+  -feature: 10_Tronferno: new set opts: sun-auto, random. needs latest firmware
+  -bugfix:  10_Tronferno: set option manual was not working
+- 2019-03-04
+  -feature: 10_Tronferno: new set option: manual. needs latest firmware
   -feature: 00_TronfernoMCU: firmware set commands for download, erase, write
   -bugfix:  00_TronfernoMCU: problem with DevIo after defmod: endless disconnect
   -change:  10_Tronferno: direct help for set and attributes

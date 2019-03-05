@@ -189,6 +189,9 @@ sub get_commandlist()   { return keys %$map_send_cmds, keys %$map_pair_cmds; }
 
 sub X_Set($$@) {
     my ($hash, $name, $cmd, @args) = @_;
+    my ($a1, $a2, $a3) = @args;
+    my $is_on = $a1 eq '1';
+    my $result = undef;
 
     return "\"set $name\" needs at least one argument" unless (defined($cmd));
 
@@ -235,7 +238,11 @@ sub X_Set($$@) {
         }
         return $res
             . ' position:slider,0,50,100'
-            . ' manual:0,1';
+            . ' manual:0,1'
+            . ' sun-auto:0,1'
+            . ' random:0,1'
+
+            ;
     } elsif (exists $map_send_cmds->{$cmd}) {
         my $req = build_cmd($hash, 'send', $map_send_cmds->{$cmd});
         my $res = transmit($hash, $req);
@@ -258,13 +265,13 @@ sub X_Set($$@) {
         my $req = build_cmd($hash, 'send', $c);
         my $res = transmit($hash, $req);
     } elsif ($cmd eq 'manual') {
-        my $manual = $args[0] eq '1';
-        my $f = "f=k" . ($manual ? 'a' : 'A');
-        my $req = build_timer($hash, $f);
-        my $res = transmit($hash, $req);
-        return $res if ($res);
+        return transmit($hash, build_timer($hash, ($a1 eq '1') ? 'f=ka' : 'f=kA'));
+     } elsif ($cmd eq 'sun-auto') {
+         return transmit($hash, build_timer($hash, $is_on ? 'f=kS' : 'f=ks'));
+    } elsif ($cmd eq 'random') {
+        return transmit($hash, build_timer($hash, $is_on ? 'f=kR' : 'f=kr'));
     } else {
-        return "unknown argument $cmd choose one of " . join(' ', get_commandlist()) . 'position' . 'manual';
+        return "unknown argument $cmd choose one of " . join(' ', get_commandlist()) . 'position' . 'manual sun-auto random';
     }
 
     return undef;
@@ -555,6 +562,12 @@ Each output device may control a single shutter, or a group of shutters dependin
 
   <a name=position></a>
   <li>position - set position to 0 (down), 50 (sun-down), 100 (up), 99 (stop). (used  by alexa)</li>
+
+  <a name=sun-auto></a>
+  <li>sun-auto - enables/disables sun-automatic of the shutter</li>
+
+  <a name=random></a>
+  <li>random - enables/disables random timer of the shutter</li>
 
   <a name=manual></a>
   <li>*experimental* manual - disable automatic shutter movement<br>
