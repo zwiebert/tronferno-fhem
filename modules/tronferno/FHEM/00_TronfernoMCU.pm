@@ -175,7 +175,7 @@ sub X_Read($$)
             for my $kv (split (' ', $1)) {
                 my ($k, $v) = split('=', $kv);
                 $k = $mcor->{$k};
-                $hash->{$k} = $v;
+                $hash->{$k} = $v if $k;
             }
         }
     }
@@ -309,6 +309,25 @@ sub fw_mk_list_file($$) {
 my $wget_log = 'wget.txt';
 my $write_flash_log = 'write_flash.txt';
 my $erase_flash_log = 'erase_flash.txt';
+my $tag_status = 'status_';
+my $tag_succ = $tag_status.'0';
+my $done_file = 'done.txt';
+my $cmd_status = "echo $tag_status\$? | tee $done_file";
+
+sub file_read_last_line($) {
+    my $last_line = '';
+    if (open (my $f, '<', shift)) {
+        $last_line = $_ while <$f>; 
+        close($f);
+    }
+    return $last_line;
+}
+sub log_get_success($) {
+    my $status = file_read_last_line(shift);
+    return 1 if $status eq $tag_succ;
+    return 0 if index($status, $tag_status) == 0;
+    return -1; # no status line. command still running?
+}
 
 sub fw_get($$) {
     my($hash, $fw) = @_;
@@ -317,7 +336,8 @@ sub fw_get($$) {
     my $sc = "wget --no-verbose --base=$uri -i files.txt -x -nH --cut-dirs 3 --preserve-permissions";
 
     fw_mk_list_file($hash, $fw);
-    my $command = "(cd $tgtdir && $sc) 1>$tgtdir$wget_log 2>&1 &";
+    my $command = "(cd $tgtdir && $sc; $cmd_status) 1>$tgtdir$wget_log 2>&1 &";
+    unlink("$tgtdir$done_file");
     system($command);
     $hash->{'mcu-firmware.get-cmd'} = $command;
 }
@@ -330,8 +350,9 @@ sub fw_write_flash($$) {
     return unless $fw->{write_flash_cmd};
     
     my $sc = sprintf($fw->{write_flash_cmd}, $ser_dev);
-    my $command = "(cd $tgtdir && $sc) 1>$tgtdir$write_flash_log 2>&1 &";
+    my $command = "(cd $tgtdir && $sc; $cmd_status) 1>$tgtdir$write_flash_log 2>&1 &";
     devio_close_device($hash);
+    unlink("$tgtdir$done_file");
     system($command);
      # delay reoping device until flasher has opened port / or is already done
     main::InternalTimer(main::gettimeofday() + 45, 'TronfernoMCU::devio_open_device', $hash);
@@ -347,8 +368,9 @@ sub fw_erase_flash($$) {
     return unless $fw->{erase_flash_cmd};
     
     my $sc = sprintf($fw->{erase_flash_cmd}, $ser_dev);
-    my $command = "(cd $tgtdir && $sc) 1>$tgtdir$erase_flash_log 2>&1 &";
+    my $command = "(cd $tgtdir && $sc; $cmd_status) 1>$tgtdir$erase_flash_log 2>&1 &";
     devio_close_device($hash);
+    unlink("$tgtdir$done_file");
     system($command);
      # delay reoping device until flasher has opened port / or is already done
     main::InternalTimer(main::gettimeofday() + 45, 'TronfernoMCU::devio_open_device', $hash);
