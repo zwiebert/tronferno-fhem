@@ -320,62 +320,97 @@ sub file_read_last_line($) {
         $last_line = $_ while <$f>; 
         close($f);
     }
+    chomp($last_line);
     return $last_line;
 }
 sub log_get_success($) {
     my $status = file_read_last_line(shift);
     return 1 if $status eq $tag_succ;
     return 0 if index($status, $tag_status) == 0;
-    return -1; # no status line. command still running?
+    return undef; # no status line. command still running?
+}
+sub sys_cmd_get_success($) {
+    my ($hash) = @_;
+    return log_get_success($hash->{helper}{sys_cmd_status_file});
+}
+
+sub cb_async_system_cmd($) {
+    my ($hash) = @_;
+    my $start_time = $hash->{helper}{sys_cmd_start_time};
+    my $id = $hash->{helper}{sys_cmd_id};
+    my $timeout = 45; #FIXME: literal
+
+    if (-e $hash->{helper}{sys_cmd_status_file}) {
+        my $failed = !sys_cmd_get_success($hash);
+        my $result = $failed ? 'error' : 'done';
+    
+        main::readingsSingleUpdate($hash, $id, "$result", 1);
+
+        if ($id  eq 'fw_get') {
+
+        } elsif ($id eq 'fw_write_flash') {
+            devio_open_device($hash);
+        } elsif ($id  eq 'fw_erase_flash') {
+            devio_open_device($hash);
+        }
+    } elsif ($start_time + $timeout < main::gettimeofday()) {
+        main::readingsSingleUpdate($hash, $id, 'timeout', 1);
+    } else {
+        main::InternalTimer(main::gettimeofday() + 4, 'TronfernoMCU::cb_async_system_cmd', $hash);
+    }
+}
+sub run_system_cmd($$$$$$) {
+    my ($hash, $tgtdir, $log, $sc, $id, $close_device) = @_;
+    my $status_file = "$tgtdir$done_file"; 
+    my $command = "(cd $tgtdir && $sc; $cmd_status) 1>$log 2>&1 &";
+
+    devio_close_device($hash) if $close_device;
+    unlink($status_file);
+    system($command);
+
+    $hash->{helper}{sys_cmd_id} = $id;
+    $hash->{helper}{sys_cmd_dir} = $tgtdir;
+    $hash->{helper}{sys_cmd_status_file} = $status_file;
+    $hash->{helper}{sys_cmd_start_time} = main::gettimeofday();
+
+    main::readingsSingleUpdate($hash, $id, 'run', 1);
+    main::InternalTimer(main::gettimeofday() + 4, 'TronfernoMCU::cb_async_system_cmd', $hash);
+    $hash->{"shell-command-$id"} = $command;
 }
 
 sub fw_get($$) {
     my($hash, $fw) = @_;
     my $uri = $fw->{uri};
     my $tgtdir =  $fw->{tgtdir};
-    my $sc = "wget --no-verbose --base=$uri -i files.txt -x -nH --cut-dirs 3 --preserve-permissions";
+    my $log = "$tgtdir$wget_log";
+    my $sc = "wget --no-verbose --base=$uri -i files.txt -x -nH --cut-dirs 3 --preserve-permissions"; #FIXME: literal
 
     fw_mk_list_file($hash, $fw);
-    my $command = "(cd $tgtdir && $sc; $cmd_status) 1>$tgtdir$wget_log 2>&1 &";
-    unlink("$tgtdir$done_file");
-    system($command);
-    $hash->{'mcu-firmware.get-cmd'} = $command;
+    run_system_cmd($hash, $tgtdir, $log, $sc, 'fw_get', 0);
 }
 
 sub fw_write_flash($$) {
     my($hash, $fw) = @_;
     my $tgtdir =  $fw->{tgtdir};
+    my $log = "$tgtdir$write_flash_log";
     my $ser_dev = devio_get_serial_device_name($hash);
     return unless $ser_dev;
     return unless $fw->{write_flash_cmd};
     
     my $sc = sprintf($fw->{write_flash_cmd}, $ser_dev);
-    my $command = "(cd $tgtdir && $sc; $cmd_status) 1>$tgtdir$write_flash_log 2>&1 &";
-    devio_close_device($hash);
-    unlink("$tgtdir$done_file");
-    system($command);
-     # delay reoping device until flasher has opened port / or is already done
-    main::InternalTimer(main::gettimeofday() + 45, 'TronfernoMCU::devio_open_device', $hash);
-    
-    $hash->{'mcu-firmware.write-flash-cmd'} = $command;
+    run_system_cmd($hash, $tgtdir, $log, $sc, 'fw_write_flash', 1);
 }
 
 sub fw_erase_flash($$) {
     my($hash, $fw) = @_;
     my $tgtdir =  $fw->{tgtdir};
+    my $log = "$tgtdir$erase_flash_log";
     my $ser_dev = devio_get_serial_device_name($hash);
     return unless $ser_dev;
     return unless $fw->{erase_flash_cmd};
     
     my $sc = sprintf($fw->{erase_flash_cmd}, $ser_dev);
-    my $command = "(cd $tgtdir && $sc; $cmd_status) 1>$tgtdir$erase_flash_log 2>&1 &";
-    devio_close_device($hash);
-    unlink("$tgtdir$done_file");
-    system($command);
-     # delay reoping device until flasher has opened port / or is already done
-    main::InternalTimer(main::gettimeofday() + 45, 'TronfernoMCU::devio_open_device', $hash);
-    
-    $hash->{'mcu-firmware.erase-flash-cmd'} = $command;
+    run_system_cmd($hash, $tgtdir, $log, $sc, 'fw_erase_flash', 1);
 }
 
 # called if set command is executed
@@ -549,23 +584,25 @@ sub TronfernoMCU_Initialize($) {
     Note: MCU will be restarted after setting this option</li>
 
   <a name="xxx.mcu-firmware.esp32"></a>
-  <li>xxx.mcu-firmware.esp32<br>
+  <li>xxx.mcu-firmware.esp32<br>         Status is shown in reading fw_erase_flash (run,done,error)</li>
+
    Fetch and write latest MCU firmware from tronferno-mcu-bin gitub repository.
     <ol>
      <li>download<br>
          Download firmware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
-         Required tools: wget <code>apt install wget</code></li>
+         Required tools: wget <code>apt install wget</code><br>
+         Status is shown in reading fw_get (run,done,error)</li>
      <li>write-flash<br>
          Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Expected MCU: Plain ESP32 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
-         The USB-port will be reconnected 45s after the flash had started.</li>
+         Status is shown in reading fw_write_flash (run,done,error)</li>
      <li>xxx.erase-flash<br>
           Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         The USB-port will be reconnected 45s after the erasing had started.</li>
+         Status is shown in reading fw_erase_flash (run,done,error)</li>
     </ol>
-    </li>
+  </li>
 
   <a name="xxx.mcu-firmware.esp8266"></a>
   <li>xxx.mcu-firmware.esp8266<br>
@@ -575,15 +612,16 @@ sub TronfernoMCU_Initialize($) {
          Download firware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
          Required tools: wget <code>apt install wget</code></li>
      <li>write-flash<br>
-         Write downloaded firmware to serial port used in definition of this device.<br>
+         Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Expected MCU: Plain ESP8266 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
-         The USB-port will be reconnected 45s after the flash had started.</li>
+         Status is shown in reading fw_write_flash (run,done,error)</li>
      <li>xxx.erase-flash<br>
-         Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
+          Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         The USB-port will be reconnected 45s after the erasing had started.</li>    </ol>
-    </li>
+         Status is shown in reading fw_erase_flash (run,done,error)</li>
+    </ol>
+  </li>
 
 
 </ul>
