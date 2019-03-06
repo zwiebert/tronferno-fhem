@@ -60,7 +60,7 @@ sub devio_open_device($) {
     my ($hash) = @_;
     my $dn = $hash->{DeviceName} // 'undef'; 
     # open connection with custom init and error callback function (non-blocking connection establishment)
-    main::Log3 $hash->{NAME}, 5, "tronferno-mcu devio_open_device() for ($dn)"; 
+    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_open_device() for ($dn)");
     return main::DevIo_OpenDev($hash, 0, "TronfernoMCU::X_Init", "TronfernoMCU::X_Callback"); 
 }
 
@@ -68,7 +68,7 @@ sub devio_close_device($) {
     my ($hash) = @_;
     my $dn = $hash->{DeviceName} // 'undef'; 
     # close connection if maybe open (on definition modify)
-    main::Log3 $hash->{NAME}, 5, "tronferno-mcu devio_close_device() for ($dn)"; 
+    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_close_device() for ($dn)"); 
     return main::DevIo_CloseDev($hash); # if(main::DevIo_IsOpen($hash));  
 }
 
@@ -121,7 +121,7 @@ sub X_Define($$)
 sub X_Undef($$)
 {
     my ($hash, $name) = @_;
-    main::Log3 $hash->{NAME}, 5, "tronferno-mcu X_Undef()"; 
+    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu X_Undef()"); 
     # close the connection 
     devio_close_device($hash);
     
@@ -133,7 +133,7 @@ sub X_Ready($)
 {
     my ($hash) = @_;
 
-    main::Log3 $hash->{NAME}, 5, "tronferno-mcu X_Ready()"; 
+    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu X_Ready()"); 
     # try to reopen the connection in case the connection is lost
     return devio_open_device($hash);
 }
@@ -152,8 +152,8 @@ sub X_Read($$)
 
     my $buf = $hash->{PARTIAL} . $data;
     
-    main::Log3 $name, 5, "TronfernoMCU ($name) - received data: >>>$data<<<"; 
-
+    main::Log3 ($name, 5, "TronfernoMCU ($name) - received data: >>>$data<<<");
+    
     my $remain = '';
     foreach my $line (split(/^/m, $buf)) {
         if (index($line, "\n") < 0) {
@@ -163,13 +163,13 @@ sub X_Read($$)
 
         $line =~ tr/\r\n//d;
 
-        main::Log3 $name, 4, "TronfernoMCU ($name) - received line: >>>>>$line<<<<<"; 
+        main::Log3 ($name, 4, "TronfernoMCU ($name) - received line: >>>>>$line<<<<<");
 
         if ($line =~ /^U:position:\s*(.+);$/) {
-            main::Log3 $name, 3, "TronfernoMCU ($name): position_update: $1";
+            main::Log3 ($name, 3, "TronfernoMCU ($name): position_update: $1");
             main::Dispatch($hash, "TFMCU#$line");
         } elsif ($line =~ /^[Cc]:.*;$/) {
-            main::Log3 $name, 3, "TronfernoMCU ($name): msg received $line";
+            main::Log3 ($name, 3, "TronfernoMCU ($name): msg received $line");
             main::Dispatch($hash, "TFMCU#$line");
         } elsif ($line =~ /^config (.*);$/) {
             for my $kv (split (' ', $1)) {
@@ -314,6 +314,17 @@ my $tag_succ = $tag_status.'0';
 my $done_file = 'done.txt';
 my $cmd_status = "echo $tag_status\$? | tee $done_file";
 
+sub file_slurp($$) {
+    my ($filename, $dst) = @_;
+
+    $$dst = do {
+    local $/;
+    open my $fh, $filename or return undef;
+    <$fh>
+    };
+    return 1;
+}
+
 sub file_read_last_line($) {
     my $last_line = '';
     if (open (my $f, '<', shift)) {
@@ -331,33 +342,43 @@ sub log_get_success($) {
 }
 sub sys_cmd_get_success($) {
     my ($hash) = @_;
-    return log_get_success($hash->{helper}{sys_cmd_status_file});
+    return log_get_success($hash->{helper}{sys_cmd}{status_file});
 }
 
 sub cb_async_system_cmd($) {
     my ($hash) = @_;
-    my $start_time = $hash->{helper}{sys_cmd_start_time};
-    my $id = $hash->{helper}{sys_cmd_id};
+    my $start_time = $hash->{helper}{sys_cmd}{start_time};
+    my $id = $hash->{helper}{sys_cmd}{id};
     my $timeout = 45; #FIXME: literal
+    my $cl = $hash->{helper}{sys_cmd}{cl};
+    my $logstr = "";
+ 
 
-    if (-e $hash->{helper}{sys_cmd_status_file}) {
+    if (-e $hash->{helper}{sys_cmd}{status_file}) {
         my $failed = !sys_cmd_get_success($hash);
         my $result = $failed ? 'error' : 'done';
     
         main::readingsSingleUpdate($hash, $id, "$result", 1);
-
+        file_slurp($hash->{helper}{sys_cmd}{log}, \$logstr) if $failed;
+        
         if ($id  eq 'fw_get') {
-
+            main::asyncOutput($cl, "firmware download command failed:\n\n" . $logstr) if ($cl && $failed);
         } elsif ($id eq 'fw_write_flash') {
+            main::asyncOutput($cl, "write-flash command failed:\n\n" . $logstr) if ($cl && $failed);
             devio_open_device($hash);
         } elsif ($id  eq 'fw_erase_flash') {
+            main::asyncOutput($cl, "erase-flash command failed:\n\n" . $logstr) if ($cl && $failed);
             devio_open_device($hash);
         }
     } elsif ($start_time + $timeout < main::gettimeofday()) {
         main::readingsSingleUpdate($hash, $id, 'timeout', 1);
     } else {
         main::InternalTimer(main::gettimeofday() + 4, 'TronfernoMCU::cb_async_system_cmd', $hash);
+        return; # return here to not reach cleanup code at bottom
     }
+
+    # all done. clean up data
+    $hash->{helper}{sys_cmd} = undef;
 }
 sub run_system_cmd($$$$$$) {
     my ($hash, $tgtdir, $log, $sc, $id, $close_device) = @_;
@@ -368,10 +389,13 @@ sub run_system_cmd($$$$$$) {
     unlink($status_file);
     system($command);
 
-    $hash->{helper}{sys_cmd_id} = $id;
-    $hash->{helper}{sys_cmd_dir} = $tgtdir;
-    $hash->{helper}{sys_cmd_status_file} = $status_file;
-    $hash->{helper}{sys_cmd_start_time} = main::gettimeofday();
+    $hash->{helper}{sys_cmd} = {};
+    $hash->{helper}{sys_cmd}{id} = $id;
+    $hash->{helper}{sys_cmd}{dir} = $tgtdir;
+    $hash->{helper}{sys_cmd}{status_file} = $status_file;
+    $hash->{helper}{sys_cmd}{start_time} = main::gettimeofday();
+    $hash->{helper}{sys_cmd}{cl} = $hash->{CL};
+    $hash->{helper}{sys_cmd}{log} = $log;
 
     main::readingsSingleUpdate($hash, $id, 'run', 1);
     main::InternalTimer(main::gettimeofday() + 4, 'TronfernoMCU::cb_async_system_cmd', $hash);
@@ -471,7 +495,7 @@ sub X_Callback($)
     my $name = $hash->{NAME};
 
     # create a log emtry with the error message
-    main::Log3 $name, 5, "TronfernoMCU ($name) - error while connecting: $error" if ($error); 
+    main::Log3 ($name, 5, "TronfernoMCU ($name) - error while connecting: $error") if ($error);
     
     return undef; 
 }
@@ -481,7 +505,7 @@ sub X_Write ($$)
     my ( $hash, $addr, $msg) = @_;
     my $name = $hash->{NAME};
 
-    main::Log3 $name, 5, "TronfernoMCU ($name) _Write(): $addr: $msg";
+    main::Log3 ($name, 5, "TronfernoMCU ($name) _Write(): $addr: $msg");
     main::DevIo_SimpleWrite($hash, $msg, 2, 1);
     return undef;
 }
@@ -591,16 +615,16 @@ sub TronfernoMCU_Initialize($) {
      <li>download<br>
          Download firmware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
          Required tools: wget <code>apt install wget</code><br>
-         Status is shown in reading fw_get (run,done,error,timeout)</li>
+         Status is shown in reading fw_get (run,done,error,timeout). Shell output may be displayed at error.</li>
      <li>write-flash<br>
          Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Expected MCU: Plain ESP32 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
-         Status is shown in reading fw_write_flash (run,done,error,timeout)</li>
+         Status is shown in reading fw_write_flash (run,done,error,timeout). Shell output may be displayed at error.</li>
      <li>xxx.erase-flash<br>
           Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Status is shown in reading fw_erase_flash (run,done,error,timeout)</li>
+         Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error.</li>
     </ol>
   </li>
 
@@ -611,16 +635,16 @@ sub TronfernoMCU_Initialize($) {
      <li>download<br>
          Download firware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
          Required tools: wget <code>apt install wget</code><br>
-         Status is shown in reading fw_get (run,done,error,timeout)</li>
+         Status is shown in reading fw_get (run,done,error,timeout). Shell output may be displayed at error.</li>
      <li>write-flash<br>
          Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Expected MCU: Plain ESP8266 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
-         Status is shown in reading fw_write_flash (run,done,error,timeout)</li>
+         Status is shown in reading fw_write_flash (run,done,error,timeout). Shell output may be displayed at error.</li>
      <li>xxx.erase-flash<br>
           Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Status is shown in reading fw_erase_flash (run,done,error,timeout)</li>
+         Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error.</li>
     </ol>
   </li>
 

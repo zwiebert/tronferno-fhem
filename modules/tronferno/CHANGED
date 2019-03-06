@@ -4,6 +4,7 @@
 ################################################################################
 - 2019-03-06
   -feature: 00_TronfernoMCU: show status of shell commands in readings
+                             show log file of failed shell command
 - 2019-03-05
   -bugfix:  00_TronfernoMCU: shell command redirections
   -feature: 10_Tronferno: new set opts: sun-auto, random. needs latest firmware
