@@ -584,7 +584,7 @@ sub TronfernoMCU_Initialize($) {
     Note: MCU will be restarted after setting this option</li>
 
   <a name="xxx.mcu-firmware.esp32"></a>
-  <li>xxx.mcu-firmware.esp32<br>         Status is shown in reading fw_erase_flash (run,done,error)</li>
+  <li>xxx.mcu-firmware.esp32<br>
 
    Fetch and write latest MCU firmware from tronferno-mcu-bin gitub repository.
     <ol>
