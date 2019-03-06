@@ -586,7 +586,7 @@ sub TronfernoMCU_Initialize($) {
   <a name="xxx.mcu-firmware.esp32"></a>
   <li>xxx.mcu-firmware.esp32<br>
 
-   Fetch and write latest MCU firmware from tronferno-mcu-bin gitub repository.
+   Fetch and write latest MCU firmware from tronferno-mcu-bin github repository.
     <ol>
      <li>download<br>
          Download firmware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
@@ -606,7 +606,7 @@ sub TronfernoMCU_Initialize($) {
 
   <a name="xxx.mcu-firmware.esp8266"></a>
   <li>xxx.mcu-firmware.esp8266<br>
-   Fetch and write latest MCU firmware from tronferno-mcu-bin gitub repository.
+   Fetch and write latest MCU firmware from tronferno-mcu-bin github repository.
     <ol>
      <li>download<br>
          Download firware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
