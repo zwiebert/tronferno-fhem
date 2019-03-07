@@ -177,6 +177,9 @@ sub X_Read($$)
                 $k = $mcor->{$k};
                 $hash->{$k} = $v if $k;
             }
+        } elsif ($line =~ /^mcu (.*);$/) {
+            my ($k, $v) = split('=', $1);
+            $hash->{"mcu-$k"} = $v; 
         }
     }
 
@@ -545,9 +548,9 @@ sub X_Set($$@) {
 sub X_Init($)
 {
     my ($hash) = @_;
-
-    # send a status request to the device
-    main::DevIo_SimpleWrite($hash, "mcu cs=?;", 2);  #FIXME: need better cli option for this
+    # get shutter positions and firmware version
+    main::DevIo_SimpleWrite($hash, "send p=?;mcu version=full;", 2);
+    # get mcu config
     mcu_read_all_config($hash);
     return undef; 
 }
