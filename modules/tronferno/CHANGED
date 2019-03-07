@@ -2,9 +2,12 @@
 # Add changes at the top of the list. Keep it in ASCII, and 80-char wide.
 # Do not insert empty lines here, update check depends on it.
 ################################################################################
+- 2019-03-07
+  -feature: 00_TronfernoMCU: firmware option upgrade (get+write)
+  -change:  00_TronfernoMCU: wget command no longer required
 - 2019-03-06
   -feature: 00_TronfernoMCU: show status of shell commands in readings
-                             show log file of failed shell command
+  -feature: 00_TronfernoMCU: show log file of failed shell command
 - 2019-03-05
   -bugfix:  00_TronfernoMCU: shell command redirections
   -feature: 10_Tronferno: new set opts: sun-auto, random. needs latest firmware

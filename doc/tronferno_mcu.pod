@@ -73,11 +73,15 @@
   <li>xxx.mcu-firmware.esp32<br>
 
    Fetch and write latest MCU firmware from tronferno-mcu-bin github repository.
-    <ol>
+    <ul>
+     <li>upgrade<br>
+         Download latest firmware and write it to MCU in one shot.<br>
+         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
+         Expected MCU: Plain ESP32 with 4MB flash.<br>
+         Status is shown in reading fw_get and fw_write (run,done,error,timeout).</li>
      <li>download<br>
          Download firmware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
-         Required tools: wget <code>apt install wget</code><br>
-         Status is shown in reading fw_get (run,done,error,timeout). Shell output may be displayed at error.</li>
+         Status is shown in reading fw_get (run,done,error,timeout).</li>
      <li>write-flash<br>
          Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
@@ -87,17 +91,21 @@
           Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error.</li>
-    </ol>
+    </ul>
   </li>
 
   <a name="xxx.mcu-firmware.esp8266"></a>
   <li>xxx.mcu-firmware.esp8266<br>
    Fetch and write latest MCU firmware from tronferno-mcu-bin github repository.
-    <ol>
+    <ul>
+     <li>upgrade<br>
+         Download latest firmware and write it to MCU in one shot.<br>
+         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
+         Expected MCU: Plain ESP32 with 4MB flash.<br>
+         Status is shown in reading fw_get and fw_write (run,done,error,timeout).</li>
      <li>download<br>
          Download firware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
-         Required tools: wget <code>apt install wget</code><br>
-         Status is shown in reading fw_get (run,done,error,timeout). Shell output may be displayed at error.</li>
+         Status is shown in reading fw_get (run,done,error,timeout).</li>
      <li>write-flash<br>
          Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
@@ -107,7 +115,7 @@
           Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error.</li>
-    </ol>
+    </ul>
   </li>
 
 

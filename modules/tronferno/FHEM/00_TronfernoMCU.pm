@@ -221,7 +221,7 @@ my $firmware;
         my $fwe = {};
         $fw->{'xxx.mcu-firmware.esp32'} = $fwe;
 
-        $fwe->{args} = ':download,write-flash,xxx.erase-flash';
+        $fwe->{args} = ':upgrade,download,write-flash,xxx.erase-flash';
         # FIXME: file ist should better be fetched from server
         $fwe->{files} = ['firmware/esp32/tronferno-mcu.bin',
                          'firmware/esp32/bootloader.bin',
@@ -239,7 +239,7 @@ my $firmware;
         $fw->{'xxx.mcu-firmware.esp8266'} = $fwe8;
 
 
-        $fwe8->{args} = ':download,write-flash,xxx.erase-flash';
+        $fwe8->{args} = ':upgrade,download,write-flash,xxx.erase-flash';
         # FIXME: file ist should better be fetched from server
         $fwe8->{files} = ['firmware/esp8266/blank.bin',
                           'firmware/esp8266/eagle.flash.bin',
@@ -259,40 +259,96 @@ while(my($k, $v) = each %$firmware) {
     $usage .= " $k".$v->{args};
 }
 
-=pod
 
-sub get_fw_cb($$$) {
+
+sub cb_fw_get_next_file($$$) {
     my ($param, $err, $data) = @_;
     my $hash = $param->{hash};
     my $name = $hash->{NAME};
-}
-
-
-sub get_fw2($$) {
-    my($hash, $fw) = @_;
-    my $uri = $fw->{uri};
-    my $tgtdir =  $fw->{tgtdir};
-
-    for my $f (@{$fw->{files}}) {
-        my $dir = $tgtdir . File::Basename::dirname($f); # compose dir path
-        File::Path::make_path($dir, {mode => 0755}); # create dir
-
-        my $param = {
-            url        => $uri.$f,
-            timeout    => 5, 
-            hash       => $hash,
-            method     => "GET",
-            header     => "User-Agent: TeleHeater/2.2.3\r\nAccept: application/json", # Den Header gemäß abzufragender Daten ändern
-            callback   => \&get_fw_cb # Diese Funktion soll das Ergebnis dieser HTTP Anfrage bearbeiten
-                };
-
-        main::HttpUtils_NonblockingGet($param);
-        
-        print "----->dir=$dir file:$uri$f\n";
+    my $fwg =  $hash->{helper}{fw_get};
+    
+    if (!$err && open (my $fh, '>', $fwg->{dst_file})) {
+        # save file
+        binmode($fh);
+        print $fh $data;
+        close ($fh);
+        fw_get_next_file($hash);
+    } else {
+        # error
+        main::readingsSingleUpdate($hash, $fwg->{id}, 'error', 1);
     }
 }
 
-=cut
+sub fw_get_next_file($) {
+    my ($hash) = @_;
+    my $fwg =  $hash->{helper}{fw_get};
+    my $count = $fwg->{file_count};
+    my $files = $fwg->{files};
+
+    my $idx = $fwg->{file_idx}++;
+
+    unless ($idx < $count) {
+        main::readingsSingleUpdate($hash, $fwg->{id}, 'done', 1);
+        if ($fwg->{write_func}) {
+            &{$fwg->{write_func}}(@{$fwg->{write_args}});
+        }
+        return;
+    }
+
+    my $file = $$files[$idx];
+    my $param = $fwg->{http_param};
+    my $base_dir =  $fwg->{dst_base}; 
+    
+    # create destination directory
+    my $dst_dir = $base_dir . File::Basename::dirname($file); # compose dir path
+    File::Path::make_path($dst_dir, {mode => 0755}); # create dir
+
+   
+    $fwg->{dst_file} = "$base_dir$file";
+    $param->{url} = $fwg->{uri} . $file;
+
+    main::HttpUtils_NonblockingGet($param);
+}
+
+sub fw_get($$) {
+    return fw_get_and_write_flash(shift, shift, undef);
+}
+
+sub fw_get_and_write_flash($$$) {
+    my($hash, $fw, $write_flash) = @_;
+    my $uri = $fw->{uri};
+    my $dst_base =  $fw->{tgtdir};
+
+    my $fwg = {};
+    $hash->{helper}{fw_get} = $fwg;
+
+    $fwg->{file_idx} = 0;
+    $fwg->{file_count} = scalar(@{$fw->{files}});
+    $fwg->{files} = $fw->{files};
+    $fwg->{uri} = $fw->{uri};
+    $fwg->{dst_base} = $dst_base;
+    $fwg->{id} = 'fw_get';
+
+    if ($write_flash) {
+        $fwg->{write_func} = \&fw_write_flash;
+        $fwg->{write_args} = [$hash, $fw];
+    }
+    
+    $fwg->{http_param} = {
+        timeout    => 5, 
+        hash       => $hash,
+        method     => "GET",
+        header     => "User-Agent: TeleHeater/2.2.3\r\nAccept: application/octet-stream",
+        callback   => \&cb_fw_get_next_file,
+    };
+
+    main::readingsSingleUpdate($hash, $fwg->{id}, 'run', 1);
+    fw_get_next_file($hash);
+}
+
+=pod
+
+## wget related code disabled
 
 sub fw_mk_list_file($$) {
     my($hash, $fw) = @_;
@@ -307,6 +363,21 @@ sub fw_mk_list_file($$) {
 }
 
 my $wget_log = 'wget.txt';
+
+sub fw_get($$) {
+    my($hash, $fw) = @_;
+    my $uri = $fw->{uri};
+    my $tgtdir =  $fw->{tgtdir};
+    my $log = "$tgtdir$wget_log";
+    my $sc = "wget --no-verbose --base=$uri -i files.txt -x -nH --cut-dirs 3 --preserve-permissions"; #FIXME: literal
+
+    fw_mk_list_file($hash, $fw);
+    run_system_cmd($hash, $tgtdir, $log, $sc, 'fw_get', 0);
+}
+
+=cut
+
+
 my $write_flash_log = 'write_flash.txt';
 my $erase_flash_log = 'erase_flash.txt';
 my $tag_status = 'status_';
@@ -402,16 +473,6 @@ sub run_system_cmd($$$$$$) {
     $hash->{"shell-command-$id"} = $command;
 }
 
-sub fw_get($$) {
-    my($hash, $fw) = @_;
-    my $uri = $fw->{uri};
-    my $tgtdir =  $fw->{tgtdir};
-    my $log = "$tgtdir$wget_log";
-    my $sc = "wget --no-verbose --base=$uri -i files.txt -x -nH --cut-dirs 3 --preserve-permissions"; #FIXME: literal
-
-    fw_mk_list_file($hash, $fw);
-    run_system_cmd($hash, $tgtdir, $log, $sc, 'fw_get', 0);
-}
 
 sub fw_write_flash($$) {
     my($hash, $fw) = @_;
@@ -454,6 +515,8 @@ sub X_Set($$@) {
     } elsif($firmware->{$cmd}) {
         if ($a1 eq 'download') {
             fw_get($hash, $firmware->{$cmd});
+        } elsif ($a1 eq 'upgrade') {
+            fw_get_and_write_flash($hash, $firmware->{$cmd}, 1);
         } elsif ($a1 eq 'write-flash') {
             fw_write_flash($hash, $firmware->{$cmd});
         } elsif ($a1 eq 'xxx.erase-flash') {
@@ -611,11 +674,15 @@ sub TronfernoMCU_Initialize($) {
   <li>xxx.mcu-firmware.esp32<br>
 
    Fetch and write latest MCU firmware from tronferno-mcu-bin github repository.
-    <ol>
+    <ul>
+     <li>upgrade<br>
+         Download latest firmware and write it to MCU in one shot.<br>
+         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
+         Expected MCU: Plain ESP32 with 4MB flash.<br>
+         Status is shown in reading fw_get and fw_write (run,done,error,timeout).</li>
      <li>download<br>
          Download firmware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
-         Required tools: wget <code>apt install wget</code><br>
-         Status is shown in reading fw_get (run,done,error,timeout). Shell output may be displayed at error.</li>
+         Status is shown in reading fw_get (run,done,error,timeout).</li>
      <li>write-flash<br>
          Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
@@ -625,17 +692,21 @@ sub TronfernoMCU_Initialize($) {
           Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error.</li>
-    </ol>
+    </ul>
   </li>
 
   <a name="xxx.mcu-firmware.esp8266"></a>
   <li>xxx.mcu-firmware.esp8266<br>
    Fetch and write latest MCU firmware from tronferno-mcu-bin github repository.
-    <ol>
+    <ul>
+     <li>upgrade<br>
+         Download latest firmware and write it to MCU in one shot.<br>
+         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
+         Expected MCU: Plain ESP32 with 4MB flash.<br>
+         Status is shown in reading fw_get and fw_write (run,done,error,timeout).</li>
      <li>download<br>
          Download firware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
-         Required tools: wget <code>apt install wget</code><br>
-         Status is shown in reading fw_get (run,done,error,timeout). Shell output may be displayed at error.</li>
+         Status is shown in reading fw_get (run,done,error,timeout).</li>
      <li>write-flash<br>
          Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
@@ -645,7 +716,7 @@ sub TronfernoMCU_Initialize($) {
           Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error.</li>
-    </ol>
+    </ul>
   </li>
 
 
