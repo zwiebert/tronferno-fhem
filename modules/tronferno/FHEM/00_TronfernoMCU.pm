@@ -680,7 +680,7 @@ sub TronfernoMCU_Initialize($) {
     <ul>
      <li>download<br>
          Downloads firmware and flash-tool from github.<br>
-         Files can be found at /tmp/TronfernoMCU<b>
+         Files can be found at /tmp/TronfernoMCU<br>
          Status is shown in reading fw_get (run,done,error,timeout).</li>
      <li>write-flash<br>
          Writes downloaded firmware to serial port used in definition of this device.<br>
