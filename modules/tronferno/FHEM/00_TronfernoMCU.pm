@@ -676,9 +676,9 @@ sub TronfernoMCU_Initialize($) {
    Fetch and write latest MCU firmware from tronferno-mcu-bin github repository.
     <ul>
      <li>upgrade<br>
-         Download latest firmware and write it to MCU in one shot.<br>
+         Download latest firmware and write it to the MCU in one shot.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Expected MCU: Plain ESP32 with 4MB flash.<br>
+         Expected MCU: Plain ESP32 with 4MB flash. Connected to USB (not WLAN)<br>
          Status is shown in reading fw_get and fw_write (run,done,error,timeout).</li>
      <li>download<br>
          Download firmware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
@@ -700,9 +700,9 @@ sub TronfernoMCU_Initialize($) {
    Fetch and write latest MCU firmware from tronferno-mcu-bin github repository.
     <ul>
      <li>upgrade<br>
-         Download latest firmware and write it to MCU in one shot.<br>
+         Download latest firmware and write it to the MCU in one shot.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Expected MCU: Plain ESP32 with 4MB flash.<br>
+         Expected MCU: Plain ESP8266 with 4MB flash. Connected to USB (not WLAN)<br>
          Status is shown in reading fw_get and fw_write (run,done,error,timeout).</li>
      <li>download<br>
          Download firware and flash-tool to /tmp/TronfernoMCU/ directory.<br>
