@@ -210,7 +210,8 @@ sub get_commandlist()   { return keys %$map_send_cmds, keys %$map_pair_cmds; }
 
 sub X_Set($$@) {
     my ($hash, $name, $cmd, $a1) = @_;
-    my $is_on = ($a1 // 0) eq 'on' || ($a1 // 0) eq '1';
+    my $is_on = ($a1 // 0) eq 'on';
+    my $is_off = ($a1 // 0) eq 'off';
     my $result = undef;
 
     return "\"set $name\" needs at least one argument" unless (defined($cmd));
@@ -261,7 +262,9 @@ sub X_Set($$@) {
             . ' manual:on,off'
             . ' sun-auto:on,off'
             . ' random:on,off'
-
+            . ' astro:on,off,-60,-50,-30,-20,-10,+10,+20,+30,+40,+50,+60'
+            . ' daily'
+            . ' weekly'
             ;
     } elsif (exists $map_send_cmds->{$cmd}) {
         my $req = build_cmd($hash, 'send', $map_send_cmds->{$cmd});
@@ -290,8 +293,23 @@ sub X_Set($$@) {
         return transmit($hash, build_timer($hash, $is_on ? 'f=kSi' : 'f=ksi'));
     } elsif ($cmd eq 'random') {
         return transmit($hash, build_timer($hash, $is_on ? 'f=kRi' : 'f=kri'));
+    } elsif ($cmd eq 'astro') {
+        #TODO: check validity of of $a1
+        my $minutes = $is_on ? 0 : int($a1);
+        my $msg = $is_off ? 'f=kai' : 'f=kAi astro='.$minutes;
+        return transmit($hash, build_timer($hash, $msg));
+    } elsif ($cmd eq 'daily') {
+        #TODO: check validity of of $a1
+        my $msg = $is_off ? 'f=kdi daily=--' : 'f=kDi daily='.$a1;
+        return transmit($hash, build_timer($hash, $msg));
+    } elsif ($cmd eq 'weekly') {
+        #TODO: check validity of of $a1
+        my $msg = $is_off ? 'f=kwi weekly=--++++++' : 'f=kWi weekly='.$a1;
+        return transmit($hash, build_timer($hash, $msg));
     } else {
-        return "unknown argument $cmd choose one of " . join(' ', get_commandlist()) . 'position' . 'manual sun-auto random';
+        return "unknown argument $cmd choose one of "
+            . join(' ', get_commandlist())
+            . ' position manual sun-auto random astro daily weekly';
     }
 
     return undef;
@@ -469,7 +487,9 @@ sub parse_timer {
     my $timer_string = '';
     my $flags = '';
     my $timer = {
-        
+        daily => 'off',
+        weekly => 'off',
+        astro => 'off',
     };
  
     
@@ -499,6 +519,9 @@ sub parse_timer {
         $timer->{'sun-auto'} = index($flags, 'S') >= 0 ? 'on' : 'off';
         $timer->{'random'} = index($flags, 'R') >= 0 ? 'on' : 'off';
         $timer->{'manual'} = index($flags, 'M') >= 0 ? 'on' : 'off';
+#       $timer->{'daily'} = index($flags, 'D') >= 0 ? 'on' : 'off';
+#       $timer->{'weekly'} = index($flags, 'W') >= 0 ? 'on' : 'off';
+#       $timer->{'astro'} = index($flags, 'A') >= 0 ? 'on' : 'off';
     }
     
     main::Log3($io_hash, 4, "Tronferno: a=$a, g=$g, m=$m");
@@ -510,7 +533,7 @@ sub parse_timer {
         if ($h->{helper}{ferid_g} eq "$g"
             && $h->{helper}{ferid_m} eq "$m") {
             $hash = $h;
-            $h->{'timer.string'} = $timer_string;
+            $h->{'debug.timer.string'} = $timer_string;
             while(my($k, $v) = each %$timer) {
                 $h->{"timer.$k"} = "$v";
             }
