@@ -171,15 +171,19 @@ sub X_Read($$)
         } elsif ($line =~ /^[Cc]:.*;$/) {
             main::Log3 ($name, 3, "TronfernoMCU ($name): msg received $line");
             main::Dispatch($hash, "TFMCU#$line");
-        } elsif ($line =~ /^config (.*);$/) {
+        } elsif ($line =~ /^tf:.* config: (.*);$/) {
             for my $kv (split (' ', $1)) {
                 my ($k, $v) = split('=', $kv);
                 $k = $mcor->{$k};
                 $hash->{$k} = $v if $k;
             }
-        } elsif ($line =~ /^mcu (.*);$/) {
-            my ($k, $v) = split('=', $1);
-            $hash->{"mcu-$k"} = $v; 
+        } elsif ($line =~ /^tf:.* mcu: (.*);$/) {
+            for my $kv (split (' ', $1)) {
+                my ($k, $v) = split('=', $kv);
+                $hash->{"mcu-$k"} = $v;
+            }
+        } elsif ($line =~ /^tf:.* timer: (.*);$/) {
+            main::Dispatch($hash, "TFMCU#timer $1");
         }
     }
 

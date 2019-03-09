@@ -43,11 +43,17 @@ sub X_Define($$) {
     my @a       = split("[ \t][ \t]*", $def);
     my $name    = $a[0];
     my $address = $a[1];
-
+    my $defptr  = $main::modules{+MODNAME}{defptr};
+    my $is_iDev = 0;
+    
     my ($a, $g, $m, $iodev, $mcu_addr) = (0, 0, 0, undef, $def_mcuaddr);
     my $u = 'wrong syntax: define <name> Tronferno a=ID [g=N] [m=N]';
     my $scan = 0;
     my $input = 0;
+
+    $defptr->{oDevs} = {} unless $defptr->{oDevs};
+    $defptr->{iDevs} = {} unless $defptr->{iDevs};
+    $defptr->{aDevs} = {} unless $defptr->{aDevs};
     
     return $u if ($#a < 2);
 
@@ -69,6 +75,7 @@ sub X_Define($$) {
         } elsif ($key eq 'mcu_addr') {
             $mcu_addr = $value;
         } elsif ($key eq 'scan' or $key eq 'input' && $value eq 'all') {
+            $is_iDev = 1;
             $scan = 1;
             $main::modules{+MODNAME}{defptr}{+DEF_INPUT_DEVICE} = $hash;
             $hash->{helper}{inputKey} = DEF_INPUT_DEVICE;
@@ -91,16 +98,30 @@ sub X_Define($$) {
     $main::modules{+MODNAME}{defptr}{$def_match} = $hash;
     #main::Log3($hash, 0, "def_match: $def_match");
 
+    $defptr->{aDevs}{"$hash"} = $hash;
+    if ($is_iDev) {
+        $defptr->{iDevs}{"$hash"} = $hash;
+        delete ($defptr->{oDevs}{"$hash"});
+    } else {
+        delete ($defptr->{iDevs}{"$hash"});
+        $defptr->{oDevs}{"$hash"} = $hash;
+    }
+    
     return undef;
 }
 
 
 sub X_Undef($$) {
     my ($hash, $name) = @_;
+    my $defptr  = $main::modules{+MODNAME}{defptr};
 
     # remove deleted input devices from defptr
     my $key = $hash->{helper}{inputKey};
-    delete $main::modules{+MODNAME}{defptr}{$key} if (defined($key));
+    delete $defptr->{$key} if (defined($key));
+
+    delete ($defptr->{aDevs}{"$hash"});
+    delete ($defptr->{oDevs}{"$hash"});
+    delete ($defptr->{iDevs}{"$hash"});
 
     return undef;
 }
@@ -188,8 +209,7 @@ my $map_pair_cmds = {
 sub get_commandlist()   { return keys %$map_send_cmds, keys %$map_pair_cmds; }
 
 sub X_Set($$@) {
-    my ($hash, $name, $cmd, @args) = @_;
-    my ($a1, $a2, $a3) = @args;
+    my ($hash, $name, $cmd, $a1) = @_;
     my $is_on = ($a1 // 0) eq '1';
     my $result = undef;
 
@@ -252,8 +272,8 @@ sub X_Set($$@) {
         my $res = transmit($hash, $req);
         return $res if ($res);
     } elsif ($cmd eq 'position') {
-        return "\"set $name $cmd\" needs one argument" unless (defined($args[0]));
-        my $percent = $args[0];
+        return "\"set $name $cmd\" needs one argument" unless (defined($a1));
+        my $percent = $a1;
         my $c = 'up';
         if ($percent eq '0') {
             $c = 'down';
@@ -265,17 +285,45 @@ sub X_Set($$@) {
         my $req = build_cmd($hash, 'send', $c);
         my $res = transmit($hash, $req);
     } elsif ($cmd eq 'manual') {
-        return transmit($hash, build_timer($hash, $is_on ? 'f=ka' : 'f=kA'));
+        return transmit($hash, build_timer($hash, $is_on ? 'f=kai' : 'f=kAi'));
     } elsif ($cmd eq 'sun-auto') {
-        return transmit($hash, build_timer($hash, $is_on ? 'f=kS' : 'f=ks'));
+        return transmit($hash, build_timer($hash, $is_on ? 'f=kSi' : 'f=ksi'));
     } elsif ($cmd eq 'random') {
-        return transmit($hash, build_timer($hash, $is_on ? 'f=kR' : 'f=kr'));
+        return transmit($hash, build_timer($hash, $is_on ? 'f=kRi' : 'f=kri'));
     } else {
         return "unknown argument $cmd choose one of " . join(' ', get_commandlist()) . 'position' . 'manual sun-auto random';
     }
 
     return undef;
 }
+
+sub X_Get($$$@) {
+    my ($hash, $name, $opt, $a1, $a2, $a3) = @_;
+    my $result = undef;
+
+    return "\"get $name\" needs at least one argument" unless (defined($opt));
+
+    my $u = "unknown argument $opt, choose one of ";
+
+
+    # handle input devices here
+    my $inputType = $hash->{helper}{ferInputType};
+    if (defined($inputType)) {
+        return $u; #input device has not options to get
+    }
+
+    #handle output devices here
+    if ($opt eq '?') {
+        return $u . 'timer:noArg';
+    } elsif ($opt eq 'timer') {
+        return transmit($hash, build_timer($hash, 'f=ukI'));
+    } else {
+        return $u . 'timer';
+    }
+
+    return undef;
+}
+
 
 sub parse_position {
     my ($io_hash, $data) = @_;
@@ -412,16 +460,57 @@ sub parse_c {
     return $hash->{NAME}
 }
 
+sub parse_timer {
+    my ($io_hash, $data) = @_;
+    my $name = $io_hash->{NAME};
+    my ($a, $g, $m, $p, $fdt, $c) = (0, 0, 0, 0, "", "");
+    my $defptr  = $main::modules{+MODNAME}{defptr};
+    my $result = undef;
+    my $timer = '';
+    
+    foreach my $arg (split(/\s+/, $data)) {
+        my ($key, $value) = split('=', $arg);
+
+        if ($key eq 'a') {
+            $a = hex($value);
+        } elsif ($key eq 'g') {
+            $g = int($value);
+            return undef unless (0 <= $g && $g <= 7);
+        } elsif ($key eq 'm') {
+            $m = int($value);
+            return undef unless (0 <= $m && $m <= 7);
+        } else {
+            $timer .= " $key=$value";
+        }
+    }
+
+    main::Log3($io_hash, 4, "a=$a, g=$g, m=$m");
+
+    my $hash = undef;
+    
+    foreach my $h (values %{$defptr->{oDevs}}) {
+        if ($h->{helper}{ferid_g} eq "$g"
+            && $h->{helper}{ferid_m} eq "$m") {
+            $h->{timer} = $timer;
+            $hash = $h;
+        }
+    }
+    
+    return $hash->{NAME}
+}
+
 
 sub X_Parse {
     my ($io_hash, $message) = @_;
     my $name = $io_hash->{NAME};
     my $result = undef;
-    
+
     if ($message =~ /^TFMCU#U:position:\s*(.+);$/) {
         return parse_position($io_hash, $1);
     } elsif ($message =~ /^TFMCU#[Cc]:(.+);$/) {
         return parse_c($io_hash, $1);
+    } elsif ($message =~ /^TFMCU#timer (.+);$/) {
+        return parse_timer($io_hash, $1);
     }
     return undef;
 }
@@ -454,6 +543,7 @@ sub Tronferno_Initialize($) {
 
     $hash->{DefFn}    = 'Tronferno::X_Define';
     $hash->{SetFn}    = 'Tronferno::X_Set';
+    $hash->{GetFn}    = 'Tronferno::X_Get';
     $hash->{ParseFn}  = 'Tronferno::X_Parse';
     $hash->{UndefFn}  = 'Tronferno::X_Undef';
     $hash->{AttrFn}   =  'Tronferno::X_Attr';
