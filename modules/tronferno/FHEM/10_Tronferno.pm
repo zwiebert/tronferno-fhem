@@ -698,18 +698,55 @@ Each output device may control a single shutter, or a group of shutters dependin
   <li>position - set position to 0 (down), 50 (sun-down), 100 (up), 99 (stop). (used  by alexa)</li>
 
   <a name=sun-auto></a>
-  <li>sun-auto - enables/disables sun-automatic of the shutter</li>
+  <li>sun-auto - switch on/off sun-sensor commands of a Fernotron device. (if off, it ignores command sun-down)</li>
 
   <a name=random></a>
-  <li>random - enables/disables random timer of the shutter</li>
+  <li>random - switch on/of random-timer of Fernotron device</li>
 
   <a name=manual></a>
-  <li>*experimental* manual - disable automatic shutter movement<br>
-     <ul>
-        <li> 0 - enables automatic shutter movement by internal timers and sun automatic</li>
-        <li> 1 - disables automatic shutter movement by internal timers and sun automatic</li>
-     </ul>
-    Unfortunally, there is no manual flag inside Fernotron devices. This feature tries to emulate (like the 2411 does) such option by saving all timer data in the MCU and sends empty timers to the device. If the user disables manual mode again, the saved timers will be sent to the device again. (This behavior collides with sending timers to entire groups (which is (therefore?) not implementd by the 2411)</li>
+  <li>manual - switch on/off automatic shutter movement<br>
+     The manual mode prevents all automatic shutter movement by internal timers or paired sensors<br>
+  <ul>
+   <li><code>set NAME manual on</code></li>
+   <li><code>set NAME manual off</code></li>
+  </ul>
+
+    <p><small>Note: This is a kludge. It reprograms the Fernotron device with empty timers and disables sun-auto. When 'manual' is switched off again, the timer data, which was stored inside the MCU will be reprogrammed.  Not sure why this is done this way by the original central 2411. There are Fernotron receivers with a button for manual-mode, but the RF controlled motors seems to have no manual flag?</small>
+</li>
+
+<a name=random></a>
+<li>random - switch on/off the random timer of a Fernotron device</li>
+
+<a name=daily></a>
+<li>daily - switch off or set the daily timer of a Fernotron device<br>
+   Format: HHMMHHMM for up/down timers. Use '-' instead HHMM to disable the up or down timer.<br>
+   <ul>
+    <li><code>set NAME daily off</code> disables daily-timer</li>
+    <li><code>set NAME daily "0700-"</code> up by daily-timer at 0700</li>
+    <li><code>set NAME daily "-1200"</code> down at 1200</li>
+  </ul>
+</li>
+
+<a name=weekly></a>
+<li>weekly - switch off or set the weekly timer of a Fernotron device<br>
+   Format: like daily (HHMMHHMM) but seven times. Starts at Monday. A '+' can be used to copy the previous day.<br>
+   <ul>
+     <li><code>set NAME weeky off</code> disables weekly-timer</li>
+     <li><code>set NAME weekly "0700-++++0900-+"</code>  up by weekly-timer at Mon-Fri=0700, Sat-Sun=0900</li>
+     <li><code>set NAME weekly "0600-0530-+++1130-0800-"</code> up at Mon=0600, Tue-Fri=0530, Sat=1130, Sun=0800</li>
+   </ul>
+</li>
+
+<a name=astro></a>
+<li>astro - switch on/off or set the astro (civil dusk) timer of a Fernotron device<br>
+    The shutter goes down at civil dusk or some minutes before or after if you provide a -/+ minute offset.<br>
+    <ul>
+      <li><code>set NAME astro off</code> disables astro-timer</li>
+      <li><code>set NAME astro on</code> down by astro-timer at civil dusk</li>
+      <li><code>set NAME astro "-10"</code> down at 10 minutes before civil dusk</li>
+      <li><code>set NAME astro 10</code> down at 10 minutes after civil dusk</li>
+    </ul>
+</li> 
 
   <a name=xxx_pair></a>
   <li>xxx_pair - Lets MCU pair the next received sender to this shutter (Paired senders will influence the shutter position)</li>
