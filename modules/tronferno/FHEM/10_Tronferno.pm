@@ -210,7 +210,7 @@ sub get_commandlist()   { return keys %$map_send_cmds, keys %$map_pair_cmds; }
 
 sub X_Set($$@) {
     my ($hash, $name, $cmd, $a1) = @_;
-    my $is_on = ($a1 // 0) eq '1';
+    my $is_on = ($a1 // 0) eq 'on' || ($a1 // 0) eq '1';
     my $result = undef;
 
     return "\"set $name\" needs at least one argument" unless (defined($cmd));
@@ -258,9 +258,9 @@ sub X_Set($$@) {
         }
         return $res
             . ' position:slider,0,50,100'
-            . ' manual:0,1'
-            . ' sun-auto:0,1'
-            . ' random:0,1'
+            . ' manual:on,off'
+            . ' sun-auto:on,off'
+            . ' random:on,off'
 
             ;
     } elsif (exists $map_send_cmds->{$cmd}) {
@@ -285,7 +285,7 @@ sub X_Set($$@) {
         my $req = build_cmd($hash, 'send', $c);
         my $res = transmit($hash, $req);
     } elsif ($cmd eq 'manual') {
-        return transmit($hash, build_timer($hash, $is_on ? 'f=kai' : 'f=kAi'));
+        return transmit($hash, build_timer($hash, $is_on ? 'f=kMi' : 'f=kmi'));
     } elsif ($cmd eq 'sun-auto') {
         return transmit($hash, build_timer($hash, $is_on ? 'f=kSi' : 'f=ksi'));
     } elsif ($cmd eq 'random') {
@@ -466,7 +466,12 @@ sub parse_timer {
     my ($a, $g, $m, $p, $fdt, $c) = (0, 0, 0, 0, "", "");
     my $defptr  = $main::modules{+MODNAME}{defptr};
     my $result = undef;
-    my $timer = '';
+    my $timer_string = '';
+    my $flags = '';
+    my $timer = {
+        
+    };
+ 
     
     foreach my $arg (split(/\s+/, $data)) {
         my ($key, $value) = split('=', $arg);
@@ -479,20 +484,36 @@ sub parse_timer {
         } elsif ($key eq 'm') {
             $m = int($value);
             return undef unless (0 <= $m && $m <= 7);
-        } else {
-            $timer .= " $key=$value";
+        } elsif ($key) {
+            $timer_string .= "$key=$value ";
+            if ($key eq 'f') {
+                $flags = $value;
+            } else {
+                $timer->{$key} = $value;
+            }
         }
     }
 
-    main::Log3($io_hash, 4, "a=$a, g=$g, m=$m");
+    # do it here to overwrite any long options using 1/0 instead on/off
+    if ($flags) {
+        $timer->{'sun-auto'} = index($flags, 'S') >= 0 ? 'on' : 'off';
+        $timer->{'random'} = index($flags, 'R') >= 0 ? 'on' : 'off';
+        $timer->{'manual'} = index($flags, 'M') >= 0 ? 'on' : 'off';
+    }
+    
+    main::Log3($io_hash, 4, "Tronferno: a=$a, g=$g, m=$m");
+    
 
     my $hash = undef;
     
     foreach my $h (values %{$defptr->{oDevs}}) {
         if ($h->{helper}{ferid_g} eq "$g"
             && $h->{helper}{ferid_m} eq "$m") {
-            $h->{timer} = $timer;
             $hash = $h;
+            $h->{'timer.string'} = $timer_string;
+            while(my($k, $v) = each %$timer) {
+                $h->{"timer.$k"} = "$v";
+            }
         }
     }
     
@@ -505,11 +526,11 @@ sub X_Parse {
     my $name = $io_hash->{NAME};
     my $result = undef;
 
-    if ($message =~ /^TFMCU#U:position:\s*(.+);$/) {
+    if ($message =~ /^TFMCU#U:position:\s*(.+)$/) {
         return parse_position($io_hash, $1);
-    } elsif ($message =~ /^TFMCU#[Cc]:(.+);$/) {
+    } elsif ($message =~ /^TFMCU#[Cc]:(.+)$/) {
         return parse_c($io_hash, $1);
-    } elsif ($message =~ /^TFMCU#timer (.+);$/) {
+    } elsif ($message =~ /^TFMCU#timer (.+)$/) {
         return parse_timer($io_hash, $1);
     }
     return undef;

@@ -165,25 +165,33 @@ sub X_Read($$)
 
         main::Log3 ($name, 4, "TronfernoMCU ($name) - received line: >>>>>$line<<<<<");
 
-        if ($line =~ /^U:position:\s*(.+);$/) {
-            main::Log3 ($name, 3, "TronfernoMCU ($name): position_update: $1");
-            main::Dispatch($hash, "TFMCU#$line");
-        } elsif ($line =~ /^[Cc]:.*;$/) {
-            main::Log3 ($name, 3, "TronfernoMCU ($name): msg received $line");
-            main::Dispatch($hash, "TFMCU#$line");
+        if ($line =~ /^(U:position:\s*.+);$/) {
+            my $msg =  "TFMCU#$1";
+            main::Log3 ($name, 4, "$name: dispatch: $msg"); 
+            main::Dispatch($hash, $msg);
+
+        } elsif ($line =~ /^([Cc]:.*);$/) {
+            my $msg =  "TFMCU#$1";
+            main::Log3 ($name, 4, "$name: dispatch: $msg"); 
+            main::Dispatch($hash, $msg);
+
+        } elsif ($line =~ /^tf:.* timer: (.*);$/) {
+            my $msg = "TFMCU#timer $1";
+            main::Log3 ($name, 4, "$name: dispatch: $msg"); 
+            main::Dispatch($hash, $msg);
+
         } elsif ($line =~ /^tf:.* config: (.*);$/) {
             for my $kv (split (' ', $1)) {
                 my ($k, $v) = split('=', $kv);
                 $k = $mcor->{$k};
                 $hash->{$k} = $v if $k;
             }
+
         } elsif ($line =~ /^tf:.* mcu: (.*);$/) {
             for my $kv (split (' ', $1)) {
                 my ($k, $v) = split('=', $kv);
                 $hash->{"mcu-$k"} = $v;
-            }
-        } elsif ($line =~ /^tf:.* timer: (.*);$/) {
-            main::Dispatch($hash, "TFMCU#timer $1");
+           }
         }
     }
 
@@ -531,10 +539,6 @@ sub X_Set($$@) {
         }
     } elsif($cmd eq 'xxx.mcu-firmware.esp8266') {
     } elsif($cmd eq 'xxx.mcu-firmware.atmega328') {
-    } elsif($cmd eq '') {
-    } elsif($cmd eq '') {
-    } elsif($cmd eq '') {
-    } elsif($cmd eq '') {
     } elsif($cmd eq "statusRequest") {
         #main::DevIo_SimpleWrite($hash, "get_status\r\n", 2);
     } elsif($cmd eq "on") {
