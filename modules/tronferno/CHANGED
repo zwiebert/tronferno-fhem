@@ -3,9 +3,10 @@
 # Do not insert empty lines here, update check depends on it.
 ################################################################################
 - 2019-03-10
-  -feature:   00_Tronferno: modifying automatic settings and have it as readings
+  -feature: 00_TronfernMCU: new reading mcu.ip4-address (esp32 only)
+  -feature: 10_Tronferno: modifying automatic settings and have it as readings
 - 2019-03-07
-  - feature:  00_Tronferno:  write parsed timers/options to internals
+  -feature: 10_Tronferno: write parsed timers/options to internals
 - 2019-03-07
   -feature: 00_TronfernoMCU: firmware option upgrade (get+write)
   -change:  00_TronfernoMCU: wget command no longer required
