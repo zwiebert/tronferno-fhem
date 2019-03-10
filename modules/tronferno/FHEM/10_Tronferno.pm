@@ -377,7 +377,7 @@ sub parse_position {
                     my $def_match = "0,$g,$m";
                     my $hash = $main::modules{+MODNAME}{defptr}{$def_match}; #FIXME: add support for $a different than zero
                     if ($hash) {
-                        main::readingsSingleUpdate($hash, 'state',  $p, 0);
+                        main::readingsSingleUpdate($hash, 'state',  $p, 1);
                         $result = $hash->{NAME};
                     }
                 }
@@ -392,7 +392,7 @@ sub parse_position {
         my $hash = $main::modules{+MODNAME}{defptr}{$def_match}; #FIXME: add support for $a different than zero
 
         if ($hash) {
-            main::readingsSingleUpdate($hash, 'state',  $p, 0);
+            main::readingsSingleUpdate($hash, 'state',  $p, 1);
             # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
             return $hash->{NAME};
         } elsif ($g == 0) {
@@ -400,7 +400,7 @@ sub parse_position {
                 for $m (1..7) {
                     my $hash = $main::modules{+MODNAME}{defptr}{"0,$g,$m"};
                     if ($hash) {
-                        main::readingsSingleUpdate($hash, 'state',  $p, 0);
+                        main::readingsSingleUpdate($hash, 'state',  $p, 1);
                         $result = $hash->{NAME};
                     }
                 }
@@ -410,7 +410,7 @@ sub parse_position {
             for $m (1..7) {
                 my $hash = $main::modules{+MODNAME}{defptr}{"0,$g,$m"};
                 if ($hash) {
-                    main::readingsSingleUpdate($hash, 'state',  $p, 0);
+                    main::readingsSingleUpdate($hash, 'state',  $p, 1);
                     $result = $hash->{NAME};
                 }
             }
@@ -533,10 +533,13 @@ sub parse_timer {
         if ($h->{helper}{ferid_g} eq "$g"
             && $h->{helper}{ferid_m} eq "$m") {
             $hash = $h;
-            $h->{'debug.timer.string'} = $timer_string;
+            main::readingsBeginUpdate($hash);
+            $hash->{'debug.timer.string'} = $timer_string;
             while(my($k, $v) = each %$timer) {
-                $h->{"timer.$k"} = "$v";
+            #    $hash->{"automatic.$k"} = "$v";
+                main::readingsBulkUpdateIfChanged($hash, "automatic.$k", "$v");
             }
+            main::readingsEndUpdate($hash, 1);
         }
     }
     
