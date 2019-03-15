@@ -90,6 +90,10 @@
           Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error.</li>
+     <li>download-beta-version<br>
+         Downloads beta-firmware and flash-tool from github.<br>
+         Files can be found at /tmp/TronfernoMCU<br>
+         Status is shown in reading fw_get (run,done,error,timeout).</li>
     </ul>
   </li>
 
@@ -112,6 +116,10 @@
           Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error.</li>
+     <li>download-beta-version<br>
+         Downloads beta-firmware and flash-tool from github.<br>
+         Files can be found at /tmp/TronfernoMCU<br>
+         Status is shown in reading fw_get (run,done,error,timeout).</li>
     </ul>
   </li>
 

@@ -2,6 +2,8 @@
 # Add changes at the top of the list. Keep it in ASCII, and 80-char wide.
 # Do not insert empty lines here, update check depends on it.
 ################################################################################
+- 2019-03-15
+  -feature: 00_TronfernMCU: new option to download beta firmware
 - 2019-03-10
   -feature: 00_TronfernMCU: new reading mcu.ip4-address (esp32 only)
   -feature: 10_Tronferno: modifying automatic settings and have it as readings

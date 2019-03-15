@@ -20,6 +20,37 @@ use warnings;
 use 5.14.0;
 
 package TronfernoMCU;
+# protos to avoid module-reloading errors if signature has changed
+# (annoying to have the subs in the right order for this)
+sub devio_open_device($);
+sub devio_close_device($);
+sub devio_get_serial_device_name($);
+sub mcu_read_all_config($);
+sub mcu_read_config($$);
+sub mcu_config($$$);
+sub mcu_download_firmware($);
+sub cb_fw_get_next_file($$$);
+sub fw_get_next_file($);
+sub fw_get_and_write_flash($$;$$);
+sub fw_get($$;$);
+sub fw_mk_list_file($$);
+sub file_slurp($$);
+sub file_read_last_line($);
+sub log_get_success($);
+sub sys_cmd_get_success($);
+sub cb_async_system_cmd($);
+sub run_system_cmd($$$$$$);
+sub fw_write_flash($$);
+sub fw_erase_flash($$);
+
+sub X_Define($$);
+sub X_Undef($$);
+sub X_Ready($);
+sub X_Read($$);
+sub X_Set($$@);
+sub X_Init($);
+sub X_Callback($);
+sub X_Write ($$);
 
 my $def_mcuaddr = 'fernotron.fritz.box.';
 my $mcu_port = 7777;
@@ -238,8 +269,8 @@ my $firmware;
         my $fwe = {};
         $fw->{'xxx.mcu-firmware.esp32'} = $fwe;
 
-        $fwe->{args} = ':upgrade,download,write-flash,xxx.erase-flash';
-        # FIXME: file ist should better be fetched from server
+        $fwe->{args} = ':upgrade,download,write-flash,xxx.erase-flash,download-beta-version';
+        # FIXME: file list should better be fetched from server
         $fwe->{files} = ['firmware/esp32/tronferno-mcu.bin',
                          'firmware/esp32/bootloader.bin',
                          'firmware/esp32/partitions.bin',
@@ -247,6 +278,7 @@ my $firmware;
                          'flash_esp32.sh'];
         $fwe->{tgtdir} = '/tmp/TronfernoMCU/';
         $fwe->{uri} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/master/';
+        $fwe->{uri_beta} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/beta/';
         $fwe->{write_flash_cmd} = '/bin/sh flash_esp32.sh %s';
         $fwe->{erase_flash_cmd} = 'python tools/esptool.py --port %s --chip esp32 erase_flash';
     }
@@ -256,8 +288,8 @@ my $firmware;
         $fw->{'xxx.mcu-firmware.esp8266'} = $fwe8;
 
 
-        $fwe8->{args} = ':upgrade,download,write-flash,xxx.erase-flash';
-        # FIXME: file ist should better be fetched from server
+        $fwe8->{args} = ':upgrade,download,write-flash,xxx.erase-flash,download-beta-version';
+        # FIXME: file list should better be fetched from server
         $fwe8->{files} = ['firmware/esp8266/blank.bin',
                           'firmware/esp8266/eagle.flash.bin',
                           'firmware/esp8266/eagle.irom0text.bin',
@@ -266,6 +298,7 @@ my $firmware;
                           'flash_esp8266.sh'];
         $fwe8->{tgtdir} = '/tmp/TronfernoMCU/';
         $fwe8->{uri} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/master/';
+        $fwe8->{uri_beta} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/beta/';
         $fwe8->{write_flash_cmd} = '/bin/sh flash_esp8266.sh %s';
         $fwe8->{erase_flash_cmd} = 'python tools/esptool.py --port %s --chip esp8266 erase_flash';
     }
@@ -275,8 +308,6 @@ my $firmware;
 while(my($k, $v) = each %$firmware) {
     $usage .= " $k".$v->{args};
 }
-
-
 
 sub cb_fw_get_next_file($$$) {
     my ($param, $err, $data) = @_;
@@ -327,13 +358,11 @@ sub fw_get_next_file($) {
     main::HttpUtils_NonblockingGet($param);
 }
 
-sub fw_get($$) {
-    return fw_get_and_write_flash(shift, shift, undef);
-}
 
-sub fw_get_and_write_flash($$$) {
-    my($hash, $fw, $write_flash) = @_;
-    my $uri = $fw->{uri};
+
+sub fw_get_and_write_flash($$;$$) {
+    my($hash, $fw, $write_flash, $uri) = @_;
+    $uri = $fw->{uri} unless $uri;
     my $dst_base =  $fw->{tgtdir};
 
     my $fwg = {};
@@ -363,6 +392,9 @@ sub fw_get_and_write_flash($$$) {
     fw_get_next_file($hash);
 }
 
+sub fw_get($$;$) {
+    return fw_get_and_write_flash(shift, shift, undef, undef);
+}
 =pod
 
 ## wget related code disabled
@@ -496,11 +528,25 @@ sub fw_write_flash($$) {
     my $tgtdir =  $fw->{tgtdir};
     my $log = "$tgtdir$write_flash_log";
     my $ser_dev = devio_get_serial_device_name($hash);
-    return unless $ser_dev;
-    return unless $fw->{write_flash_cmd};
+    my $id = 'fw_write_flash';
+    my $client_hash = $hash->{CL};
+    
+    unless ($ser_dev) {
+        main::asyncOutput($client_hash, "write_flash failed: MCU needs do be connected via a serial device)")
+            if ($client_hash && $client_hash->{canAsyncOutput});
+        main::readingsSingleUpdate($hash, $id, 'error', 1);
+        return "no serial device";
+    }
+
+    unless ($fw->{write_flash_cmd}) {
+        main::readingsSingleUpdate($hash, $id, 'error', 1);
+        return "internal_error: no system command"  ;
+    }
     
     my $sc = sprintf($fw->{write_flash_cmd}, $ser_dev);
-    run_system_cmd($hash, $tgtdir, $log, $sc, 'fw_write_flash', 1);
+    run_system_cmd($hash, $tgtdir, $log, $sc, $id, 1);
+
+    return undef;
 }
 
 sub fw_erase_flash($$) {
@@ -532,6 +578,8 @@ sub X_Set($$@) {
     } elsif($firmware->{$cmd}) {
         if ($a1 eq 'download') {
             fw_get($hash, $firmware->{$cmd});
+        } elsif ($a1 eq 'download-beta-version') {
+            fw_get($hash, $firmware->{$cmd}, $firmware->{$cmd}{uri_beta});
         } elsif ($a1 eq 'upgrade') {
             fw_get_and_write_flash($hash, $firmware->{$cmd}, 1);
         } elsif ($a1 eq 'write-flash') {
@@ -704,6 +752,10 @@ sub TronfernoMCU_Initialize($) {
           Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error.</li>
+     <li>download-beta-version<br>
+         Downloads beta-firmware and flash-tool from github.<br>
+         Files can be found at /tmp/TronfernoMCU<br>
+         Status is shown in reading fw_get (run,done,error,timeout).</li>
     </ul>
   </li>
 
@@ -726,6 +778,10 @@ sub TronfernoMCU_Initialize($) {
           Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error.</li>
+     <li>download-beta-version<br>
+         Downloads beta-firmware and flash-tool from github.<br>
+         Files can be found at /tmp/TronfernoMCU<br>
+         Status is shown in reading fw_get (run,done,error,timeout).</li>
     </ul>
   </li>
 
