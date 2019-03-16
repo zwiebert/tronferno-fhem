@@ -371,7 +371,7 @@ sub fw_get_and_write_flash($$;$$) {
     $fwg->{file_idx} = 0;
     $fwg->{file_count} = scalar(@{$fw->{files}});
     $fwg->{files} = $fw->{files};
-    $fwg->{uri} = $fw->{uri};
+    $fwg->{uri} = $uri;
     $fwg->{dst_base} = $dst_base;
     $fwg->{id} = 'fw_get';
 
@@ -393,7 +393,7 @@ sub fw_get_and_write_flash($$;$$) {
 }
 
 sub fw_get($$;$) {
-    return fw_get_and_write_flash(shift, shift, undef, undef);
+    return fw_get_and_write_flash(shift, shift, undef, shift);
 }
 =pod
 
