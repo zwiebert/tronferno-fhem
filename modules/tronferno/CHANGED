@@ -2,10 +2,13 @@
 # Add changes at the top of the list. Keep it in ASCII, and 80-char wide.
 # Do not insert empty lines here, update check depends on it.
 ################################################################################
+- 2019-03-17
+  -feature  00_TronfernoMCU: new MCU config options for MCU's MQTT support
+  -change   00_TronfernoMCU: prefix mcu_config changed to mcc in set
 - 2019-03-15
-  -feature: 00_TronfernMCU: new option to download beta firmware
+  -feature: 00_TronfernoMCU: new option to download beta firmware
 - 2019-03-10
-  -feature: 00_TronfernMCU: new reading mcu.ip4-address (esp32 only)
+  -feature: 00_TronfernoMCU: new reading mcu.ip4-address (esp32 only)
   -feature: 10_Tronferno: modifying automatic settings and have it as readings
 - 2019-03-07
   -feature: 10_Tronferno: write parsed timers/options to internals

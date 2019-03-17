@@ -55,6 +55,8 @@ sub X_Write ($$);
 my $def_mcuaddr = 'fernotron.fritz.box.';
 my $mcu_port = 7777;
 my $mcu_baud = 115200;
+my $FW_WRT_ID = 'fw_write_flash';
+my $FW_ERA_ID = 'fw_erase_flash';
 
 my $mcfg_prefix = 'mcc.';
 my $mco = {
@@ -469,6 +471,12 @@ sub sys_cmd_get_success($) {
     return log_get_success($hash->{helper}{sys_cmd}{status_file});
 }
 
+sub sys_cmd_rm_log_internals($) {
+    my ($hash) = @_;
+    delete ($hash->{"$FW_WRT_ID.log"});
+    delete ($hash->{"$FW_ERA_ID.log"});
+}
+
 sub cb_async_system_cmd($) {
     my ($hash) = @_;
     my $start_time = $hash->{helper}{sys_cmd}{start_time};
@@ -479,18 +487,19 @@ sub cb_async_system_cmd($) {
  
 
     if (-e $hash->{helper}{sys_cmd}{status_file}) {
+        my $failed = !sys_cmd_get_success($hash);
+        my $result = $failed ? 'error' : 'done';
     
         main::readingsSingleUpdate($hash, $id, "$result", 1);
         file_slurp($hash->{helper}{sys_cmd}{log}, \$logstr) if $failed;
-        $hash->{"$id.log"} = $failed if $failed;
-        delete ($hash->{"$id.log"}) unless $failed;
-        
+        $hash->{"$id.log"} = substr($logstr, 0, 300) if $failed;
+       
         if ($id  eq 'fw_get') {
             main::asyncOutput($cl, "firmware download command failed:\n\n" . $logstr) if ($cl && $failed);
-        } elsif ($id eq 'fw_write_flash') {
+        } elsif ($id eq $FW_WRT_ID) {
             main::asyncOutput($cl, "write-flash command failed:\n\n" . $logstr) if ($cl && $failed);
             devio_open_device($hash);
-        } elsif ($id  eq 'fw_erase_flash') {
+        } elsif ($id  eq $FW_ERA_ID) {
             main::asyncOutput($cl, "erase-flash command failed:\n\n" . $logstr) if ($cl && $failed);
             devio_open_device($hash);
         }
@@ -532,7 +541,7 @@ sub fw_write_flash($$) {
     my $tgtdir =  $fw->{tgtdir};
     my $log = "$tgtdir$write_flash_log";
     my $ser_dev = devio_get_serial_device_name($hash);
-    my $id = 'fw_write_flash';
+    my $id = $FW_WRT_ID;
     my $client_hash = $hash->{CL};
     
     unless ($ser_dev) {
@@ -562,7 +571,7 @@ sub fw_erase_flash($$) {
     return unless $fw->{erase_flash_cmd};
     
     my $sc = sprintf($fw->{erase_flash_cmd}, $ser_dev);
-    run_system_cmd($hash, $tgtdir, $log, $sc, 'fw_erase_flash', 1);
+    run_system_cmd($hash, $tgtdir, $log, $sc, $FW_ERA_ID, 1);
 }
 
 # called if set command is executed
@@ -580,6 +589,7 @@ sub X_Set($$@) {
     } elsif($mcof->{$cmd}) {
         mcu_config($hash, $mcof->{$cmd}, $a1) if defined($a1); 
     } elsif($firmware->{$cmd}) {
+        sys_cmd_rm_log_internals($hash);
         if ($a1 eq 'download') {
             fw_get($hash, $firmware->{$cmd});
         } elsif ($a1 eq 'download-beta-version') {
@@ -775,14 +785,14 @@ sub TronfernoMCU_Initialize($) {
          Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Expected MCU: Plain ESP32 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
-         Status is shown in reading fw_write_flash (run,done,error,timeout). Shell output may be displayed at error.</li>
+         Status is shown in reading fw_write_flash (run,done,error,timeout). Shell output may be displayed at error in Internals.</li>
      <li>upgrade<br>
         Combines download and write-flash for convinience.
          </li>
      <li>xxx.erase-flash<br>
           Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error.</li>
+         Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error in Internals.</li>
      <li>download-beta-version<br>
          Downloads beta-firmware and flash-tool from github.<br>
          Files can be found at /tmp/TronfernoMCU<br>
@@ -802,13 +812,13 @@ sub TronfernoMCU_Initialize($) {
          Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
          Expected MCU: Plain ESP8266 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
-         Status is shown in reading fw_write_flash (run,done,error,timeout). Shell output may be displayed at error.</li>
+         Status is shown in reading fw_write_flash (run,done,error,timeout). Shell output may be displayed at error in Internals.</li>
      <li>upgrade<br>
         Combines download and write-flash for convinience.
      <li>xxx.erase-flash<br>
           Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error.</li>
+         Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error in Internals.</li>
      <li>download-beta-version<br>
          Downloads beta-firmware and flash-tool from github.<br>
          Files can be found at /tmp/TronfernoMCU<br>
