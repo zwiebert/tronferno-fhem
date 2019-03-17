@@ -69,6 +69,33 @@
     WLAN/WiFi SSID to connect to<br>
     Note: MCU will be restarted after setting this option</li>
 
+  <a name="mcu-config.mqtt-enable"></a>
+  <li>mcu-config.mqtt-enable - enables/disables conection to MQTT server<br>
+    <code>set tfmc mcu-config.mqtt-enable 1</code><br>
+    <code>set tfmc mcu-config.mqtt-enable 0</code><br>
+<br>
+    <code>attr MQTT2_tronferno42 setList cli tfmcu/cli $EVENT</code><br>
+    <code>set MQTT2_tronferno42 cli send g=4 m=2 c=down</code><br>
+<br>
+    <small>MQTT support is still experimental.</small><br> 
+    <small>Note: MQTT is only supportet on esp32 hardware (for now)</small><br>
+    </li>
+
+  <a name="mcu-config.mqtt-url"></a>
+  <li>mcu-config.mqtt-url - URL of MQTT server to connect<br>
+    <code>set tfmcu mcu-config.mqtt-url "mqtt://192.168.1.42:7777"</code>
+    </li>
+
+  <a name="mcu-config.mqtt-user"></a>
+  <li>mcu-config.mqtt-user - User name for MQTT server connection<br>
+    <code>set tfmcu mcu-config.mqtt-user myUserName</code>
+    </li>
+
+  <a name="mcu-config.mqtt-password"></a>
+  <li>mcu-config.mqtt-password - Password for MQTT server connection<br>
+    <code>set tfmcu mcu-config.mqtt-password myPassword</code>
+    </li>
+
   <a name="xxx.mcu-firmware.esp32"></a>
   <li>xxx.mcu-firmware.esp32<br>
 
