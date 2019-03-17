@@ -21,7 +21,7 @@ use 5.14.0;
 
 package TronfernoMCU;
 # protos to avoid module-reloading errors if signature has changed
-# (annoying to have the subs in the right order for this)
+# (because it was annoying to have the subs in the right order for this)
 sub devio_open_device($);
 sub devio_close_device($);
 sub devio_get_serial_device_name($);
@@ -68,6 +68,10 @@ my $mco = {
     MCFG_TZ => 'tz',
     MCFG_VERBOSE => 'verbose',
     MCFG_RESTART => 'restart',
+    MCFG_MQTT_PASSWORD => 'mqtt-password',
+    MCFG_MQTT_USER => 'mqtt-user',
+    MCFG_MQTT_URL => 'mqtt-url',
+    MCFG_MQTT_ENABLE => 'mqtt-enable',
 };
 
 my $mcof = {};
@@ -82,6 +86,8 @@ while(my($k, $v) = each %$mco) {
         $usage .= " $vp:0,1,2,3,4,5";
     } elsif ($k eq 'MCFG_RESTART') {
         $usage .= " $vp:1";
+    } elsif ($k eq 'MCFG_MQTT_ENABLE') {
+        $usage .= " $vp:0,1";       
     } else {
         $usage .= " $vp";
     }
@@ -233,9 +239,7 @@ sub X_Read($$)
 
 sub mcu_read_all_config($) {
     my ($hash) = @_;
-    main::DevIo_SimpleWrite($hash, "config longitude=? latitude=? tz=? wlan-ssid=?;", 2);
-    main::DevIo_SimpleWrite($hash, "config cu=? baud=? verbose=?;", 2);
-
+    main::DevIo_SimpleWrite($hash, "config all=?;", 2);
 }
 
 sub mcu_read_config($$) {
@@ -607,9 +611,9 @@ sub X_Init($)
 {
     my ($hash) = @_;
     # get shutter positions and firmware version
-    main::DevIo_SimpleWrite($hash, "send p=?;mcu version=full;", 2);
+    main::DevIo_SimpleWrite($hash, "send p=?;mcu version=full;config all=?;", 2);
     # get mcu config
-    mcu_read_all_config($hash);
+   # mcu_read_all_config($hash);
     return undef; 
 }
 
