@@ -56,7 +56,7 @@ my $def_mcuaddr = 'fernotron.fritz.box.';
 my $mcu_port = 7777;
 my $mcu_baud = 115200;
 
-my $mcfg_prefix = 'mcu-config.';
+my $mcfg_prefix = 'mcc.';
 my $mco = {
     MCFG_CU => 'cu',
     MCFG_RTC => 'rtc',
@@ -271,7 +271,7 @@ my $firmware;
     
     {
         my $fwe = {};
-        $fw->{'xxx.mcu-firmware.esp32'} = $fwe;
+        $fw->{'mcu-firmware.esp32'} = $fwe;
 
         $fwe->{args} = ':upgrade,download,write-flash,xxx.erase-flash,download-beta-version';
         # FIXME: file list should better be fetched from server
@@ -289,7 +289,7 @@ my $firmware;
 
     {
         my $fwe8 = {};
-        $fw->{'xxx.mcu-firmware.esp8266'} = $fwe8;
+        $fw->{'mcu-firmware.esp8266'} = $fwe8;
 
 
         $fwe8->{args} = ':upgrade,download,write-flash,xxx.erase-flash,download-beta-version';
@@ -479,11 +479,11 @@ sub cb_async_system_cmd($) {
  
 
     if (-e $hash->{helper}{sys_cmd}{status_file}) {
-        my $failed = !sys_cmd_get_success($hash);
-        my $result = $failed ? 'error' : 'done';
     
         main::readingsSingleUpdate($hash, $id, "$result", 1);
         file_slurp($hash->{helper}{sys_cmd}{log}, \$logstr) if $failed;
+        $hash->{"$id.log"} = $failed if $failed;
+        delete ($hash->{"$id.log"}) unless $failed;
         
         if ($id  eq 'fw_get') {
             main::asyncOutput($cl, "firmware download command failed:\n\n" . $logstr) if ($cl && $failed);
@@ -591,8 +591,8 @@ sub X_Set($$@) {
         } elsif ($a1 eq 'xxx.erase-flash') {
             fw_erase_flash($hash, $firmware->{$cmd});
         }
-    } elsif($cmd eq 'xxx.mcu-firmware.esp8266') {
-    } elsif($cmd eq 'xxx.mcu-firmware.atmega328') {
+    } elsif($cmd eq 'mcu-firmware.esp8266') {
+    } elsif($cmd eq 'mcu-firmware.atmega328') {
     } elsif($cmd eq "statusRequest") {
         #main::DevIo_SimpleWrite($hash, "get_status\r\n", 2);
     } elsif($cmd eq "on") {
@@ -684,61 +684,61 @@ sub TronfernoMCU_Initialize($) {
 <h4>SET</h4>
 <ul>
 
-  <a name="mcu-config.baud"></a>
-  <li>mcu-config.baud<br>
+  <a name="mcc.baud"></a>
+  <li>mcc.baud<br>
     Baud rate of MCU's serial interface</li>
 
-  <a name="mcu-config.cu"></a>
-  <li>mcu-config.cu<br>
+  <a name="mcc.cu"></a>
+  <li>mcc.cu<br>
    Central-Unit ID used by the MCU (six digit hex number)</li>
 
 
-  <a name="mcu-config.latitude"></a>
-  <li>mcu-config.latitude<br>
+  <a name="mcc.latitude"></a>
+  <li>mcc.latitude<br>
    geographical coordinates are used to calculate civil dusk for astro-timer (decimal degree, e.g. 52.5)</li>
 
-  <a name="mcu-config.longitude"></a>
-  <li>mcu-config.longitude<br>
+  <a name="mcc.longitude"></a>
+  <li>mcc.longitude<br>
    geographical coordinates are used to calculate civil dusk for astro-timer (decimal degree, e.g. 13,4)</li>
 
-  <a name="mcu-config.restart"></a>
-  <li>mcu-config.restart<br>
+  <a name="mcc.restart"></a>
+  <li>mcc.restart<br>
     Retart the MCU.</li>
 
-  <a name="mcu-config.rtc"></a>
-  <li>mcu-config.rtc<br>
+  <a name="mcc.rtc"></a>
+  <li>mcc.rtc<br>
     Set MCU's internal real time clock by ISO date/time string (e.g. 1999-12-31T23:59:00). If possible, the MCU will use NTP instead.</li>
 
-  <a name="mcu-config.rtc"></a>
-  <li>mcu-config.rtc<br>
+  <a name="mcc.rtc"></a>
+  <li>mcc.rtc<br>
     Set MCU's internal real time clock by ISO date/time string (e.g. 1999-12-31T23:59:00). If possible, the MCU will use NTP instead.</li>
 
-  <a name="mcu-config.tz"></a>
-  <li>mcu-config.tz<br>
+  <a name="mcc.tz"></a>
+  <li>mcc.tz<br>
     Time-zone in POSIX (TZ) format</li>
 
-  <a name="mcu-config.rtc"></a>
-  <li>mcu-config.rtc<br>
+  <a name="mcc.rtc"></a>
+  <li>mcc.rtc<br>
     </li>
 
-  <a name="mcu-config.verbose"></a>
-  <li>mcu-config.verbose<br>
+  <a name="mcc.verbose"></a>
+  <li>mcc.verbose<br>
     Verbosity level of MCU's diagnose output (0 .. 5)</li>
 
-  <a name="mcu-config.wlan-password"></a>
-  <li>mcu-config.wlan-passord<br>
+  <a name="mcc.wlan-password"></a>
+  <li>mcc.wlan-passord<br>
     Password used by MCU to connect to WLAN/WiFi<br>
     Note: MCU will be restarted after setting this option </li>
 
-  <a name="mcu-config.wlan-ssid"></a>
-  <li>mcu-config.wlan-ssid<br>
+  <a name="mcc.wlan-ssid"></a>
+  <li>mcc.wlan-ssid<br>
     WLAN/WiFi SSID to connect to<br>
     Note: MCU will be restarted after setting this option</li>
 
-  <a name="mcu-config.mqtt-enable"></a>
-  <li>mcu-config.mqtt-enable - enables/disables conection to MQTT server<br>
-    <code>set tfmc mcu-config.mqtt-enable 1</code><br>
-    <code>set tfmc mcu-config.mqtt-enable 0</code><br>
+  <a name="mcc.mqtt-enable"></a>
+  <li>mcc.mqtt-enable - enables/disables conection to MQTT server<br>
+    <code>set tfmc mcc.mqtt-enable 1</code><br>
+    <code>set tfmc mcc.mqtt-enable 0</code><br>
 <br>
     <code>attr MQTT2_tronferno42 setList cli tfmcu/cli $EVENT</code><br>
     <code>set MQTT2_tronferno42 cli send g=4 m=2 c=down</code><br>
@@ -747,23 +747,23 @@ sub TronfernoMCU_Initialize($) {
     <small>Note: MQTT is only supportet on esp32 hardware (for now)</small><br>
     </li>
 
-  <a name="mcu-config.mqtt-url"></a>
-  <li>mcu-config.mqtt-url - URL of MQTT server to connect<br>
-    <code>set tfmcu mcu-config.mqtt-url "mqtt://192.168.1.42:7777"</code>
+  <a name="mcc.mqtt-url"></a>
+  <li>mcc.mqtt-url - URL of MQTT server to connect<br>
+    <code>set tfmcu mcc.mqtt-url "mqtt://192.168.1.42:7777"</code>
     </li>
 
-  <a name="mcu-config.mqtt-user"></a>
-  <li>mcu-config.mqtt-user - User name for MQTT server connection<br>
-    <code>set tfmcu mcu-config.mqtt-user myUserName</code>
+  <a name="mcc.mqtt-user"></a>
+  <li>mcc.mqtt-user - User name for MQTT server connection<br>
+    <code>set tfmcu mcc.mqtt-user myUserName</code>
     </li>
 
-  <a name="mcu-config.mqtt-password"></a>
-  <li>mcu-config.mqtt-password - Password for MQTT server connection<br>
-    <code>set tfmcu mcu-config.mqtt-password myPassword</code>
+  <a name="mcc.mqtt-password"></a>
+  <li>mcc.mqtt-password - Password for MQTT server connection<br>
+    <code>set tfmcu mcc.mqtt-password myPassword</code>
     </li>
 
-  <a name="xxx.mcu-firmware.esp32"></a>
-  <li>xxx.mcu-firmware.esp32<br>
+  <a name="mcu-firmware.esp32"></a>
+  <li>mcu-firmware.esp32<br>
 
    Fetch and write latest MCU firmware from tronferno-mcu-bin github repository.
     <ul>
@@ -790,8 +790,8 @@ sub TronfernoMCU_Initialize($) {
     </ul>
   </li>
 
-  <a name="xxx.mcu-firmware.esp8266"></a>
-  <li>xxx.mcu-firmware.esp8266<br>
+  <a name="mcu-firmware.esp8266"></a>
+  <li>mcu-firmware.esp8266<br>
    Fetch and write latest MCU firmware from tronferno-mcu-bin github repository.
     <ul>
      <li>download<br>
