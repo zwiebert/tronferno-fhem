@@ -44,7 +44,10 @@ SIGNALduino Konfiguration ist beschrieben in [Nachricht im FHEM-Forum](https://f
 
 
 
-#### 2.  FHEM-Modul "Tronferno" zum Steuern von Fernotron Empfängern über die Hardware [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu).
+### 2.  FHEM-Modul "Tronferno"
+
+* zum Steuern von Fernotron Empfängern über die Hardware [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu).
+
 Installation ist unten beschrieben. Die weitere Nutzung in [englische TronfernoMCU I/O Moduldokumentation](doc/tronferno_mcu.pod) und  [englische Tronferno Moduldokumentation](doc/tronferno.pod).
 
 #### Installation und Aktualisierung
@@ -55,3 +58,26 @@ Installation ist unten beschrieben. Die weitere Nutzung in [englische TronfernoM
      update all https://raw.githubusercontent.com/zwiebert/tronferno-fhem/master/modules/tronferno/controls_tronferno.txt
 ```
 
+
+### 3. MQTT statt eigenes FHEM Modul.
+
+* steuern der  ESP32-Hardware [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu) über MQTT
+* das Kommandozeilen-Interfacde von tronferno-mcu wird über MQTT angesprochen
+
+Nach Konfiguration der Verbindungsdaten zum FHEM MQTT2_SERVER kann ein Rolladen-Gerät in FHEM z.B. folgendermaßen angelegt werden:
+
+
+```
+define mroll23 MQTT2_DEVICE
+
+attr mroll23 setList up:noArg tfmcu/cli send g=2 m=3 c=up\
+stop:noArg tfmcu/cli send g=2 m=3 c=stop\
+down:noArg tfmcu/cli send g=2 m=3 c=down
+
+attr mroll23 webCmd down:stop:up
+```
+
+Hierbei sind:
+  * stop:noArg - der anzulegende Set-Befehlt (noArg heißt, es wird dafür kein Texteingabefeld in FHEMWEB erzeugt). 
+  * tfmcu/cli  - ist der MQTT Topic an den CLI Befehle gesendet werden können
+  * send g=2 m=3 c=down  - das CLI Kommando zum Runterfahren des Rolladens 3 der Gruppe 2

@@ -11,7 +11,7 @@
 
 
 require DevIo;
-#require HttpUtils;
+require HttpUtils;
 require File::Path;
 require File::Basename;
 
@@ -20,6 +20,11 @@ use warnings;
 use 5.14.0;
 
 package TronfernoMCU;
+
+use main;
+use DevIo; # useless at the moment (because its using main name space)
+
+
 # protos to avoid module-reloading errors if signature has changed
 # (because it was annoying to have the subs in the right order for this)
 sub devio_open_device($);

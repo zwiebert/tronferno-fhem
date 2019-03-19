@@ -56,3 +56,26 @@ get sduino raw CDR
 ```
 
 
+### 3. MQTT
+
+* needs no specific Module in FHEM
+* the ESP32-Hardware [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu) can be controlled by its command line interface via MQTT.
+
+After you configured the connection data to the FHEM MQTT2_SERVER you cand define a shutter device in FHEM like this:
+
+
+```
+define mshutter23 MQTT2_DEVICE
+
+attr mshutter23 setList up:noArg tfmcu/cli send g=2 m=3 c=up\
+stop:noArg tfmcu/cli send g=2 m=3 c=stop\
+down:noArg tfmcu/cli send g=2 m=3 c=down
+
+attr mshutter23 webCmd down:stop:up
+```
+
+Explanation:
+  * stop:noArg - the name of the generated Set command (noArg gets rid of the useles textinput field on FHEMWEB)
+  * tfmcu/cli  - the MQTT Topic to where the CLI command will be sent
+  * send g=2 m=3 c=down  - the CLI command to close the shutter number 3 of group 2
+  
