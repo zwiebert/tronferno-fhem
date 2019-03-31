@@ -2,6 +2,9 @@
 # Add changes at the top of the list. Keep it in ASCII, and 80-char wide.
 # Do not insert empty lines here, update check depends on it.
 ################################################################################
+- 2019-04-01
+  -feature  00_TronfernoMCU: new set: upgrade-beta-version
+  -bugfix   00_TronfernoMCU: load error "main"
 - 2019-03-17
   -feature  00_TronfernoMCU: new MCU config options for MCU's MQTT support
   -change   00_TronfernoMCU: prefix mcu_config changed to mcc in set

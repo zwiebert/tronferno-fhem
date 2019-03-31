@@ -21,7 +21,6 @@ use 5.14.0;
 
 package TronfernoMCU;
 
-use main;
 use DevIo; # useless at the moment (because its using main name space)
 
 
@@ -280,7 +279,7 @@ my $firmware;
         my $fwe = {};
         $fw->{'mcu-firmware.esp32'} = $fwe;
 
-        $fwe->{args} = ':upgrade,download,write-flash,xxx.erase-flash,download-beta-version';
+        $fwe->{args} = ':upgrade,download,write-flash,xxx.erase-flash,upgrade-beta-version,download-beta-version';
         # FIXME: file list should better be fetched from server
         $fwe->{files} = ['firmware/esp32/tronferno-mcu.bin',
                          'firmware/esp32/bootloader.bin',
@@ -299,7 +298,7 @@ my $firmware;
         $fw->{'mcu-firmware.esp8266'} = $fwe8;
 
 
-        $fwe8->{args} = ':upgrade,download,write-flash,xxx.erase-flash,download-beta-version';
+        $fwe8->{args} = ':upgrade,download,write-flash,xxx.erase-flash,upgrade-beta-version,download-beta-version';
         # FIXME: file list should better be fetched from server
         $fwe8->{files} = ['firmware/esp8266/blank.bin',
                           'firmware/esp8266/eagle.flash.bin',
@@ -404,7 +403,8 @@ sub fw_get_and_write_flash($$;$$) {
 }
 
 sub fw_get($$;$) {
-    return fw_get_and_write_flash(shift, shift, undef, shift);
+    my ($hash, $fw, $uri) = @_;
+    return fw_get_and_write_flash($hash, $fw, undef, $uri);
 }
 =pod
 
@@ -601,6 +601,8 @@ sub X_Set($$@) {
             fw_get($hash, $firmware->{$cmd}, $firmware->{$cmd}{uri_beta});
         } elsif ($a1 eq 'upgrade') {
             fw_get_and_write_flash($hash, $firmware->{$cmd}, 1);
+        } elsif ($a1 eq 'upgrade-beta-version') {
+            fw_get_and_write_flash($hash, $firmware->{$cmd}, 1, $firmware->{$cmd}{uri_beta});
         } elsif ($a1 eq 'write-flash') {
             fw_write_flash($hash, $firmware->{$cmd});
         } elsif ($a1 eq 'xxx.erase-flash') {
