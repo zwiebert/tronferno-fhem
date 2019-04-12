@@ -78,6 +78,9 @@ my $mco = {
     MCFG_MQTT_USER => 'mqtt-user',
     MCFG_MQTT_URL => 'mqtt-url',
     MCFG_MQTT_ENABLE => 'mqtt-enable',
+    MCFG_HTTP_PASSWORD => 'http-password',
+    MCFG_HTTP_USER => 'http-user',
+    MCFG_HTTP_ENABLE => 'http-enable',
 };
 
 my $mcof = {};
@@ -92,8 +95,8 @@ while(my($k, $v) = each %$mco) {
         $usage .= " $vp:0,1,2,3,4,5";
     } elsif ($k eq 'MCFG_RESTART') {
         $usage .= " $vp:1";
-    } elsif ($k eq 'MCFG_MQTT_ENABLE') {
-        $usage .= " $vp:0,1";       
+    } elsif ($k =~ /_ENABLE$/) {
+        $usage .= " $vp:0,1";
     } else {
         $usage .= " $vp";
     }
@@ -101,18 +104,18 @@ while(my($k, $v) = each %$mco) {
 
 sub devio_open_device($) {
     my ($hash) = @_;
-    my $dn = $hash->{DeviceName} // 'undef'; 
+    my $dn = $hash->{DeviceName} // 'undef';
     # open connection with custom init and error callback function (non-blocking connection establishment)
     main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_open_device() for ($dn)");
-    return main::DevIo_OpenDev($hash, 0, "TronfernoMCU::X_Init", "TronfernoMCU::X_Callback"); 
+    return main::DevIo_OpenDev($hash, 0, "TronfernoMCU::X_Init", "TronfernoMCU::X_Callback");
 }
 
 sub devio_close_device($) {
     my ($hash) = @_;
-    my $dn = $hash->{DeviceName} // 'undef'; 
+    my $dn = $hash->{DeviceName} // 'undef';
     # close connection if maybe open (on definition modify)
-    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_close_device() for ($dn)"); 
-    return main::DevIo_CloseDev($hash); # if(main::DevIo_IsOpen($hash));  
+    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_close_device() for ($dn)");
+    return main::DevIo_CloseDev($hash); # if(main::DevIo_IsOpen($hash));
 }
 
 sub devio_get_serial_device_name($) {
@@ -130,12 +133,12 @@ sub X_Define($$)
     my @a = split("[ \t]+", $def);
 
     my $name = $a[0];
-    
+
     # $a[1] is always equals the module name "MY_MODULE"
-    
+
     # first argument is the hostname or IP address of the device (e.g. "192.168.1.120")
     my $dev = $a[2];
-    
+
     $dev = $def_mcuaddr unless($dev); # FIXME: remove this line
 
     return "no device given" unless($dev);
@@ -148,26 +151,26 @@ sub X_Define($$)
         #TCP/IP connection
         $dev .= ":$mcu_port" if(index($dev, ':') < 0);
     }
-    
+
     # first close connection if maybe open (on definition modify)
     devio_close_device($hash);
     # now change old device name to new one
     $hash->{DeviceName} = $dev;
     # open connection with custom init and error callback function (non-blocking connection establishment)
     devio_open_device($hash);
-    
+
     return undef;
 }
 
-# called when definition is undefined 
+# called when definition is undefined
 # (config reload, shutdown or delete of definition)
 sub X_Undef($$)
 {
     my ($hash, $name) = @_;
-    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu X_Undef()"); 
-    # close the connection 
+    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu X_Undef()");
+    # close the connection
     devio_close_device($hash);
-    
+
     return undef;
 }
 
@@ -176,7 +179,7 @@ sub X_Ready($)
 {
     my ($hash) = @_;
 
-    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu X_Ready()"); 
+    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu X_Ready()");
     # try to reopen the connection in case the connection is lost
     return devio_open_device($hash);
 }
@@ -194,9 +197,9 @@ sub X_Read($$)
     return if(!defined($data));
 
     my $buf = $hash->{PARTIAL} . $data;
-    
+
     main::Log3 ($name, 5, "TronfernoMCU ($name) - received data: >>>$data<<<");
-    
+
     my $remain = '';
     foreach my $line (split(/^/m, $buf)) {
         if (index($line, "\n") < 0) {
@@ -210,17 +213,17 @@ sub X_Read($$)
 
         if ($line =~ /^(U:position:\s*.+);$/) {
             my $msg =  "TFMCU#$1";
-            main::Log3 ($name, 4, "$name: dispatch: $msg"); 
+            main::Log3 ($name, 4, "$name: dispatch: $msg");
             main::Dispatch($hash, $msg);
 
         } elsif ($line =~ /^([Cc]:.*);$/) {
             my $msg =  "TFMCU#$1";
-            main::Log3 ($name, 4, "$name: dispatch: $msg"); 
+            main::Log3 ($name, 4, "$name: dispatch: $msg");
             main::Dispatch($hash, $msg);
 
         } elsif ($line =~ /^tf:.* timer: (.*);$/) {
             my $msg = "TFMCU#timer $1";
-            main::Log3 ($name, 4, "$name: dispatch: $msg"); 
+            main::Log3 ($name, 4, "$name: dispatch: $msg");
             main::Dispatch($hash, $msg);
 
         } elsif ($line =~ /^tf:.* config: (.*);$/) {
@@ -274,7 +277,7 @@ my $firmware;
 {
     my $fw = {};
     $firmware = $fw;
-    
+
     {
         my $fwe = {};
         $fw->{'mcu-firmware.esp32'} = $fwe;
@@ -324,7 +327,7 @@ sub cb_fw_get_next_file($$$) {
     my $hash = $param->{hash};
     my $name = $hash->{NAME};
     my $fwg =  $hash->{helper}{fw_get};
-    
+
     if (!$err && open (my $fh, '>', $fwg->{dst_file})) {
         # save file
         binmode($fh);
@@ -355,13 +358,13 @@ sub fw_get_next_file($) {
 
     my $file = $$files[$idx];
     my $param = $fwg->{http_param};
-    my $base_dir =  $fwg->{dst_base}; 
-    
+    my $base_dir =  $fwg->{dst_base};
+
     # create destination directory
     my $dst_dir = $base_dir . File::Basename::dirname($file); # compose dir path
     File::Path::make_path($dst_dir, {mode => 0755}); # create dir
 
-   
+
     $fwg->{dst_file} = "$base_dir$file";
     $param->{url} = $fwg->{uri} . $file;
 
@@ -389,9 +392,9 @@ sub fw_get_and_write_flash($$;$$) {
         $fwg->{write_func} = \&fw_write_flash;
         $fwg->{write_args} = [$hash, $fw];
     }
-    
+
     $fwg->{http_param} = {
-        timeout    => 5, 
+        timeout    => 5,
         hash       => $hash,
         method     => "GET",
         header     => "User-Agent: TeleHeater/2.2.3\r\nAccept: application/octet-stream",
@@ -459,7 +462,7 @@ sub file_slurp($$) {
 sub file_read_last_line($) {
     my $last_line = '';
     if (open (my $f, '<', shift)) {
-        $last_line = $_ while <$f>; 
+        $last_line = $_ while <$f>;
         close($f);
     }
     chomp($last_line);
@@ -489,16 +492,16 @@ sub cb_async_system_cmd($) {
     my $timeout = 45; #FIXME: literal
     my $cl = $hash->{helper}{sys_cmd}{cl};
     my $logstr = "";
- 
+
 
     if (-e $hash->{helper}{sys_cmd}{status_file}) {
         my $failed = !sys_cmd_get_success($hash);
         my $result = $failed ? 'error' : 'done';
-    
+
         main::readingsSingleUpdate($hash, $id, "$result", 1);
         file_slurp($hash->{helper}{sys_cmd}{log}, \$logstr) if $failed;
         $hash->{"$id.log"} = substr($logstr, 0, 300) if $failed;
-       
+
         if ($id  eq 'fw_get') {
             main::asyncOutput($cl, "firmware download command failed:\n\n" . $logstr) if ($cl && $failed);
         } elsif ($id eq $FW_WRT_ID) {
@@ -520,7 +523,7 @@ sub cb_async_system_cmd($) {
 }
 sub run_system_cmd($$$$$$) {
     my ($hash, $tgtdir, $log, $sc, $id, $close_device) = @_;
-    my $status_file = "$tgtdir$done_file"; 
+    my $status_file = "$tgtdir$done_file";
     my $command = "(cd $tgtdir && $sc; $cmd_status) 1>$log 2>&1 &";
 
     devio_close_device($hash) if $close_device;
@@ -548,7 +551,7 @@ sub fw_write_flash($$) {
     my $ser_dev = devio_get_serial_device_name($hash);
     my $id = $FW_WRT_ID;
     my $client_hash = $hash->{CL};
-    
+
     unless ($ser_dev) {
         main::asyncOutput($client_hash, "write_flash failed: MCU needs do be connected via a serial device)")
             if ($client_hash && $client_hash->{canAsyncOutput});
@@ -560,7 +563,7 @@ sub fw_write_flash($$) {
         main::readingsSingleUpdate($hash, $id, 'error', 1);
         return "internal_error: no system command"  ;
     }
-    
+
     my $sc = sprintf($fw->{write_flash_cmd}, $ser_dev);
     run_system_cmd($hash, $tgtdir, $log, $sc, $id, 1);
 
@@ -574,7 +577,7 @@ sub fw_erase_flash($$) {
     my $ser_dev = devio_get_serial_device_name($hash);
     return unless $ser_dev;
     return unless $fw->{erase_flash_cmd};
-    
+
     my $sc = sprintf($fw->{erase_flash_cmd}, $ser_dev);
     run_system_cmd($hash, $tgtdir, $log, $sc, $FW_ERA_ID, 1);
 }
@@ -588,11 +591,11 @@ sub X_Set($$@) {
 
     my $u = "unknown argument $cmd choose one of ";
     $u .= $usage;
-    
+
     if ($cmd eq '?') {
         return $u;
     } elsif($mcof->{$cmd}) {
-        mcu_config($hash, $mcof->{$cmd}, $a1) if defined($a1); 
+        mcu_config($hash, $mcof->{$cmd}, $a1) if defined($a1);
     } elsif($firmware->{$cmd}) {
         sys_cmd_rm_log_internals($hash);
         if ($a1 eq 'download') {
@@ -619,7 +622,7 @@ sub X_Set($$@) {
     } else {
         return $u;
     }
-    
+
     return undef;
 }
 
@@ -631,7 +634,7 @@ sub X_Init($)
     main::DevIo_SimpleWrite($hash, "send p=?;mcu version=full;config all=?;", 2);
     # get mcu config
    # mcu_read_all_config($hash);
-    return undef; 
+    return undef;
 }
 
 sub X_Callback($)
@@ -641,8 +644,8 @@ sub X_Callback($)
 
     # create a log emtry with the error message
     main::Log3 ($name, 5, "TronfernoMCU ($name) - error while connecting: $error") if ($error);
-    
-    return undef; 
+
+    return undef;
 }
 
 sub X_Write ($$)
@@ -694,7 +697,7 @@ sub TronfernoMCU_Initialize($) {
  <li>Can flash the MCU (ESP32 or ESP8266) using the respective SET command. (if conected to FHEM by USB)</i>
  <li>Can configure the MCU using SET commands</li>
  <li>Can connect to MCU by 1) USB or 2) WLAN.</li>
-</ul> 
+</ul>
 
 <p>
 <a name="TronfernoMCUset"></a>
@@ -753,14 +756,14 @@ sub TronfernoMCU_Initialize($) {
     Note: MCU will be restarted after setting this option</li>
 
   <a name="mcc.mqtt-enable"></a>
-  <li>mcc.mqtt-enable - enables/disables conection to MQTT server<br>
+  <li>mcc.mqtt-enable - enables/disables builtin MQTT client<br>
     <code>set tfmc mcc.mqtt-enable 1</code><br>
     <code>set tfmc mcc.mqtt-enable 0</code><br>
 <br>
     <code>attr MQTT2_tronferno42 setList cli tfmcu/cli $EVENT</code><br>
     <code>set MQTT2_tronferno42 cli send g=4 m=2 c=down</code><br>
 <br>
-    <small>MQTT support is still experimental.</small><br> 
+    <small>MQTT support is still experimental.</small><br>
     <small>Note: MQTT is only supportet on esp32 hardware (for now)</small><br>
     </li>
 
@@ -777,6 +780,25 @@ sub TronfernoMCU_Initialize($) {
   <a name="mcc.mqtt-password"></a>
   <li>mcc.mqtt-password - Password for MQTT server connection<br>
     <code>set tfmcu mcc.mqtt-password myPassword</code>
+    </li>
+
+  <a name="mcc.http-enable"></a>
+  <li>mcc.http-enable - enables/disables builtin HTTP server<br>
+    <code>set tfmc mcc.http-enable 1</code><br>
+    <code>set tfmc mcc.http-enable 0</code><br>
+<br>
+    <small>HTTP support is still experimental.</small><br>
+    <small>Note: HTTP is only supportet on esp32 hardware (for now)</small><br>
+    </li>
+
+  <a name="mcc.http-user"></a>
+  <li>mcc.http-user - set optional HTTP login user name<br>
+    <code>set tfmcu mcc.http-user myUserName</code>
+    </li>
+
+  <a name="mcc.http-password"></a>
+  <li>mcc.http-password - set optional HTTP login password<br>
+    <code>set tfmcu mcc.http-password myPassword</code>
     </li>
 
   <a name="mcu-firmware.esp32"></a>
@@ -865,4 +887,3 @@ sub TronfernoMCU_Initialize($) {
 # compile-command: "perl -cw -MO=Lint ./00_TronfernoMCU.pm"
 # eval: (my-buffer-local-set-key (kbd "C-c C-c") (lambda () (interactive) (shell-command "cd ../../.. && ./build.sh")))
 # End:
-
