@@ -238,7 +238,7 @@ sub X_Read($$)
                 my ($k, $v) = split('=', $kv);
                 $hash->{"mcu-$k"} = $v;
            }
-        } elsif ($line =~ /\s+wifistation:\s+got\s+ip:\s*([0-9.]*).*/) { #ESP32
+        } elsif ($line =~ /^tf:.* ipaddr:\s*([0-9.]*);$/) {
             main::readingsSingleUpdate($hash, 'mcu.ip4-address', $1, 1);
         }
     }
