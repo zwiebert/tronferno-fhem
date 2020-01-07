@@ -974,7 +974,7 @@ sub Fernotron_Initialize($) {
 <a name="Fernotron"></a>
 <h3>Fernotron</h3>
 
-<i>Fernotron</i> is a logic FHEM module to 1) control shutters and power plugs using Fernotron protocol and 2) use Fernotron controllers and sensors as general switches in FHEM.
+<i>Fernotron</i> is a logic FHEM module to 1) control shutters and power plugs using Fernotron protocol and 2) utilize Fernotron controllers and sensors as general switches in FHEM.
 
 <ul>
 <li>Required I/O device: <i>SIGNALduino</i></li>
@@ -1037,7 +1037,7 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 
 <h5>Three different methods to make messsages find their target Fernotron receiver</h5>
 <ol>
-  <li>Scan IDs of physical Fernotron controllers you own and copy their IDs in our FHEM output devices.  Use default Input device Fernotron_Scan to scan the ID first. Then use the ID to define your device. Here we have scanned the ID of our 2411 central resulting to 801234. Now define devices by using it
+  <li>Use IDs of existing Controllers you own. Scan IDs of physical Fernotron controllers you own and copy their IDs in our FHEM output devices.  Use default input device Fernotron_Scan to scan the ID first. Then use the ID to define your device. Here we have scanned the ID of our 2411 central resulting to 801234. Now define devices by using it
   </li>
 
   <li>Define Fernotron devices using invented IDs (like 100001, 100002, ...). Then pair these devices by sending a STOP command from it while the physical Fernotron receiver/motor is in pairing-mode (aka set-mode).
@@ -1154,6 +1154,7 @@ Die erzeugten Kommandos werden über <i>SIGNALduino</i> gesendet.
 <h4>Kopplung</h4>
 
 Jeder Kontroller hat eine ID-Nummer ab Werk fest einprogrammiert.
+
 Empfänger und Sender werden gekoppelt, indem sich der Empfänger die ID eines bzw. mehrerer Sender merkt (diese lernt).
 Jeder Empfänger kann sich je eine ID einer Zentraleinheit (inklusive Gruppe und Empfängernummer), eines Sonnensensors und mehrerer Handsender merken.
 
@@ -1179,7 +1180,7 @@ Dies wird durch die verwendete ID und Gruppen und Empfängernummer bestimmt.
   MN : Empfängernummer (1-) oder 0 (default) für alle Empfänger<br>
                         
 <p>
-  'g' und 'n' sind nur sinnvoll, wenn als ID eine Zentraleinheit angegeben wurde 
+  'g' und 'n' sind nur sinnvoll, wenn als ID eine Zentraleinheit angegeben wurde.
 
 
 <h5>Eingabe Geräte</h5>
@@ -1217,7 +1218,7 @@ Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann
 <h4>Verschiedene Methoden der Adressierung</h4>
 
 <ol>
-  <li> Die IDs vorhandener Sende-Geräte (oder einfach nur die ID der Zentrale 2411) einscannen und dann benutzen.
+  <li> Die IDs vorhandener Sende-Geräte einscannen und dann benutzen.
     Beispiel: Die ID der 2411 benutzen um dann über Gruppen und Empfängernummern die Rolläden anzusprechen.</li>
 
   <li> Ausgedachte Handsender IDs mit Motoren zu koppeln.
@@ -1256,7 +1257,8 @@ Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann
 <h5>Addressierung und Pairing</h5>
 <ol>
   <li><ul>
-      <li>scanne die ID der 2411: Den Stop Taster der 2411 einige Sekunden drücken. Im automatisch erzeugten Default-Eingabegerät "Fernotron_Scan" steht die ID unter Internals:received_HR.</li>
+      <li>Die ID der 2411 befindet sich auf einem Aufkleber im Batteriefach (sechstellige ID in der Form 80xxxx.</li>
+      <li>Ohne ID-Aufkleber: scanne die ID der 2411: Den Stop Taster der 2411 einige Sekunden drücken. Im automatisch erzeugten Default-Eingabegerät "Fernotron_Scan" steht die ID unter Internals:received_HR.</li>
       <li><code>define myShutter_42 Fernotron a=80abcd g=4 m=2</code></li>
   </ul></li>
 

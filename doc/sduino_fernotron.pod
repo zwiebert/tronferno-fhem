@@ -3,7 +3,7 @@
 <a name="Fernotron"></a>
 <h3>Fernotron</h3>
 
-<i>Fernotron</i> is a logic FHEM module to 1) control shutters and power plugs using Fernotron protocol and 2) use Fernotron controllers and sensors as general switches in FHEM.
+<i>Fernotron</i> is a logic FHEM module to 1) control shutters and power plugs using Fernotron protocol and 2) utilize Fernotron controllers and sensors as general switches in FHEM.
 
 <ul>
 <li>Required I/O device: <i>SIGNALduino</i></li>
@@ -66,7 +66,7 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 
 <h5>Three different methods to make messsages find their target Fernotron receiver</h5>
 <ol>
-  <li>Scan IDs of physical Fernotron controllers you own and copy their IDs in our FHEM output devices.  Use default Input device Fernotron_Scan to scan the ID first. Then use the ID to define your device. Here we have scanned the ID of our 2411 central resulting to 801234. Now define devices by using it
+  <li>Use IDs of existing Controllers you own. Scan IDs of physical Fernotron controllers you own and copy their IDs in our FHEM output devices.  Use default input device Fernotron_Scan to scan the ID first. Then use the ID to define your device. Here we have scanned the ID of our 2411 central resulting to 801234. Now define devices by using it
   </li>
 
   <li>Define Fernotron devices using invented IDs (like 100001, 100002, ...). Then pair these devices by sending a STOP command from it while the physical Fernotron receiver/motor is in pairing-mode (aka set-mode).

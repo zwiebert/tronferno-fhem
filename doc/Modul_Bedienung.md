@@ -26,7 +26,7 @@ Ein Gerät kann einen einzige Rolladen aber  auch eine ganze Gruppe ansprechen. 
 Verschiedene Methoden der Adressierung
 --------------------------------------
 
-1) Virtuelle Controller mit IDs vorhandener Sende-Geräte. Bietet sich an um die Zentrale (2411) zu simulieren und die vorhandenen Gruppen und Empfängernummern zu nutzen. Es muss nur die ID der Zentrale eingescannt werden.  Scannen mit (define scanFerno Fernotron scan) und dann unter Internals.receive_HR die ID (a=xxxxxx) ablesen. (Scannen ist unzuverlässig, da das SIGNALduino das Checksum-Byte meistens nicht mit empfängt. Also mehrfach probieren)
+1) Virtuelle Controller mit IDs vorhandener Sende-Geräte. Bietet sich an um die Zentrale (2411) zu simulieren und die vorhandenen Gruppen und Empfängernummern zu nutzen. Es muss nur die ID der Zentrale eingescannt oder vom Etikett im Batteriefach abgelesen werden.  Scannen mit (define scanFerno Fernotron scan) und dann unter Internals.receive_HR die ID (a=xxxxxx) ablesen. (Scannen ist unzuverlässig, da das SIGNALduino das Checksum-Byte meistens nicht mit empfängt. Also mehrfach probieren)
 
 2) Virtuelle Controller anlegen. Die ID denkt man sich selber aus. Bietet sich an um virtuelle einfach Handsender (2431) zu erzeugen (ID: 10xxxx) um diese dann mit je einem Motoren zu koppeln. Ist wohl die technisch sauberste Lösung. Man hat dann keine virtuellen Doubles vorhandener Geräte, sondern Geräte die einem zugekauftem Controller entsprechen.
 
