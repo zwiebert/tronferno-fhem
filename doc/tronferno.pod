@@ -25,7 +25,7 @@ Each output device may control a single shutter, or a group of shutters dependin
     define <my_shutter> Tronferno [a=ID] [g=GN] [m=MN]<br>
   </code>
 
-<p> 
+<p>
   ID : the device ID.  A six digit hexadecimal number. 10xxxx=plain controller, 20xxxx=sun sensor, 80xxxx=central controller unit, 90xxxx=receiver. 0 (default) for using the default central unit of Tronferno-MCU<br>
   GN : group number (1-7) or 0 (default) for all groups<br>
   MN : member number  (1-7) or  0 (default) for all group members<br>
@@ -142,7 +142,7 @@ Each output device may control a single shutter, or a group of shutters dependin
       <li><code>set NAME astro "-10"</code> down at 10 minutes before civil dusk</li>
       <li><code>set NAME astro 10</code> down at 10 minutes after civil dusk</li>
     </ul>
-</li> 
+</li>
 
   <a name=xxx_pair></a>
   <li>xxx_pair - Lets MCU pair the next received sender to this shutter (Paired senders will influence the shutter position)</li>

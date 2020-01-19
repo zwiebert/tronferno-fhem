@@ -45,7 +45,7 @@ sub X_Define($$) {
     my $address = $a[1];
     my $defptr  = $main::modules{+MODNAME}{defptr};
     my $is_iDev = 0;
-    
+
     my ($a, $g, $m, $iodev, $mcu_addr) = (0, 0, 0, undef, $def_mcuaddr);
     my $u = 'wrong syntax: define <name> Tronferno a=ID [g=N] [m=N]';
     my $scan = 0;
@@ -54,7 +54,7 @@ sub X_Define($$) {
     $defptr->{oDevs} = {} unless $defptr->{oDevs};
     $defptr->{iDevs} = {} unless $defptr->{iDevs};
     $defptr->{aDevs} = {} unless $defptr->{aDevs};
-    
+
     return $u if ($#a < 2);
 
     shift(@a);
@@ -106,7 +106,7 @@ sub X_Define($$) {
         delete ($defptr->{iDevs}{"$hash"});
         $defptr->{oDevs}{"$hash"} = $hash;
     }
-    
+
     return undef;
 }
 
@@ -133,7 +133,7 @@ sub transmit_by_socket($$) {
     my $socket = IO::Socket::INET->new(
         Proto    => 'tcp',
         PeerPort => 7777,
-        PeerAddr => main::AttrVal($name, 'mcuaddr', $hash->{helper}{mcu_addr}),  
+        PeerAddr => main::AttrVal($name, 'mcuaddr', $hash->{helper}{mcu_addr}),
         ) or return "\"no socket\"";
 
     $socket->autoflush(1);
@@ -158,11 +158,11 @@ sub transmit($$) {
         #no I/O device seems to be defined. send directly via TCP socket
         return transmit_by_socket ($hash, $req);
     }
-    
+
     return undef;
 }
 
-sub build_cmd($$$) {
+sub build_cmd_cli($$$) {
     my ($hash, $cmd, $c) = @_;
     my $name = $hash->{NAME};
 
@@ -170,16 +170,41 @@ sub build_cmd($$$) {
     my $g   = $hash->{helper}{ferid_g};
     my $m   = $hash->{helper}{ferid_m};
     my $r   = int(main::AttrVal($name, 'repeats', '1'));
-    
+
     my $msg = "$cmd a=$a g=$g m=$m c=$c r=$r mid=82;";
     main::Log3($hash, 3, "$name:command: $msg");
     return $msg;
 }
 
+sub build_cmd_json($$$) {
+    my ($hash, $cmd, $c) = @_;
+    my $name = $hash->{NAME};
+
+    my $a   = ($cmd eq 'pair') ? '"?"' : $hash->{helper}{ferid_a};
+    my $g   = $hash->{helper}{ferid_g};
+    my $m   = $hash->{helper}{ferid_m};
+    my $r   = int(main::AttrVal($name, 'repeats', '1'));
+
+    my $msg = "{\"to\":\"tfmcu\",\"$cmd\":{\"a\":$a,\"g\":$g,\"m\":$m,\"c\":\"$c\",\"r\":$r,\"mid\":82}};";
+    main::Log3($hash, 3, "$name:command: $msg");
+    return $msg;
+}
+
+sub build_cmd($$$) {
+    my ($hash, $cmd, $c) = @_;
+    my $mcu_chip = $hash->{IODev}->{'mcu-chip'};
+    print "test: $mcu_chip\n";
+    if ($mcu_chip && $mcu_chip eq 'esp32') {
+        build_cmd_json($hash, $cmd, $c);
+    } else {
+        build_cmd_cli($hash, $cmd, $c);
+    }
+}
+
 sub build_timer($$) {
     my ($hash, $opts) = @_;
     my $name = $hash->{NAME};
-    
+
     my $a   = $hash->{helper}{ferid_a};
     my $g   = $hash->{helper}{ferid_g};
     my $m   = $hash->{helper}{ferid_m};
@@ -248,7 +273,7 @@ sub X_Set($$@) {
         } else {
             return "unsupported input type: $inputType";
         }
-        return undef;    
+        return undef;
     }
 
     #handle output devices here
@@ -426,17 +451,17 @@ sub defaultInputMakeReading($$$$$$) {
 
     my $kind = $fdt;
     $a = sprintf("%06x", $a);
-    
+
     return undef unless $kind;
-    
+
     my $gm = $kind eq FDT_CENTRAL ? " g=$g m=$m" : '';
-    
+
     ### combine parts and update reading
     my $human_readable = "$kind a=$a$gm c=$c";
     my $state = "$kind:$a" . ($kind eq FDT_CENTRAL ? "-$g-$m" : '')  . ":$c";
     $state =~ tr/ /:/; # don't want spaces in reading
     my $do_trigger =  !($kind eq FDT_RECV || $kind eq 'unknown'); # unknown and receiver should not trigger events
-    
+
     $hash->{received_HR} = $human_readable;
     main::readingsSingleUpdate($hash, 'state',  $state, $do_trigger);
     return 1;
@@ -491,8 +516,8 @@ sub parse_timer {
         weekly => 'off',
         astro => 'off',
     };
- 
-    
+
+
     foreach my $arg (split(/\s+/, $data)) {
         my ($key, $value) = split('=', $arg);
 
@@ -523,12 +548,12 @@ sub parse_timer {
 #       $timer->{'weekly'} = index($flags, 'W') >= 0 ? 'on' : 'off';
 #       $timer->{'astro'} = index($flags, 'A') >= 0 ? 'on' : 'off';
     }
-    
+
     main::Log3($io_hash, 4, "Tronferno: a=$a, g=$g, m=$m");
-    
+
 
     my $hash = undef;
-    
+
     foreach my $h (values %{$defptr->{oDevs}}) {
         if ($h->{helper}{ferid_g} eq "$g"
             && $h->{helper}{ferid_m} eq "$m") {
@@ -542,7 +567,7 @@ sub parse_timer {
             main::readingsEndUpdate($hash, 1);
         }
     }
-    
+
     return $hash->{NAME}
 }
 
@@ -632,7 +657,7 @@ Each output device may control a single shutter, or a group of shutters dependin
     define <my_shutter> Tronferno [a=ID] [g=GN] [m=MN]<br>
   </code>
 
-<p> 
+<p>
   ID : the device ID.  A six digit hexadecimal number. 10xxxx=plain controller, 20xxxx=sun sensor, 80xxxx=central controller unit, 90xxxx=receiver. 0 (default) for using the default central unit of Tronferno-MCU<br>
   GN : group number (1-7) or 0 (default) for all groups<br>
   MN : member number  (1-7) or  0 (default) for all group members<br>
@@ -749,7 +774,7 @@ Each output device may control a single shutter, or a group of shutters dependin
       <li><code>set NAME astro "-10"</code> down at 10 minutes before civil dusk</li>
       <li><code>set NAME astro 10</code> down at 10 minutes after civil dusk</li>
     </ul>
-</li> 
+</li>
 
   <a name=xxx_pair></a>
   <li>xxx_pair - Lets MCU pair the next received sender to this shutter (Paired senders will influence the shutter position)</li>

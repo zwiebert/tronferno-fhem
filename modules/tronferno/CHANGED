@@ -2,8 +2,10 @@
 # Add changes at the top of the list. Keep it in ASCII, and 80-char wide.
 # Do not insert empty lines here, update check depends on it.
 ################################################################################
+- 2020-01-19
+  -change:  10_Tronferno: send MCU commands in JSON if mcu_chip is esp32
 - 2020-01-06
-  -change   00_TronfernoMCU: regex for mcu.ip4addr modified 
+  -change   00_TronfernoMCU: regex for mcu.ip4addr modified
 - 2019-04-12
   -feature  00_TronfernoMCU: new set: mcc.http-*
 - 2019-04-01
