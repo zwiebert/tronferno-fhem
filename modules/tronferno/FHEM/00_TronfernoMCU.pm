@@ -719,7 +719,7 @@ sub TronfernoMCU_Initialize($) {
 
   <a name="mcc.longitude"></a>
   <li>mcc.longitude<br>
-   geographical coordinates are used to calculate civil dusk for astro-timer (decimal degree, e.g. 13,4)</li>
+   geographical coordinates are used to calculate civil dusk for astro-timer (decimal degree, e.g. 13.4)</li>
 
   <a name="mcc.restart"></a>
   <li>mcc.restart<br>
