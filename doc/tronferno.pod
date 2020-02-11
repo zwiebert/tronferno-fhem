@@ -91,7 +91,10 @@ Each output device may control a single shutter, or a group of shutters dependin
   <li>sun-inst - set the current position as sun position</li>
 
   <a name=position></a>
-  <li>position - set position to 0 (down), 50 (sun-down), 100 (up), 99 (stop). (used  by alexa)</li>
+  <li>position - set position in percent. 0 is down/closed. 100 is up/open.  (for alexa: 1% is stop, 2% is sun-down)</li>
+
+  <a name=pct></a>
+  <li>pct - set position in percent. 0 is down/closed. 100 is up/open.  (for alexa: 1% is stop, 2% is sun-down)</li>
 
   <a name=sun-auto></a>
   <li>sun-auto - switch on/off sun-sensor commands of a Fernotron device. (if off, it ignores command sun-down)</li>

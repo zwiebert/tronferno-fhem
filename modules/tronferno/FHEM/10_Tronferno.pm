@@ -170,8 +170,9 @@ sub build_cmd_cli($$$) {
     my $g   = $hash->{helper}{ferid_g};
     my $m   = $hash->{helper}{ferid_m};
     my $r   = int(main::AttrVal($name, 'repeats', '1'));
+    my $x   =  ($c =~ /^[0-9]+$/) ? 'p' : 'c';
 
-    my $msg = "$cmd a=$a g=$g m=$m c=$c r=$r mid=82;";
+    my $msg = "$cmd a=$a g=$g m=$m $x=$c r=$r mid=82;";
     main::Log3($hash, 3, "$name:command: $msg");
     return $msg;
 }
@@ -184,8 +185,10 @@ sub build_cmd_json($$$) {
     my $g   = $hash->{helper}{ferid_g};
     my $m   = $hash->{helper}{ferid_m};
     my $r   = int(main::AttrVal($name, 'repeats', '1'));
+    my $x   =  ($c =~ /^[0-9]+$/) ? 'p' : 'c';
 
-    my $msg = "{\"to\":\"tfmcu\",\"$cmd\":{\"a\":$a,\"g\":$g,\"m\":$m,\"c\":\"$c\",\"r\":$r,\"mid\":82}};";
+
+    my $msg = "{\"to\":\"tfmcu\",\"$cmd\":{\"a\":$a,\"g\":$g,\"m\":$m,\"$x\":\"$c\",\"r\":$r,\"mid\":82}};";
     main::Log3($hash, 3, "$name:command: $msg");
     return $msg;
 }
@@ -283,7 +286,8 @@ sub X_Set($$@) {
             $res .= " $key:noArg";
         }
         return $res
-            . ' position:slider,0,50,100'
+            . ' position:slider,0,5,100'
+            . ' pct:slider,0,5,100'
             . ' manual:on,off'
             . ' sun-auto:on,off'
             . ' random:on,off'
@@ -299,15 +303,14 @@ sub X_Set($$@) {
         my $req = build_cmd($hash, 'pair', $map_pair_cmds->{$cmd});
         my $res = transmit($hash, $req);
         return $res if ($res);
-    } elsif ($cmd eq 'position') {
+    } elsif ($cmd eq 'position' || $cmd eq 'pct') {
         return "\"set $name $cmd\" needs one argument" unless (defined($a1));
         my $percent = $a1;
-        my $c = 'up';
-        if ($percent eq '0') {
-            $c = 'down';
-        } elsif ($percent eq '50') {
+        my $c = $percent;
+        #use some special percent number as commands (for alexa)
+        if ($percent eq '2') {
             $c = 'sun-down';
-        } elsif ($percent eq '99') {
+        } elsif ($percent eq '1') {
             $c = 'stop';
         }
         my $req = build_cmd($hash, 'send', $c);
@@ -577,7 +580,7 @@ sub X_Parse {
     my $name = $io_hash->{NAME};
     my $result = undef;
 
-    if ($message =~ /^TFMCU#U:position:\s*(.+)$/) {
+    if ($message =~ /^TFMCU#[AU]:position:\s*(.+)$/) {
         return parse_position($io_hash, $1);
     } elsif ($message =~ /^TFMCU#[Cc]:(.+)$/) {
         return parse_c($io_hash, $1);
@@ -723,7 +726,10 @@ Each output device may control a single shutter, or a group of shutters dependin
   <li>sun-inst - set the current position as sun position</li>
 
   <a name=position></a>
-  <li>position - set position to 0 (down), 50 (sun-down), 100 (up), 99 (stop). (used  by alexa)</li>
+  <li>position - set position in percent. 0 is down/closed. 100 is up/open.  (for alexa: 1% is stop, 2% is sun-down)</li>
+
+  <a name=pct></a>
+  <li>pct - set position in percent. 0 is down/closed. 100 is up/open.  (for alexa: 1% is stop, 2% is sun-down)</li>
 
   <a name=sun-auto></a>
   <li>sun-auto - switch on/off sun-sensor commands of a Fernotron device. (if off, it ignores command sun-down)</li>

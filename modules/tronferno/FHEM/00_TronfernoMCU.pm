@@ -211,7 +211,7 @@ sub X_Read($$)
 
         main::Log3 ($name, 4, "TronfernoMCU ($name) - received line: >>>>>$line<<<<<");
 
-        if ($line =~ /^(U:position:\s*.+);$/) {
+        if ($line =~ /^([AU]:position:\s*.+);$/) {
             my $msg =  "TFMCU#$1";
             main::Log3 ($name, 4, "$name: dispatch: $msg");
             main::Dispatch($hash, $msg);
