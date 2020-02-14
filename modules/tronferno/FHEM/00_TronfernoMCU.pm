@@ -287,6 +287,7 @@ my $firmware;
         $fwe->{files} = ['firmware/esp32/tronferno-mcu.bin',
                          'firmware/esp32/bootloader.bin',
                          'firmware/esp32/partitions.bin',
+                         'firmware/esp32/ota_data_initial.bin',
                          'tools/esptool.py',
                          'flash_esp32.sh'];
         $fwe->{tgtdir} = '/tmp/TronfernoMCU/';
