@@ -684,9 +684,10 @@ sub TronfernoMCU_Initialize($) {
 1;
 
 =pod
+=encoding utf-8
 =item device
 =item summary I/O device which communicates with Tronferno-MCU
-=item summary_DE E/A Ger�t welches mit Tronferno-MCU kommuniziert
+=item summary_DE E/A Gerät welches mit Tronferno-MCU kommuniziert
 
 =begin html
 
@@ -705,7 +706,7 @@ sub TronfernoMCU_Initialize($) {
 
 <p>
 <a name="TronfernoMCUset"></a>
-<h4>SET</h4>
+<h4>Set</h4>
 <ul>
 
   <a name="mcc.baud"></a>
@@ -733,17 +734,9 @@ sub TronfernoMCU_Initialize($) {
   <li>mcc.rtc<br>
     Set MCU's internal real time clock by ISO date/time string (e.g. 1999-12-31T23:59:00). If possible, the MCU will use NTP instead.</li>
 
-  <a name="mcc.rtc"></a>
-  <li>mcc.rtc<br>
-    Set MCU's internal real time clock by ISO date/time string (e.g. 1999-12-31T23:59:00). If possible, the MCU will use NTP instead.</li>
-
   <a name="mcc.tz"></a>
   <li>mcc.tz<br>
     Time-zone in POSIX (TZ) format</li>
-
-  <a name="mcc.rtc"></a>
-  <li>mcc.rtc<br>
-    </li>
 
   <a name="mcc.verbose"></a>
   <li>mcc.verbose<br>
@@ -752,10 +745,13 @@ sub TronfernoMCU_Initialize($) {
   <a name="mcc.network"></a>
   <li>mcc.network<br>
     Network to connect: none, ap, wlan, lan<br>
-     ap: Create Wlan accesspoint<br>
-     wlan: connect to existing WLAN<br>
-     lan: Ethernet<br>
-     Note: MCU will be restarted after setting this option</li>
+<ul>
+     <li>none: no networking</li>
+     <li>ap: create WLAN accesspoint</li>
+     <li>wlan: connect to existing WLAN</li>
+     <li>lan: connect to Router via Ethernet</li>
+     <li>Note: MCU will be restarted after setting this option</li>
+</ul></li>
 
   <a name="mcc.wlan-password"></a>
   <li>mcc.wlan-passord<br>
@@ -894,6 +890,202 @@ sub TronfernoMCU_Initialize($) {
 <p>
 
 =end html
+
+=begin html_DE
+
+<a name="TronfernoMCU"></a>
+<h3>TronfernoMCU</h3>
+
+
+<p><i>TronfernoMCU</i> ist ein physiches FHEM Gerät zum steuern von Fernotron-Empfängern und Empfang von Fernotrn Sendern.
+<ul>
+ <li>Erzeugt das IODev benögit von den logischen Tronferno FHEM Geräten</li>
+ <li>MCU/RF-hardware/firmware: <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a></li>
+ <li>Kann die Firmware flashen für den Mikrocontroller (ESP32 or ESP8266) mit den jeweiligen SET Kommandos. (wenn über USB verbunden mit FHEM Server)</i>
+ <li>Kann Mikrocontroller konfigurieren mit SET Kommandos</li>
+ <li>Kann sich über Netzwerk oder USB mit dem Mikrocontroller verbinden.</li>
+</ul>
+
+<p>
+<a name="TronfernoMCUset"></a>
+<h4>Set</h4>
+<ul>
+
+  <a name="mcc.cu"></a>
+  <li>mcc.cu<br>
+   Programmierzentralen-ID (sechstellige HEX Nummer im Batteriefach der 2411 Zentrale)</li>
+
+  <a name="mcc.latitude"></a>
+  <li>mcc.latitude<br>
+   Breitengrad zum Berechnen der Dämmerung (Dezimal-Grad. z.B. 52.5)</li>
+
+  <a name="mcc.longitude"></a>
+  <li>mcc.longitude<br>
+   Längengrad zum Berechnen der Dämmerung (Dezimal-Grad. z.B. 13.4)</li>
+
+  <a name="mcc.restart"></a>
+  <li>mcc.restart<br>
+    Neustart des Controllers.</li>
+
+  <a name="mcc.rtc"></a>
+  <li>mcc.rtc<br>
+    Setzen der Uhrzeit des Controllers mittels ISO date/time (z.B. 2018-12-31T23:59:00), falls kein NTP möglich ist.</li>
+
+  <a name="mcc.tz"></a>
+  <li>mcc.tz<br>
+    Time-zone im POSIX (TZ) Format</li>
+
+  <a name="mcc.verbose"></a>
+  <li>mcc.verbose<br>
+    Umfang der Diagnose Ausgaben des Controllers (0 .. 5)</li>
+
+  <a name="mcc.network"></a>
+  <li>mcc.network<br>
+    Netzwerk zum Verbinden des Controllers: none, ap, wlan, lan<br>
+<ul>
+     <li>none: No networking</li>
+     <li>ap:  Wlan Zugangspunkt erzeugen (für Erstkonfiguration)</li>
+     <li>wlan: Verbinde mit vorhandenem WLAN</li>
+     <li>lan: Verbinde mit Router über Ethernet</li>
+     <li>Hinweis: MC wird neugestartet nach setzen einer dieser Optionen</li>
+</ul></li>
+  <a name="mcc.wlan-password"></a>
+  <li>mcc.wlan-passord<br>
+    Passwort zum Verbinen mit bestehendem WLAN Netz<br>
+   Hinweis: MC wird neugestartet nach setzen dieser Option</li>
+
+
+  <a name="mcc.wlan-ssid"></a>
+  <li>mcc.wlan-ssid<br>
+    SSID es bestehenden WLAN Netzes<br>
+    Hinweis: MC wird neugestartet nach setzen dieser Option</li>
+
+
+  <a name="mcc.mqtt-enable"></a>
+  <li>mcc.mqtt-enable - aktiviere MQTT Klient des MCs<br>
+    <code>set tfmc mcc.mqtt-enable 1</code><br>
+    <code>set tfmc mcc.mqtt-enable 0</code><br>
+<br>
+    <code>attr MQTT2_tronferno42 setList cli tfmcu/cli $EVENT</code><br>
+    <code>set MQTT2_tronferno42 cli send g=4 m=2 c=down</code><br>
+<br>
+    <small>Hinweis: ESP32 und ESP8266</small><br>
+    </li>
+
+  <a name="mcc.mqtt-url"></a>
+  <li>mcc.mqtt-url - URL of MQTT server to connect<br>
+    <code>set tfmcu mcc.mqtt-url "mqtt://192.168.1.42:7777"</code>
+    </li>
+
+  <a name="mcc.mqtt-user"></a>
+  <li>mcc.mqtt-user - Username für Login beim MQTT server/broker<br>
+    <code>set tfmcu mcc.mqtt-user myUserName</code>
+    </li>
+
+  <a name="mcc.mqtt-password"></a>
+  <li>mcc.mqtt-password - Passwort für Login beim MQTT server/broker<br>
+    <code>set tfmcu mcc.mqtt-password myPassword</code>
+    </li>
+
+  <a name="mcc.http-enable"></a>
+  <li>mcc.http-enable - aktiviert den Webserver des MCs (Browseroberfläche)<br>
+    <code>set tfmc mcc.http-enable 1</code><br>
+    <code>set tfmc mcc.http-enable 0</code><br>
+<br>
+    <small>Hinweis: Nur ESP32</small><br>
+    </li>
+
+  <a name="mcc.http-user"></a>
+  <li>mcc.http-user - Optionaler Webserver Benutzername zur Authentifizierung<br>
+    <code>set tfmcu mcc.http-user myUserName</code>
+    </li>
+
+  <a name="mcc.http-password"></a>
+  <li>mcc.http-password -  Optionales Webserver Benutzerpasswort zur Authentifizierung<br>
+    <code>set tfmcu mcc.http-password myPassword</code>
+    </li>
+
+  <a name="mcu-firmware.esp32"></a>
+  <li>mcu-firmware.esp32<br>
+   Download der letzten MC firmware von GitHub(tronferno-mcu-bin) und Flashen
+    <ul>
+     <li>download<br>
+         Download Firmware und Flash-Programm.<br>
+         Dateien werden kopiert nach /tmp/TronfernoMCU<br>
+         Status ist sichtbar im Reading fw_get (run,done,error,timeout).</li>
+     <li>write-flash<br>
+         Flasht die Firmware über den USB Port definiert in diesem Gerät.<br>
+         Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
+         MCU: ESP32/4MB/WLAN angeschlossen über USB.<br>
+         Status ist sichtbar im Reading fw_write_flash (run,done,error,timeout).</li>
+     <li>upgrade<br>
+        Kombiniert download und flashen in einem Schritt.
+         </li>
+     <li>xxx.erase-flash<br>
+          Optional: Löschen des FLASH-ROM. Alles gespeicherten Daten auf dem MC gehen verloren!</br>
+         Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
+         Status ist sichtbar im Reading fw_erase_flash (run,done,error,timeout).</li>
+     <li>download-beta-version<br>
+         Download der letzten beta-firmware und Flash Programm.<br>
+         Dateien werden kopiert nach /tmp/TronfernoMCU<br>
+         Status ist sichtbar im Reading fw_get (run,done,error,timeout).</li>
+    </ul>
+  </li>
+
+  <a name="mcu-firmware.esp8266"></a>
+  <li>mcu-firmware.esp8266<br>
+  Download der letzten MC firmware von GitHub(tronferno-mcu-bin) und Flashen
+    <ul>
+     <li>download<br>
+         Download Firmware und Flash-Programm.<br>
+         Dateien werden kopiert nach /tmp/TronfernoMCU<br>
+         Status ist sichtbar im Reading fw_get (run,done,error,timeout).</li>
+     <li>write-flash<br>
+         Flasht die Firmware über den USB Port definiert in diesem Gerät.<br>
+         Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
+         MCU: ESP8266/4MB/WLAN angeschlossen über USB.<br>
+         Status ist sichtbar im Reading fw_write_flash (run,done,error,timeout).</li>
+     <li>upgrade<br>
+        Kombiniert download und flashen in einem Schritt.
+         </li>
+     <li>xxx.erase-flash<br>
+          Optional: Löschen des FLASH-ROM. Alles gespeicherten Daten auf dem MC gehen verloren!</br>
+         Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
+         Status ist sichtbar im Reading fw_erase_flash (run,done,error,timeout).</li>
+     <li>download-beta-version<br>
+         Download der letzten beta-firmware und Flash Programm.<br>
+         Dateien werden kopiert nach /tmp/TronfernoMCU<br>
+         Status ist sichtbar im Reading fw_get (run,done,error,timeout).</li>
+    </ul>
+  </li>
+
+
+</ul>
+
+<br>     Beispiele:
+<br>
+<br> 1) MC verbunden über Netzwerk TCP/IP
+<br>
+<br>    define tfmcu TronfernoMCU  192.168.1.123
+<br>    define shutter_11 Tronferno g=1 m=1
+<br>    define shutter_12 Tronferno g=1 m=2
+<br>     ..
+<br>    define shutter_77 Tronferno g=7 m=7
+<br>
+<br> 2) MC verbunden mit USB port /dev/ttyUSB1
+<br>
+<br>    define tfmcu TronfernoMCU /dev/ttyUSB1
+<br>    define shutter_11 Tronferno g=1 m=1
+<br>    define shutter_12 Tronferno g=1 m=2
+<br>     ..
+<br>    define shutter_77 Tronferno g=7 m=7
+<br>
+<br>  ### Unbedingt das I/O Gerät tfmcu *vor* den Tronferno Geräten  definieren ###
+<br>  ### Andernfalls finden die Tronferno-Geräte ihr I/O Gerät nicht (besonders nach einem Neustart von FHEM) ###
+
+<p>
+
+=end html_DE
 
 # Local Variables:
 # compile-command: "perl -cw -MO=Lint ./00_TronfernoMCU.pm"

@@ -4,7 +4,7 @@
 
 <h3>Tronferno</h3>
 
-<i>Tronferno</i> is a logic module to control Fernotron shutters via radio frequency. To do this, it utilizes the <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a> micro controller hardware.
+<i>Tronferno</i> is a logic FHEM module to control Fernotron shutters via radio frequency. To do this, it utilizes the <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a> micro controller firmware.
 
 <ul>
 <li>Required I/O device: <i>TronfernoMCU</i></li>
@@ -32,6 +32,33 @@ Each output device may control a single shutter, or a group of shutters dependin
 
 <p>
   'g' or  'n' are only useful combined with an ID of the central controller type.
+
+<h5>2. FHEM Devices to receive Fernotron senders</h5>
+
+<p>  Incoming data is handled by input devices. There is one default input device, who handles all messages not matchin a defined input device. The default input device will be auto-created.
+
+<p> Input devices are defined just like output devices, but with the parameter 'input' given in the define.
+
+<p>
+  <code>
+    define <my_shutter> Tronferno a=ID [g=GN] [m=MN] input[=(plain|sun|central)]<br>
+  </code>
+<p>
+The input type (like plain) can be ommitted. Its already determined by the ID (e.g. each ID starting with 10 is a plain controller).
+<ul>
+ <li>defining a plain controller as switch for up/down/stop<br>
+      <code>define myFernoSwitch Tronferno a=10abcd input</code></li>
+<li>defining a sun sensor as on/off switch (on: sunshine, off: no sunshine)<br>
+     <code>define myFernoSun Tronferno a=20abcd input </code></li>
+<li>defining a switch for up/down/stop controlled by a Tronferno central unit<br>
+     <code>define myFernoSwitch2 Tronferno a=80abcd g=2 m=3 input</code></li>
+<li>define a notify device to toggle our light device HUEDevice3<br>
+      <code>define myFernoSwitch2 Tronferno a=80abcd g=2 m=3 input</code></li>
+ <li>define a notify device to toggle our light device HUEDevice3<br>
+     <code>define n_toggleHUEDevice3 notify myFernoSwitch:stop set HUEDevice3 toggle</code></li>
+<li>Its possible to use the default input device with your notify device, if you don't want to define specific input devices. This works only if you really had no input device defined for that Tronferno ID<br>
+     <code>define n_toggleHUEDevice3 notify Tronferno_Scan:plain:10abcd:stop set HUEDevice3 toggle</code></li>
+</ul>
 
 
 <h4>Adressing and Pairing in Detail</h4>
@@ -70,7 +97,7 @@ Each output device may control a single shutter, or a group of shutters dependin
 </ul>
 
 <a name=Tronfernoset></a>
-<h4>Set Commands</h4>
+<h4>Set</h4>
 <ul>
   <a name=up></a>
   <li>up - open shutter</li>
@@ -102,15 +129,12 @@ Each output device may control a single shutter, or a group of shutters dependin
   <a name=sun-auto></a>
   <li>sun-auto - switch on/off sun-sensor commands of a Fernotron device. (if off, it ignores command sun-down)</li>
 
-  <a name=random></a>
-  <li>random - switch on/of random-timer of Fernotron device</li>
-
-  <a name=manual></a>
+   <a name=manual></a>
   <li>manual - switch on/off automatic shutter movement<br>
      The manual mode prevents all automatic shutter movement by internal timers or paired sensors<br>
   <ul>
-   <li><code>set NAME manual on</code></li>
-   <li><code>set NAME manual off</code></li>
+   <li><code>set <name> manual on</code></li>
+   <li><code>set <name> manual off</code></li>
   </ul>
 
     <p><small>Note: This is a kludge. It reprograms the Fernotron device with empty timers and disables sun-auto. When 'manual' is switched off again, the timer data, which was stored inside the MCU will be reprogrammed.  Not sure why this is done this way by the original central 2411. There are Fernotron receivers with a button for manual-mode, but the RF controlled motors seems to have no manual flag?</small>
@@ -123,9 +147,9 @@ Each output device may control a single shutter, or a group of shutters dependin
 <li>daily - switch off or set the daily timer of a Fernotron device<br>
    Format: HHMMHHMM for up/down timers. Use '-' instead HHMM to disable the up or down timer.<br>
    <ul>
-    <li><code>set NAME daily off</code> disables daily-timer</li>
-    <li><code>set NAME daily "0700-"</code> up by daily-timer at 0700</li>
-    <li><code>set NAME daily "-1200"</code> down at 1200</li>
+    <li><code>set <name> daily off</code> disables daily-timer</li>
+    <li><code>set <name> daily "0700-"</code> up by daily-timer at 0700</li>
+    <li><code>set <name> daily "-1200"</code> down at 1200</li>
   </ul>
 </li>
 
@@ -133,9 +157,9 @@ Each output device may control a single shutter, or a group of shutters dependin
 <li>weekly - switch off or set the weekly timer of a Fernotron device<br>
    Format: like daily (HHMMHHMM) but seven times. Starts at Monday. A '+' can be used to copy the previous day.<br>
    <ul>
-     <li><code>set NAME weeky off</code> disables weekly-timer</li>
-     <li><code>set NAME weekly "0700-++++0900-+"</code>  up by weekly-timer at Mon-Fri=0700, Sat-Sun=0900</li>
-     <li><code>set NAME weekly "0600-0530-+++1130-0800-"</code> up at Mon=0600, Tue-Fri=0530, Sat=1130, Sun=0800</li>
+     <li><code>set <name> weeky off</code> disables weekly-timer</li>
+     <li><code>set <name> weekly "0700-++++0900-+"</code>  up by weekly-timer at Mon-Fri=0700, Sat-Sun=0900</li>
+     <li><code>set <name> weekly "0600-0530-+++1130-0800-"</code> up at Mon=0600, Tue-Fri=0530, Sat=1130, Sun=0800</li>
    </ul>
 </li>
 
@@ -143,10 +167,10 @@ Each output device may control a single shutter, or a group of shutters dependin
 <li>astro - switch on/off or set the astro (civil dusk) timer of a Fernotron device<br>
     The shutter goes down at civil dusk or some minutes before or after if you provide a -/+ minute offset.<br>
     <ul>
-      <li><code>set NAME astro off</code> disables astro-timer</li>
-      <li><code>set NAME astro on</code> down by astro-timer at civil dusk</li>
-      <li><code>set NAME astro "-10"</code> down at 10 minutes before civil dusk</li>
-      <li><code>set NAME astro 10</code> down at 10 minutes after civil dusk</li>
+      <li><code>set <name> astro off</code> disables astro-timer</li>
+      <li><code>set <name> astro on</code> down by astro-timer at civil dusk</li>
+      <li><code>set <name> astro "-10"</code> down at 10 minutes before civil dusk</li>
+      <li><code>set <name> astro 10</code> down at 10 minutes after civil dusk</li>
     </ul>
 </li>
 
@@ -169,13 +193,13 @@ Each output device may control a single shutter, or a group of shutters dependin
 <h5>Adressing and Pairing in Detail</h5>
 <ol>
   <li>
-    <code>define myShutterGroup1 Tronferno a=801234 g=1 m=0</code><br>
-    <code>define myShutter11 Tronferno a=801234 g=1 m=1</code><br>
-    <code>define myShutter12 Tronferno a=801234 g=1 m=2</code><br>
+    <code>define myShutterGroup1 Tronferno g=1 m=0</code><br>
+    <code>define myShutter11 Tronferno g=1 m=1</code><br>
+    <code>define myShutter12 Tronferno g=1 m=2</code><br>
     ...
-    <code>define myShutterGroup2 Tronferno a=801234 g=2 m=0</code><br>
-    <code>define myShutter21 Tronferno a=801234 g=2 m=1</code><br>
-    <code>define myShutter22 Tronferno a=801234 g=2 m=2</code><br>
+    <code>define myShutterGroup2 Tronferno g=2 m=0</code><br>
+    <code>define myShutter21 Tronferno g=2 m=1</code><br>
+    <code>define myShutter22 Tronferno g=2 m=2</code><br>
       </li>
 
   <li>

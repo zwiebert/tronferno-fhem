@@ -1,6 +1,6 @@
-=begin html
+=encoding UTF-8
 
-=encoding utf-8
+=begin html
 
 <a name="Fernotron"></a>
 <h3>Fernotron</h3>
@@ -31,13 +31,13 @@ Dies wird durch die verwendete ID und Gruppen und Empfängernummer bestimmt.
   <code>
     define <MeinRolladen> Fernotron a=ID [g=GN] [m=MN]<br>
   </code>
-                        
-                
-<p>  
+
+
+<p>
   ID : Die Geräte ID. Eine  sechstellige hexadezimale Zahl.  10xxxx=Handsender, 20xxxx=Sonnensensor, 80xxxx=Zentraleinheit, 90xxxx=Empfänger<br>
   GN : Gruppennummer (1-7) oder 0 (default) für alle Gruppen<br>
   MN : Empfängernummer (1-) oder 0 (default) für alle Empfänger<br>
-                        
+
 <p>
   'g' und 'n' sind nur sinnvoll, wenn als ID eine Zentraleinheit angegeben wurde.
 
@@ -91,7 +91,7 @@ Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann
 
 <ol>
   <li>Gruppen und Empfäger entsprechen der 2411. Gruppenbildung durch die 0 als Joker.  (g=1 m=0 oder g=0 m=1) </li>
-  
+
   <li> Wie bei realen Handsendern. Beispiel: Ein (virtueller) Handsender wird bei allen Motoren einer Etage angemeldet.</li>
 
   <li> nicht möglich</li>

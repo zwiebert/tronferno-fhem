@@ -429,7 +429,7 @@ sub parse_position {
 
         if ($hash) {
            pctReadingsUpdate($hash, $p);
-            # R�ckgabe des Ger�tenamens, f�r welches die Nachricht bestimmt ist.
+            # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
             return $hash->{NAME};
         } elsif ($g == 0) {
             for $g (1..7) {
@@ -603,8 +603,8 @@ sub X_Parse {
 sub X_Attr(@) {
     my ($cmd, $name, $attrName, $attrValue) = @_;
 
-    # $cmd  - Vorgangsart - kann die Werte "del" (l�schen) oder "set" (setzen) annehmen
-    # $name - Ger�tename
+    # $cmd  - Vorgangsart - kann die Werte "del" (löschen) oder "set" (setzen) annehmen
+    # $name - Gerätename
     # $attrName/$attrValue sind Attribut-Name und Attribut-Wert
 
     if ($cmd eq "set") {
@@ -641,9 +641,10 @@ sub Tronferno_Initialize($) {
 
 1;
 =pod
+=encoding utf-8
 =item device
 =item summary controls shutters via Tronferno-MCU
-=item summary_DE steuert Roll�den �ber Tronferno-MCU
+=item summary_DE steuert Rolläden über Tronferno-MCU
 
 =begin html
 
@@ -651,7 +652,7 @@ sub Tronferno_Initialize($) {
 
 <h3>Tronferno</h3>
 
-<i>Tronferno</i> is a logic module to control Fernotron shutters via radio frequency. To do this, it utilizes the <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a> micro controller hardware.
+<i>Tronferno</i> is a logic FHEM module to control Fernotron shutters via radio frequency. To do this, it utilizes the <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a> micro controller firmware.
 
 <ul>
 <li>Required I/O device: <i>TronfernoMCU</i></li>
@@ -679,6 +680,33 @@ Each output device may control a single shutter, or a group of shutters dependin
 
 <p>
   'g' or  'n' are only useful combined with an ID of the central controller type.
+
+<h5>2. FHEM Devices to receive Fernotron senders</h5>
+
+<p>  Incoming data is handled by input devices. There is one default input device, who handles all messages not matchin a defined input device. The default input device will be auto-created.
+
+<p> Input devices are defined just like output devices, but with the parameter 'input' given in the define.
+
+<p>
+  <code>
+    define <my_shutter> Tronferno a=ID [g=GN] [m=MN] input[=(plain|sun|central)]<br>
+  </code>
+<p>
+The input type (like plain) can be ommitted. Its already determined by the ID (e.g. each ID starting with 10 is a plain controller).
+<ul>
+ <li>defining a plain controller as switch for up/down/stop<br>
+      <code>define myFernoSwitch Tronferno a=10abcd input</code></li>
+<li>defining a sun sensor as on/off switch (on: sunshine, off: no sunshine)<br>
+     <code>define myFernoSun Tronferno a=20abcd input </code></li>
+<li>defining a switch for up/down/stop controlled by a Tronferno central unit<br>
+     <code>define myFernoSwitch2 Tronferno a=80abcd g=2 m=3 input</code></li>
+<li>define a notify device to toggle our light device HUEDevice3<br>
+      <code>define myFernoSwitch2 Tronferno a=80abcd g=2 m=3 input</code></li>
+ <li>define a notify device to toggle our light device HUEDevice3<br>
+     <code>define n_toggleHUEDevice3 notify myFernoSwitch:stop set HUEDevice3 toggle</code></li>
+<li>Its possible to use the default input device with your notify device, if you don't want to define specific input devices. This works only if you really had no input device defined for that Tronferno ID<br>
+     <code>define n_toggleHUEDevice3 notify Tronferno_Scan:plain:10abcd:stop set HUEDevice3 toggle</code></li>
+</ul>
 
 
 <h4>Adressing and Pairing in Detail</h4>
@@ -717,7 +745,7 @@ Each output device may control a single shutter, or a group of shutters dependin
 </ul>
 
 <a name=Tronfernoset></a>
-<h4>Set Commands</h4>
+<h4>Set</h4>
 <ul>
   <a name=up></a>
   <li>up - open shutter</li>
@@ -749,15 +777,12 @@ Each output device may control a single shutter, or a group of shutters dependin
   <a name=sun-auto></a>
   <li>sun-auto - switch on/off sun-sensor commands of a Fernotron device. (if off, it ignores command sun-down)</li>
 
-  <a name=random></a>
-  <li>random - switch on/of random-timer of Fernotron device</li>
-
-  <a name=manual></a>
+   <a name=manual></a>
   <li>manual - switch on/off automatic shutter movement<br>
      The manual mode prevents all automatic shutter movement by internal timers or paired sensors<br>
   <ul>
-   <li><code>set NAME manual on</code></li>
-   <li><code>set NAME manual off</code></li>
+   <li><code>set <name> manual on</code></li>
+   <li><code>set <name> manual off</code></li>
   </ul>
 
     <p><small>Note: This is a kludge. It reprograms the Fernotron device with empty timers and disables sun-auto. When 'manual' is switched off again, the timer data, which was stored inside the MCU will be reprogrammed.  Not sure why this is done this way by the original central 2411. There are Fernotron receivers with a button for manual-mode, but the RF controlled motors seems to have no manual flag?</small>
@@ -770,9 +795,9 @@ Each output device may control a single shutter, or a group of shutters dependin
 <li>daily - switch off or set the daily timer of a Fernotron device<br>
    Format: HHMMHHMM for up/down timers. Use '-' instead HHMM to disable the up or down timer.<br>
    <ul>
-    <li><code>set NAME daily off</code> disables daily-timer</li>
-    <li><code>set NAME daily "0700-"</code> up by daily-timer at 0700</li>
-    <li><code>set NAME daily "-1200"</code> down at 1200</li>
+    <li><code>set <name> daily off</code> disables daily-timer</li>
+    <li><code>set <name> daily "0700-"</code> up by daily-timer at 0700</li>
+    <li><code>set <name> daily "-1200"</code> down at 1200</li>
   </ul>
 </li>
 
@@ -780,9 +805,9 @@ Each output device may control a single shutter, or a group of shutters dependin
 <li>weekly - switch off or set the weekly timer of a Fernotron device<br>
    Format: like daily (HHMMHHMM) but seven times. Starts at Monday. A '+' can be used to copy the previous day.<br>
    <ul>
-     <li><code>set NAME weeky off</code> disables weekly-timer</li>
-     <li><code>set NAME weekly "0700-++++0900-+"</code>  up by weekly-timer at Mon-Fri=0700, Sat-Sun=0900</li>
-     <li><code>set NAME weekly "0600-0530-+++1130-0800-"</code> up at Mon=0600, Tue-Fri=0530, Sat=1130, Sun=0800</li>
+     <li><code>set <name> weeky off</code> disables weekly-timer</li>
+     <li><code>set <name> weekly "0700-++++0900-+"</code>  up by weekly-timer at Mon-Fri=0700, Sat-Sun=0900</li>
+     <li><code>set <name> weekly "0600-0530-+++1130-0800-"</code> up at Mon=0600, Tue-Fri=0530, Sat=1130, Sun=0800</li>
    </ul>
 </li>
 
@@ -790,10 +815,10 @@ Each output device may control a single shutter, or a group of shutters dependin
 <li>astro - switch on/off or set the astro (civil dusk) timer of a Fernotron device<br>
     The shutter goes down at civil dusk or some minutes before or after if you provide a -/+ minute offset.<br>
     <ul>
-      <li><code>set NAME astro off</code> disables astro-timer</li>
-      <li><code>set NAME astro on</code> down by astro-timer at civil dusk</li>
-      <li><code>set NAME astro "-10"</code> down at 10 minutes before civil dusk</li>
-      <li><code>set NAME astro 10</code> down at 10 minutes after civil dusk</li>
+      <li><code>set <name> astro off</code> disables astro-timer</li>
+      <li><code>set <name> astro on</code> down by astro-timer at civil dusk</li>
+      <li><code>set <name> astro "-10"</code> down at 10 minutes before civil dusk</li>
+      <li><code>set <name> astro 10</code> down at 10 minutes after civil dusk</li>
     </ul>
 </li>
 
@@ -816,13 +841,13 @@ Each output device may control a single shutter, or a group of shutters dependin
 <h5>Adressing and Pairing in Detail</h5>
 <ol>
   <li>
-    <code>define myShutterGroup1 Tronferno a=801234 g=1 m=0</code><br>
-    <code>define myShutter11 Tronferno a=801234 g=1 m=1</code><br>
-    <code>define myShutter12 Tronferno a=801234 g=1 m=2</code><br>
+    <code>define myShutterGroup1 Tronferno g=1 m=0</code><br>
+    <code>define myShutter11 Tronferno g=1 m=1</code><br>
+    <code>define myShutter12 Tronferno g=1 m=2</code><br>
     ...
-    <code>define myShutterGroup2 Tronferno a=801234 g=2 m=0</code><br>
-    <code>define myShutter21 Tronferno a=801234 g=2 m=1</code><br>
-    <code>define myShutter22 Tronferno a=801234 g=2 m=2</code><br>
+    <code>define myShutterGroup2 Tronferno g=2 m=0</code><br>
+    <code>define myShutter21 Tronferno g=2 m=1</code><br>
+    <code>define myShutter22 Tronferno g=2 m=2</code><br>
       </li>
 
   <li>
@@ -846,6 +871,243 @@ Each output device may control a single shutter, or a group of shutters dependin
 </ul>
 
 =end html
+
+
+=begin html_DE
+
+<a name="Tronferno"></a>
+
+<h3>Tronferno</h3>
+
+<i>Tronferno</i> ist ein logisches FHEM-Modul zum steuern von Fernotron Rolladen Motoren über Funk. Es verwendet die <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a> Mikrocontroller Firmware.
+
+<ul>
+<li>Benötigt I/O Geräte Modul: <i>TronfernoMCU</i></li>
+</ul>
+
+
+<h4>Geräte definieren</h4>
+
+<p>Vorrausetzung: Zuerst muss das TronfernoMCU-I/O-Gerät welches mit dem Mikrocontroller kommuniziert angelegt werden. Die Dokumentation im Modul TronfernoMCU beschreibt die verschiedenen Möglichkeiten zur Kommunikation (USB/WLAN/LAN). Ein Beispiel zum Anlegen der Geräte findet sich am Ende dieses Textes.</p>
+
+<p>Es gibt zwei Arten von Tronferno FHEM Geräten. Die wichtigsten sind die Geräte zum Steuern von Empfängern (Motoren) durch Senden von Kommandos.  Die anderen Geräte sind zum Empfangen von Sendern (Handsender, Sonnensensoren), falls man diese Sender für allgemeine Steuerungsaufgaben in FHEM verwenden möchte.
+
+<h5>FHEM Geräte zum steuern von Fernotron Empfängern (Motoren)</h5>
+
+Jedes der FHEM Geräte kann entweder einen Empfäger oder eine Gruppe von Empfängern steuern. Festgelegt durch die Parameter bei der Gerätedefinition.
+
+<p>
+  <code>
+    define <my_shutter> Tronferno [a=ID] [g=N] [m=N]<br>
+  </code>
+
+<p>
+<ul>
+  <li>a=ID : Geräte ID. ID ist 0 (default), wenn die ID der 2411 benutzt werden soll.  Andernfalls ist eine sechstellige Hex-Nummer, nach dem Muster: 10xxxx=Handsender, 20xxxx=Sonnensensor, 80xxxx=Zentralet, 90xxxx=Motor.</li>
+  <li>g=N : Gruppen-Nummer (1-7) oder  0 (default) für alle Gruppen</li>
+  <li>m=N : Empfänger-Nummer (1-7) or  0 (default) for alle Empfänger</li>
+ <li>Hinweis: Die Optionen haben den Default-Wert 0. Das bedeutet man kann sie ganz weglassen statt "a=0" oder "m=0" zu schreiben.</li>
+</ul>
+
+<h5>Eingabe Geräte</h5>
+
+<p>Empfangene Nachrichten von Controllern/Sensoren werden durch Eingabe Geräte verarbeitet. Es gibt ein Default-Eingabegerät, welches alle Nachrichten verarbeitet, für die kein eigenes Eingabe Geräte definiert wurde. Das Default-Eingabegerät wird automatisch angelegt.
+
+<p> Eingabegeräte werden wie Ausgebegeräte definiert plus dem Parameter 'input' in der Definition:
+
+<p>
+  <code>
+    define <my_shutter> Tronferno a=ID [g=GN] [m=MN] input[=(plain|sun|central)]<br>
+  </code>
+<p>
+Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann bestimmt durch die ID (z.B. jede ID beginnend mit 10 gehört zu Typ plain)
+<p>
+  <code>
+    define myFernoSwitch Tronferno a=10abcd input           # ein Handsender als Schalter für up/down/stop<br>
+    define myFernoSun Tronferno a=20abcd input              # ein Sonnensensor als on/off Schalter  (on: Sonnenschein, off: kein Sonnenschein)
+    define myFernoSwitch2 Tronferno g=2 m=3 input  # defines a switch for up/down/stop controlled by a Fernotron central unit<br>
+  </code>
+
+<p>Nun lassen sich die üblichen notify-Geräte oder DOIF-Geräte nutzen um Events zu verarbeiten:
+
+<p> Beispiel: Ein Notify um Lampe HUEDevice3 zu toggeln wenn STOP auf Handsender myFernoSwitch gedrückt wird:
+  <code>
+    define n_toggleHUEDevice3 notify myFernoSwitch:stop set HUEDevice3 toggle
+  </code>
+
+<p> Wenn kein spezifisches Eingabegerät definiert werden soll, kann man das Default-Eingabegerät nutzen:
+<p> Beispiel wie oben, nur mit dem Default-Eingabegerät
+  <code>
+    define n_toggleHUEDevice3 notify Fernotron_Scan:plain:1089ab:stop set HUEDevice3 toggle
+  </code>
+
+<h4>Verschiedene Methoden der Adressierung</h4>
+
+<ol>
+  <li> Die IDs vorhandener Sende-Geräte einscannen und dann benutzen.
+    Beispiel: Die ID der 2411 benutzen um dann über Gruppen und Empfängernummern die Rolläden anzusprechen.</li>
+
+  <li> Ausgedachte Handsender IDs mit Motoren zu koppeln.
+    Beispiel: Rolladen Nr 1 mit 100001, Nr 2 mit 100002, ...</li>
+
+  <li> Empfänger IDs: Funkmotoren haben 5 stellige "Funk-Codes" aufgedruckt, eigentlich gedacht zur Inbetriebnahme.
+    Es muss eine 9 davorgestellt werden um die ID zu erhalten.</li>
+</ol>
+
+<h4>Gruppenbildung</h4>
+
+<ol>
+  <li>Gruppen und Empfäger entsprechen der 2411. Gruppenbildung durch die 0 als Joker.  (g=1 m=0 oder g=0 m=1) </li>
+
+  <li> Wie bei realen Handsendern. Beispiel: Ein (virtueller) Handsender wird bei allen Motoren einer Etage angemeldet.</li>
+
+  <li> nicht möglich</li>
+</ol>
+
+
+<a name="Tronfernoattr"></a>
+<h4>Attribute</h4>
+<ul>
+  <li><a name="repeats">repeats N</a><br>
+        Wiederhohlung einer Nachricht beim Senden zum Verbessern der Chancen das sie ankommt (default ist 2 Wiederhohlungen).
+  </li>
+  <li><a name="pctInverse">pctInverse 1|0</a><br>
+        Invertiert die Position-Prozente Normal: Auf=100%, ZU=0%. Invertiert: Auf=0%, Zu=100%<br>
+        Sprachsteuerung: Normal 1%=stop 2%=sun-down. Invertiert 99%=stop, 98%=sun-down
+  </li>
+</ul>
+
+<a name=Tronfernoset></a>
+<h4>Set</h4>
+<ul>
+  <a name=up></a>
+  <li>up - Öffne Rolladen</li>
+
+  <a name=down></a>
+  <li>down - Schließe Rollladen</li>
+
+  <a name=stop></a>
+  <li>stop - Stoppe den Rollladen</li>
+
+  <a name=set></a>
+  <li>set  - Aktiviere Kopplungs Modus am Fernotron Empfänger (SET)</li>
+
+  <a name=sun-down></a>
+  <li>sun-down - Bewege Rollladen zur SonnenSensor-Position (wenn Sonnenautomatik aktiv ist und der Rollladen zur Zeit weiter geöffnet ist als die Sonnenposition)</li>
+
+  <a name=sun-up></a>
+  <li>sun-up - Kehrt aus der Sonnenposition zurück in die Offen-Position</li>
+
+  <a name=sun-inst></a>
+  <li>sun-inst - Speichere aktuelle Position als neue Sonnenposition</li>
+
+  <a name=position></a>
+  <li>position - Bewege den Rollladen zur angegebenen Position in Prozent. (100% ist offen. sprachsteuerung: 1% ist stop, 2% ist sun-down)</li>
+
+  <a name=pct></a>
+  <li>pct - Bewege den Rollladen zur angegebenen Position in Prozent. (100% ist offen. sprachsteuerung: 1% ist stop, 2% ist sun-down)</li>
+
+
+  <a name=sun-auto></a>
+  <li>sun-auto - Schalte Sonnenautomatik des Empfängers ein oder aus</li>
+
+  <a name=manual></a>
+  <li>manual - Schalte Manuell ein oder aus<br>
+     Der Manuelle-Modus verhindert alles automatischen Rollladen Bewegungen durch interne Timer oder gekoppelte Sensoren<br>
+  <ul>
+   <li><code>set <name> manual on</code></li>
+   <li><code>set <name> manual off</code></li>
+  </ul>
+
+    <p><small>Klugde: Der Manuelle Modus wird erreicht durch ersetzten der Programme des Empfängers. Um wieder in den Automatik-Modus zu wechseln müssen alle Timer neu programmiert werden (mit den in der MCU zwischengespeichterten Daten). Die Original 2411 macht dies auch so.</small>
+</li>
+
+  <a name=random></a>
+  <li>random - Schalte Zufalls-Timer des Empfänger ein oder aus</li>
+
+<a name=daily></a>
+<li>daily - Programmiere Tages-Timer des Empfängers<br>
+   Format: HHMMHHMM for auf/zu Timer. Benutze  '-' statt HHMM zum deaktivieren des auf oder zu Timers.<br>
+   <ul>
+    <li><code>set <name> daily off</code> deaktiviert Tagestimer</li>
+    <li><code>set <name> daily "0700-"</code> täglich um 7:00 Uhr öffnen</li>
+    <li><code>set <name> daily "-1200"</code> täglich um 12:00 Uhr schließen</li>
+  </ul>
+</li>
+
+<a name=weekly></a>
+<li>weekly - Programmiere Wochentimer des Empfängers<br>
+   Format: Wie Tagestimer (HHMMHHMM) haber 7 mal hintereinander. Von Montag bis Sonntag. Ein '+' kopiert den Timer vom Vortag.<br>
+   <ul>
+     <li><code>set <name> weekly off</code> deaktiviert Wochentimer</li>
+     <li><code>set <name> weekly "0700-++++0900-+"</code>  Mo-Fr um 07:00 Uhr öffnen, Sa-So um 09:00 Uhr öffnen</li>
+     <li><code>set <name> weekly "0600-0530-+++1130-0800-"</code>Öffnen am Mo um 6:00 Uhr, Di-Fr um 05:30, Sa um 11:30 und So um 08:00 Uhr</li>
+   </ul>
+</li>
+
+<a name=astro></a>
+<li>astro - Programmiere Astro-Timer (Dämmerung) des Fernotron-Empfängers<br>
+    Der Rollladen schließt zur zivilen Dämmerung +/- dem angegebenen Minuten-Offset.<br>
+    <ul>
+      <li><code>set <name> astro off</code> deaktiviert Astro-Timer</li>
+      <li><code>set <name> astro on</code> schließt zur zvilen Dämmerung</li>
+      <li><code>set <name> astro "-10"</code> schließt 10 Minuten vor der zivilen Dämmerung</li>
+      <li><code>set <name> astro 10</code> schließt 10 Minuten nach der zivilen Dämmerung</li>
+    </ul>
+</li>
+
+  <a name=xxx_pair></a>
+  <li>xxx_pair - Binde den Sender der als nächstes sendet an diesen Empfänger. Dies dient dazu, die Position des Motors zu ermitteln, in dem der Mikrocontroller Befehler von gekoppelten Sendern mithört. Man sollte also nur Sender hier binden die auch real diesen Empfänger steuern (also mit ihm real gekoppelt sind).
+
+  <a name=xxx_unpair></a>
+  <li>xxx_unpair - Lösche die Bindung des Senders der als nächstes sendet an diesen Empfänger.</li>
+</ul>
+
+
+<h4>Beispiele</h4>
+
+
+<ul>
+      <li>Zuerst das TronfernoMCU-I/O-Gerät einmalig definieren. Es wird benötigt von den eigentlichen Tronferno-Geräten und muss daher als erstes angelegt werden, so dass es beim Start des FHEM Servers dann auch immer zuerst erzeugt wird.<br>
+      <code>define tfmcu TronfernoMCU /dev/ttyUSB0</code><br>
+      Dieses Gerät erlaubt die Konfiguration des Miktrocontrollers, falls dies nicht schon anderweitig gemacht wurde (Webinterface, etc)<br>
+      Es sollte zumindest die ID der 2411 konfiguriert sein (set tfmcu mcc.cu 80xxxx)</li>
+
+</ul>
+
+<h5>Adressing and Pairing in Detail</h5>
+<ol>
+  <li>
+    <code>define myShutterGroup1 Tronferno g=1 m=0</code><br>
+    <code>define myShutter11 Tronferno g=1 m=1</code><br>
+    <code>define myShutter12 Tronferno g=1 m=2</code><br>
+    ...
+    <code>define myShutterGroup2 Tronferno g=2 m=0</code><br>
+    <code>define myShutter21 Tronferno g=2 m=1</code><br>
+    <code>define myShutter22 Tronferno g=2 m=2</code><br>
+      </li>
+
+  <li>
+    <code>define myShutter1 Tronferno a=100001</code><br>
+    <code>define myShutter2 Tronferno a=100002</code><br>
+    Now activate Set-mode on the Fernotron receiver and send a STOP by the newly defined device you wish to pair with it.
+ ...</li>
+
+<li><code>define myShutter__0d123 Tronferno a=90d123</code></li>
+</ol>
+
+<h5>Weitere Beispiele</h5>
+<ul>
+<li>Attribute for alexa module:<br>
+<code>attr myShutter_42 genericDeviceType blind</code><br>
+<code>attr myShutter_42 alexaName bedroom shutter</code><br>
+</li>
+<li>GUI buttons<br>
+<code>attr myShutter_42 webCmd down:stop:up</code><br>
+</li>
+</ul>
+
+=end html_DE
 
 # Local Variables:
 # compile-command: "perl -cw -MO=Lint ./10_Tronferno.pm"

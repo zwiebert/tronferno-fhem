@@ -15,7 +15,7 @@
 
 <p>
 <a name="TronfernoMCUset"></a>
-<h4>SET</h4>
+<h4>Set</h4>
 <ul>
 
   <a name="mcc.baud"></a>
@@ -43,17 +43,9 @@
   <li>mcc.rtc<br>
     Set MCU's internal real time clock by ISO date/time string (e.g. 1999-12-31T23:59:00). If possible, the MCU will use NTP instead.</li>
 
-  <a name="mcc.rtc"></a>
-  <li>mcc.rtc<br>
-    Set MCU's internal real time clock by ISO date/time string (e.g. 1999-12-31T23:59:00). If possible, the MCU will use NTP instead.</li>
-
   <a name="mcc.tz"></a>
   <li>mcc.tz<br>
     Time-zone in POSIX (TZ) format</li>
-
-  <a name="mcc.rtc"></a>
-  <li>mcc.rtc<br>
-    </li>
 
   <a name="mcc.verbose"></a>
   <li>mcc.verbose<br>
@@ -62,10 +54,13 @@
   <a name="mcc.network"></a>
   <li>mcc.network<br>
     Network to connect: none, ap, wlan, lan<br>
-     ap: Create Wlan accesspoint<br>
-     wlan: connect to existing WLAN<br>
-     lan: Ethernet<br>
-     Note: MCU will be restarted after setting this option</li>
+<ul>
+     <li>none: no networking</li>
+     <li>ap: create WLAN accesspoint</li>
+     <li>wlan: connect to existing WLAN</li>
+     <li>lan: connect to Router via Ethernet</li>
+     <li>Note: MCU will be restarted after setting this option</li>
+</ul></li>
 
   <a name="mcc.wlan-password"></a>
   <li>mcc.wlan-passord<br>

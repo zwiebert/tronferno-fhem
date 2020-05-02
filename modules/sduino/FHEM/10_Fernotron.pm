@@ -7,7 +7,7 @@
 ##  - to recveive commands from Fernotron controllers
 ##
 ## Fernotron is a legacy unidirectional 434MHz protocol for shutters and lights
-## 
+##
 ################################################################################
 ## *experimentelles* FHEM Modul für Fernotron Geräte
 ##
@@ -30,7 +30,7 @@ use 5.14.0;
 
 package Fernotron::Protocol;
 ################################################################################
-### 
+###
 
 # for sendMsg()
 my $d_float_string = 'D';  # or 'F'
@@ -83,7 +83,7 @@ sub word2bitString($) {
 
 ##
 ## turn databytes into bit string with two 10bit words for each byte and one stop bit before each word
-##    
+##
 sub byte2dmsgString {
     my $res = "";
     foreach my $b (@_) {
@@ -230,7 +230,7 @@ sub FSB_MODEL_IS_SUNSENS($) {
 sub FSB_MODEL_IS_STANDARD($) {
     my ($fsb) = @_;
     return ($$fsb[0] & $FDT_MASK) == 0x10;
-}   
+}
 
 sub FSB_GET_DEVID($) {
     my ($fsb) = @_;
@@ -339,7 +339,7 @@ sub fsb_verify_by_id($) {
     my $have_checksum = (scalar(@$fsb) == 6);
 
     return (($$fsb[0] + $$fsb[1] + $$fsb[2] + $$fsb[3] + $$fsb[4]) & 0xFF) eq $$fsb[5] if ($have_checksum);
-    
+
     my $m = FSB_GET_MEMB($fsb);
 
     return ($m == fer_memb_Broadcast || (fer_memb_M1 <= $m && $m <= fer_memb_M7)) if FSB_MODEL_IS_CENTRAL($fsb);
@@ -357,7 +357,7 @@ sub fer_dev33dmsg_split($) {
 
     # if dmsg starts with 'F', as it should, remove the empty string at index 0
     shift(@bitArr) if (length($bitArr[0] == 0));
-    
+
     return \@bitArr;
 }
 
@@ -418,7 +418,7 @@ sub fer_words2bytes($) {
     return \@bytes1 if (scalar(@bytes1) < 6); # no checksum availabe
 
     my @fsb = @bytes1;
-    
+
     return \@fsb if ((($fsb[0] + $fsb[1] + $fsb[2] + $fsb[3] + $fsb[4]) & 0xFF) eq $fsb[5]);
 
     ### if a word is incorrect but has correct parity try to find out the correct one by checksum
@@ -590,7 +590,7 @@ sub defaultInputMakeReading($$) {
         : undef;
 
     return undef unless $kind;
-    
+
     my $a = sprintf('%02x%02x%02x', @$fsb);
     my $g = 0;
     my $m = 0;
@@ -603,15 +603,15 @@ sub defaultInputMakeReading($$) {
         $g = Fernotron::Protocol::FSB_GET_GRP($fsb);
         $gm = " g=$g m=$m";
     }
-    
+
     my $c = Fernotron::Protocol::get_command_name_by_number(Fernotron::Protocol::FSB_GET_CMD($fsb));
-    
+
     ### combine parts and update reading
     my $human_readable = "$kind a=$a$gm c=$c";
     my $state = "$kind:$a" . ($kind eq FDT_CENTRAL ? "-$g-$m" : '')  . ":$c";
     $state =~ tr/ /:/; # don't want spaces in reading
     my $do_trigger =  !($kind eq FDT_RECV || $kind eq 'unknown'); # unknown and receiver should not trigger events
-    
+
     $hash->{received_HR} = $human_readable;
     main::readingsSingleUpdate($hash, 'state',  $state, $do_trigger);
     return 1;
@@ -620,15 +620,15 @@ sub defaultInputMakeReading($$) {
 # update Reading of matching input device
 sub inputMakeReading($$) {
     my ($fsb, $hash) = @_;
-    
+
     my $inputType = $hash->{helper}{ferInputType};
     my $c = Fernotron::Protocol::get_command_name_by_number(Fernotron::Protocol::FSB_GET_CMD($fsb));
     return undef unless defined($c);
 
     my $do_trigger = 1;
-    
+
     my $state = undef;
-    
+
     if ($inputType eq FDT_SUN) {
         $state = $c eq 'sun-down' ? 'on'
             : $c eq 'sun-up' ? 'off' : undef;
@@ -639,7 +639,7 @@ sub inputMakeReading($$) {
     }
 
     return undef unless defined ($state);
-    
+
     main::readingsSingleUpdate($hash, 'state',  $state, $do_trigger);
     return 1;
 }
@@ -656,7 +656,7 @@ sub makeAutoNameByFSB($$) {
         : undef;
 
     return undef unless $kind;
-    
+
     my $a = sprintf('%02x%02x%02x', @$fsb);
     my $g = 0;
     my $m = 0;
@@ -667,9 +667,9 @@ sub makeAutoNameByFSB($$) {
         }
         $g = Fernotron::Protocol::FSB_GET_GRP($fsb);
     }
-    
+
     my $c = Fernotron::Protocol::get_command_name_by_number(Fernotron::Protocol::FSB_GET_CMD($fsb));
-    
+
     my $name = "UNDEFINED Fernotron";
     $name .= "_${kind}" if ($is_input);
     $name .= "_$a";
@@ -685,7 +685,7 @@ sub makeAutoNameByFSB($$) {
 sub X_Parse {
     my ($io_hash, $message) = @_;
     my $result = undef;
-    
+
     my ($proto, $dmsg) = split('#', $message);
 
     my $fsb     = Fernotron::Protocol::fer_sdDmsg2Bytes($dmsg);
@@ -693,7 +693,7 @@ sub X_Parse {
 
     my $hash = getInputDeviceByFsb($fsb);
     my $default =  $main::modules{+MODNAME}{defptr}{+DEF_INPUT_DEVICE};
-    
+
     if ($hash and $hash == $default) {
         my $attrCreate = main::AttrVal($hash->{NAME}, ATTR_AUTOCREATE_NAME, ATTR_AUTOCREATE_DEFAULT);
         $hash->{debug} = $attrCreate;
@@ -702,25 +702,25 @@ sub X_Parse {
             return makeAutoNameByFSB($fsb, $is_input); # autocreate specific input device or return undef
         }
     }
-    
+
     return 'UNDEFINED Fernotron_Scan Fernotron scan' unless ($default || $hash); # autocreate default input device
-    
-    
+
+
     my $byteCount = scalar(@$fsb);
     $hash->{received_ByteCount} = "$byteCount";
     $hash->{received_ID} = ($byteCount >= 3) ? sprintf('a=%02x%02x%02x', @$fsb) : undef;
     $hash->{received_CheckSum} = ($byteCount == 6) ? sprintf('%02x', $$fsb[5]) : undef;
     return $result if ($byteCount < 5);
-    
+
     my $fsb_valid =  Fernotron::Protocol::fsb_verify_by_id($fsb);
-    $hash->{received_IsValid} = $fsb_valid ? 'yes' : 'no'; 
+    $hash->{received_IsValid} = $fsb_valid ? 'yes' : 'no';
     return $result unless $fsb_valid;
 
     my $msg = sprintf('%02x, %02x, %02x, %02x, %02x', @$fsb);
     $hash->{received_Bytes} = $msg;
     main::Log3($io_hash, 3, "Fernotron: message received: $msg");
 
-    
+
     if ($hash->{helper}{ferInputType} eq 'scan') {
         defaultInputMakeReading($fsb, $hash) or return undef;
     } else {
@@ -767,7 +767,7 @@ sub X_Define($$) {
             return "out of range value $m for m. expected: 0..7" unless (0 <= $m && $m <= 7);
         } elsif ($key eq 'scan') {
             $scan = 1;
-            
+
             $main::modules{+MODNAME}{defptr}{+DEF_INPUT_DEVICE} = $hash;
             $hash->{helper}{inputKey} = DEF_INPUT_DEVICE;
 
@@ -775,7 +775,7 @@ sub X_Define($$) {
 
         } elsif ($key eq 'input') {
             $fdt = $value;
-            $is_input = 1;          
+            $is_input = 1;
         } else {
             return "$name: unknown argument $o in define";    #FIXME add usage text
         }
@@ -784,7 +784,7 @@ sub X_Define($$) {
     if ($is_input) {
         my $value = $fdt;
         $fdt = getFDTypeByA($a) unless $fdt;
-        
+
         return "$name: invalid input type: $value in define. Choose one of: sun, plain, central" unless (defined($fdt) and "$fdt" eq FDT_SUN || "$fdt" eq FDT_PLAIN || "$fdt" eq FDT_CENTRAL);
         $hash->{helper}{ferInputType} = $fdt;
         my $key =  sprintf('%6x', $a);
@@ -812,7 +812,7 @@ sub X_Undef($$) {
     # remove deleted input devices from defptr
     my $key = $hash->{helper}{inputKey};
     delete $main::modules{+MODNAME}{defptr}{$key} if (defined($key));
-    
+
     return undef;
 }
 
@@ -820,7 +820,7 @@ sub transmit($$$) {
     my ($hash, $command, $c) = @_;
     my $name = $hash->{NAME};
     my $io   = $hash->{IODev};
-    
+
     return 'error: IO device not open' unless (exists($io->{NAME}) and main::ReadingsVal($io->{NAME}, 'state', '') eq 'opened');
 
     my $args = {
@@ -881,11 +881,11 @@ sub X_Set($$@) {
         } else {
             return "unsupported input type: $inputType";
         }
-        return undef;    
+        return undef;
     }
 
-    
-    
+
+
     #handle output devices here
     if ($cmd eq '?') {
         foreach my $key (Fernotron::Protocol::get_commandlist()) {
@@ -895,13 +895,13 @@ sub X_Set($$@) {
     }
 
     my $io = $hash->{IODev} or return 'error: no io device';
-    
+
 
     if (Fernotron::Protocol::is_command_valid($cmd)) {
         my $res = transmit($hash, 'send', $cmd);
         unless ($res) {
             my $pos = $$cmd2pos{$cmd};
-            
+
             main::readingsSingleUpdate($hash, 'state', $pos, 0) if (defined($pos));
         }
         return $res if ($res);
@@ -966,6 +966,7 @@ sub Fernotron_Initialize($) {
 
 
 =pod
+=encoding utf-8
 =item device
 =item summary controls shutters via Fernotron protocol
 =item summary_DE steuert Rolläden über Fernotron Protokoll
@@ -1141,8 +1142,6 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 
 =begin html_DE
 
-=encoding utf-8
-
 <a name="Fernotron"></a>
 <h3>Fernotron</h3>
 
@@ -1172,13 +1171,13 @@ Dies wird durch die verwendete ID und Gruppen und Empfängernummer bestimmt.
   <code>
     define <MeinRolladen> Fernotron a=ID [g=GN] [m=MN]<br>
   </code>
-                        
-                
-<p>  
+
+
+<p>
   ID : Die Geräte ID. Eine  sechstellige hexadezimale Zahl.  10xxxx=Handsender, 20xxxx=Sonnensensor, 80xxxx=Zentraleinheit, 90xxxx=Empfänger<br>
   GN : Gruppennummer (1-7) oder 0 (default) für alle Gruppen<br>
   MN : Empfängernummer (1-) oder 0 (default) für alle Empfänger<br>
-                        
+
 <p>
   'g' und 'n' sind nur sinnvoll, wenn als ID eine Zentraleinheit angegeben wurde.
 
@@ -1232,7 +1231,7 @@ Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann
 
 <ol>
   <li>Gruppen und Empfäger entsprechen der 2411. Gruppenbildung durch die 0 als Joker.  (g=1 m=0 oder g=0 m=1) </li>
-  
+
   <li> Wie bei realen Handsendern. Beispiel: Ein (virtueller) Handsender wird bei allen Motoren einer Etage angemeldet.</li>
 
   <li> nicht möglich</li>
