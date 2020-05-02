@@ -110,6 +110,15 @@ sub X_Define($$) {
     return undef;
 }
 
+sub pctTrans($$) {
+    my ($hash, $pct) = @_;
+    return $pct if 0 == main::AttrVal($hash->{NAME}, 'pctInverse', 0);
+    return 100 - $pct;
+}
+sub pctReadingsUpdate($$) {
+        my ($hash, $pct) = @_;
+        main::readingsSingleUpdate($hash, 'state',  pctTrans($hash, $pct), 1);
+}
 
 sub X_Undef($$) {
     my ($hash, $name) = @_;
@@ -196,7 +205,6 @@ sub build_cmd_json($$$) {
 sub build_cmd($$$) {
     my ($hash, $cmd, $c) = @_;
     my $mcu_chip = $hash->{IODev}->{'mcu-chip'};
-    print "test: $mcu_chip\n";
     if ($mcu_chip && $mcu_chip eq 'esp32') {
         build_cmd_json($hash, $cmd, $c);
     } else {
@@ -305,7 +313,7 @@ sub X_Set($$@) {
         return $res if ($res);
     } elsif ($cmd eq 'position' || $cmd eq 'pct') {
         return "\"set $name $cmd\" needs one argument" unless (defined($a1));
-        my $percent = $a1;
+        my $percent = pctTrans($hash, $a1);
         my $c = $percent;
         #use some special percent number as commands (for alexa)
         if ($percent eq '2') {
@@ -405,7 +413,7 @@ sub parse_position {
                     my $def_match = "0,$g,$m";
                     my $hash = $main::modules{+MODNAME}{defptr}{$def_match}; #FIXME: add support for $a different than zero
                     if ($hash) {
-                        main::readingsSingleUpdate($hash, 'state',  $p, 1);
+                       pctReadingsUpdate($hash, $p);
                         $result = $hash->{NAME};
                     }
                 }
@@ -420,7 +428,7 @@ sub parse_position {
         my $hash = $main::modules{+MODNAME}{defptr}{$def_match}; #FIXME: add support for $a different than zero
 
         if ($hash) {
-            main::readingsSingleUpdate($hash, 'state',  $p, 1);
+           pctReadingsUpdate($hash, $p);
             # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
             return $hash->{NAME};
         } elsif ($g == 0) {
@@ -428,7 +436,7 @@ sub parse_position {
                 for $m (1..7) {
                     my $hash = $main::modules{+MODNAME}{defptr}{"0,$g,$m"};
                     if ($hash) {
-                        main::readingsSingleUpdate($hash, 'state',  $p, 1);
+                         pctReadingsUpdate($hash, $p);
                         $result = $hash->{NAME};
                     }
                 }
@@ -438,7 +446,7 @@ sub parse_position {
             for $m (1..7) {
                 my $hash = $main::modules{+MODNAME}{defptr}{"0,$g,$m"};
                 if ($hash) {
-                    main::readingsSingleUpdate($hash, 'state',  $p, 1);
+                    pctReadingsUpdate($hash, $p);
                     $result = $hash->{NAME};
                 }
             }
@@ -604,6 +612,10 @@ sub X_Attr(@) {
             my $r = int($attrValue);
             return "invalid argument '$attrValue'. Expected: 0..5" unless (0 <= $r and $r <= 5);
         }
+        if ($attrName eq 'pctInverse') {
+            my $v = int($attrValue);
+            return "invalid argument '$attrValue'. Expected: 0..1" unless (0 <= $v and $v <= 1);
+        }
     }
     return undef;
 }
@@ -622,7 +634,7 @@ sub Tronferno_Initialize($) {
     $hash->{ParseFn}  = 'Tronferno::X_Parse';
     $hash->{UndefFn}  = 'Tronferno::X_Undef';
     $hash->{AttrFn}   =  'Tronferno::X_Attr';
-    $hash->{AttrList} = 'IODev repeats:0,1,2,3,4,5';
+    $hash->{AttrList} = 'IODev repeats:0,1,2,3,4,5 pctInverse:1,0';
     $hash->{Match}    = '^TFMCU#.+';
 }
 
@@ -694,10 +706,13 @@ Each output device may control a single shutter, or a group of shutters dependin
 </ol>
 
 <a name="Tronfernoattr"></a>
-<h6>Attributes</h6>
+<h4>Attributes</h4>
 <ul>
   <li><a name="repeats">repeats N</a><br>
         repeat sent messages N additional times to increase the chance of successfull delivery (default: 1 repeat)
+  </li>
+  <li><a name="pctInverse">pctInverse 1|0</a><br>
+        Invert position percents. Normal: Open=100%, Closed=0%. Inverted: Open=0%, Closed=100%
   </li>
 </ul>
 

@@ -81,6 +81,7 @@ my $mco = {
     MCFG_HTTP_PASSWORD => 'http-password',
     MCFG_HTTP_USER => 'http-user',
     MCFG_HTTP_ENABLE => 'http-enable',
+    MCFG_NETWORK => 'network',
 };
 
 my $mcof = {};
@@ -97,6 +98,8 @@ while(my($k, $v) = each %$mco) {
         $usage .= " $vp:1";
     } elsif ($k =~ /_ENABLE$/) {
         $usage .= " $vp:0,1";
+    } elsif ($k eq 'MCFG_NETWORK') {
+        $usage .= " $vp:none,ap,wlan,lan";
     } else {
         $usage .= " $vp";
     }
@@ -264,7 +267,7 @@ sub mcu_config($$$) {
     my ($hash, $opt, $arg) = @_;
     my $msg =  "$opt=$arg";
     $msg .=  " $opt=?" unless ($arg eq '?' || $opt eq 'wlan-password');
-    $msg .= ' restart=1' if 0 == index($opt, 'wlan-'); # do restart after changing any wlan option
+    $msg .= ' restart=1' if 0 == index($opt, 'wlan-') || ($opt == 'network'); # do restart after changing any network option
 
     main::DevIo_SimpleWrite($hash, "config $msg;", 2);
 }
@@ -745,6 +748,14 @@ sub TronfernoMCU_Initialize($) {
   <a name="mcc.verbose"></a>
   <li>mcc.verbose<br>
     Verbosity level of MCU's diagnose output (0 .. 5)</li>
+
+  <a name="mcc.network"></a>
+  <li>mcc.network<br>
+    Network to connect: none, ap, wlan, lan<br>
+     ap: Create Wlan accesspoint<br>
+     wlan: connect to existing WLAN<br>
+     lan: Ethernet<br>
+     Note: MCU will be restarted after setting this option</li>
 
   <a name="mcc.wlan-password"></a>
   <li>mcc.wlan-passord<br>

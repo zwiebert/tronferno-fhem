@@ -2,6 +2,9 @@
 # Add changes at the top of the list. Keep it in ASCII, and 80-char wide.
 # Do not insert empty lines here, update check depends on it.
 ################################################################################
+- 2020-05-02
+   -added   00_TronfernoMCU: new config option mcc.network
+   -added   10_Tronferno: new attribute pctInverse
 - 2020-02-11
    -change: send/receive real positions to/from the MCU (needs latest firmware)
 - 2020-01-19

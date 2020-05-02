@@ -59,10 +59,13 @@ Each output device may control a single shutter, or a group of shutters dependin
 </ol>
 
 <a name="Tronfernoattr"></a>
-<h6>Attributes</h6>
+<h4>Attributes</h4>
 <ul>
   <li><a name="repeats">repeats N</a><br>
         repeat sent messages N additional times to increase the chance of successfull delivery (default: 1 repeat)
+  </li>
+  <li><a name="pctInverse">pctInverse 1|0</a><br>
+        Invert position percents. Normal: Open=100%, Closed=0%. Inverted: Open=0%, Closed=100%
   </li>
 </ul>
 

@@ -59,6 +59,14 @@
   <li>mcc.verbose<br>
     Verbosity level of MCU's diagnose output (0 .. 5)</li>
 
+  <a name="mcc.network"></a>
+  <li>mcc.network<br>
+    Network to connect: none, ap, wlan, lan<br>
+     ap: Create Wlan accesspoint<br>
+     wlan: connect to existing WLAN<br>
+     lan: Ethernet<br>
+     Note: MCU will be restarted after setting this option</li>
+
   <a name="mcc.wlan-password"></a>
   <li>mcc.wlan-passord<br>
     Password used by MCU to connect to WLAN/WiFi<br>
