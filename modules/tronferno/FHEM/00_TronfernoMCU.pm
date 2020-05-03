@@ -21,7 +21,7 @@ use 5.14.0;
 
 package TronfernoMCU;
 
-use DevIo; # useless at the moment (because its using main name space)
+#use DevIo; # useless at the moment (because its using main name space)
 
 
 # protos to avoid module-reloading errors if signature has changed
@@ -893,11 +893,11 @@ sub TronfernoMCU_Initialize($) {
 <h3>TronfernoMCU</h3>
 
 
-<p><i>TronfernoMCU</i> ist ein physiches FHEM Gerät zum steuern von Fernotron-Empfängern und Empfang von Fernotrn Sendern.
+<p><i>TronfernoMCU</i> ist ein physisches FHEM Gerät zum steuern von Fernotron-Empfängern und Empfang von Fernotron Sendern.
 <ul>
- <li>Erzeugt das IODev benögit von den logischen Tronferno FHEM Geräten</li>
+ <li>Erzeugt das IODev benötigt von den logischen Tronferno FHEM Geräten</li>
  <li>MCU/RF-hardware/firmware: <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a></li>
- <li>Kann die Firmware flashen für den Mikrocontroller (ESP32 or ESP8266) mit den jeweiligen SET Kommandos. (wenn über USB verbunden mit FHEM Server)</i>
+ <li>Kann die Firmware flashen für den Mikrocontroller (ESP32 oder ESP8266) mit den jeweiligen SET Kommandos. (wenn über USB verbunden mit FHEM Server)</i>
  <li>Kann Mikrocontroller konfigurieren mit SET Kommandos</li>
  <li>Kann sich über Netzwerk oder USB mit dem Mikrocontroller verbinden.</li>
 </ul>
@@ -913,7 +913,7 @@ sub TronfernoMCU_Initialize($) {
 <li><code>IP4_ADDRES</code> Wenn MCU verbunden mit FHEM über Netzwerk</li>
 </ul>
 
-<p>Dieses Gerät muss vor allen Tronferno Geräten definiert werden die es benutzen. Beim FHEM server start muss es vorher erzeugt werden. Alle vorher erzeugten Tronferno Geräte können nicht angelegt werden.</p>
+<p>Dieses Gerät muss vor allen Tronferno Geräten definiert werden die es benutzen. Beim FHEM Server Start muss es vorher erzeugt werden. Alle vorher erzeugten Tronferno Geräte können nicht angelegt werden.</p>
 
 <p>Mehrere Geräte können definiert werden wenn mehrere MCs vorhanden sind. Dann den IODev der Tronferno Geräte auf den Namen des TronfernoMCU Gerätes setzen, welches verwendet werden soll.</p>
 
@@ -929,7 +929,7 @@ sub TronfernoMCU_Initialize($) {
 
   <a name="mcc.cu"></a>
   <li>mcc.cu<br>
-   Programmierzentralen-ID (sechstellige HEX Nummer im Batteriefach der 2411 Zentrale)</li>
+   Programmierzentralen-ID (sechsstellige Hex Nummer im Batteriefach der 2411 Zentrale)</li>
 
   <a name="mcc.latitude"></a>
   <li>mcc.latitude<br>
@@ -945,11 +945,11 @@ sub TronfernoMCU_Initialize($) {
 
   <a name="mcc.rtc"></a>
   <li>mcc.rtc<br>
-    Setzen der Uhrzeit des Controllers mittels ISO date/time (z.B. 2018-12-31T23:59:00), falls kein NTP möglich ist.</li>
+    Setzen der Uhrzeit des Controllers mittels ISO Datum/Zeit (z.B. 2018-12-31T23:59:00), falls kein NTP möglich ist.</li>
 
   <a name="mcc.tz"></a>
   <li>mcc.tz<br>
-    Time-zone im POSIX (TZ) Format</li>
+    Zeit-Zone im POSIX (TZ) Format</li>
 
   <a name="mcc.verbose"></a>
   <li>mcc.verbose<br>
@@ -959,15 +959,15 @@ sub TronfernoMCU_Initialize($) {
   <li>mcc.network<br>
     Netzwerk zum Verbinden des Controllers: none, ap, wlan, lan<br>
 <ul>
-     <li>none: No networking</li>
+     <li>none: Kein Netzwerk</li>
      <li>ap:  Wlan Zugangspunkt erzeugen (für Erstkonfiguration)</li>
      <li>wlan: Verbinde mit vorhandenem WLAN</li>
      <li>lan: Verbinde mit Router über Ethernet</li>
      <li>Hinweis: MC wird neugestartet nach setzen einer dieser Optionen</li>
 </ul></li>
   <a name="mcc.wlan-password"></a>
-  <li>mcc.wlan-passord<br>
-    Passwort zum Verbinen mit bestehendem WLAN Netz<br>
+  <li>mcc.wlan-password<br>
+    Passwort zum Verbinden mit bestehendem WLAN Netz<br>
    Hinweis: MC wird neugestartet nach setzen dieser Option</li>
 
 
@@ -989,17 +989,17 @@ sub TronfernoMCU_Initialize($) {
     </li>
 
   <a name="mcc.mqtt-url"></a>
-  <li>mcc.mqtt-url - URL of MQTT server to connect<br>
+  <li>mcc.mqtt-url - URL des MQTT Brokers/Servers<br>
     <code>set tfmcu mcc.mqtt-url "mqtt://192.168.1.42:7777"</code>
     </li>
 
   <a name="mcc.mqtt-user"></a>
-  <li>mcc.mqtt-user - Username für Login beim MQTT server/broker<br>
+  <li>mcc.mqtt-user - Username für Login beim MQTT Server/Broker<br>
     <code>set tfmcu mcc.mqtt-user myUserName</code>
     </li>
 
   <a name="mcc.mqtt-password"></a>
-  <li>mcc.mqtt-password - Passwort für Login beim MQTT server/broker<br>
+  <li>mcc.mqtt-password - Passwort für Login beim MQTT Server/Broker<br>
     <code>set tfmcu mcc.mqtt-password myPassword</code>
     </li>
 
@@ -1038,7 +1038,7 @@ sub TronfernoMCU_Initialize($) {
         Kombiniert download und flashen in einem Schritt.
          </li>
      <li>xxx.erase-flash<br>
-          Optional: Löschen des FLASH-ROM. Alles gespeicherten Daten auf dem MC gehen verloren!</br>
+          Optional: Löschen des FLASH-ROM. Alle gespeicherten Daten auf dem MC gehen verloren!</br>
          Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
          Status ist sichtbar im Reading fw_erase_flash (run,done,error,timeout).</li>
      <li>download-beta-version<br>

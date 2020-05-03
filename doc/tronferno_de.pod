@@ -6,7 +6,7 @@
 
 <h3>Tronferno</h3>
 
-<i>Tronferno</i> ist ein logisches FHEM-Modul zum steuern von Rolladen Motoren und Steckdosen und empfangen von Sendern und Sensoren über das Fernotron-Funkprotokoll mithilfe eines Mikrocontrollers. Es verwendet das physische FHEM-Modul TronfernoMCU um mit der <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a> Mikrocontroller Firmware zu kommunizieren.
+<i>Tronferno</i> ist ein logisches FHEM-Modul zum steuern von Rollladen Motoren und Steckdosen und empfangen von Sendern und Sensoren über das Fernotron-Funkprotokoll mithilfe eines Mikrocontrollers. Es verwendet das physische FHEM-Modul TronfernoMCU um mit der <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a> Mikrocontroller Firmware zu kommunizieren.
 
 <h4>Define</h4>
 
@@ -18,7 +18,7 @@
 <p>
 <ul>
   <li>a=ID : Geräte ID. Default ist die ID der 2411 (gespeichert in der MCU). Nur verwenden, wenn eine abweichende ID benutzt werden soll.<br>
-             Sechstellige Hexadezimale-Zahl nach dem Muster: 10xxxx=Handsender, 20xxxx=Sonnensensor, 80xxxx=Zentralet, 90xxxx=Motor.</li>
+             Sechsstellige Hexadezimale-Zahl nach dem Muster: 10xxxx=Handsender, 20xxxx=Sonnensensor, 80xxxx=Zentrale, 90xxxx=Motor.</li>
   <li>g=N : Gruppen-Nummer (1-7)  oder  0/weglassen für alle Gruppen</li>
   <li>m=N : Empfänger-Nummer (1-7) oder  0/weglassen für alle Empfänger der Gruppe</li>
   <li>scan : Definiert ein Gerät welches alle eingehenden Fernotron-Nachrichten empfängt. Wird automatisch angelegt als "Tronferno_Scan"</li>
@@ -28,8 +28,8 @@
 </ul>
 
 
-<p>Ein Tronferno Gerät kann entweder einen einzelnen Empfäger oder eine Gruppe von Empfängern gleichzeitig adressieren.
-<p>Empfangene Nachrichten von Controllern/Sensoren werden durch Eingabe Geräte verarbeitet. Das (automatish erzeugte) Default-Eingabegerät (Tronferno_Scan) empfängt alle Nachrichten, für die noch kein eigenes Eingabe Geräte definiert wurde.
+<p>Ein Tronferno Gerät kann entweder einen einzelnen Empfänger oder eine Gruppe von Empfängern gleichzeitig adressieren.
+<p>Empfangene Nachrichten von Controllern/Sensoren werden durch Eingabe Geräte verarbeitet. Das (automatisch erzeugte) Default-Eingabegerät (Tronferno_Scan) empfängt alle Nachrichten, für die noch kein eigenes Eingabe Geräte definiert wurde.
 <p> Eingabegeräte werden durch Verwenden des Parameters 'input' in der Definition erzeugt.
 
 
@@ -45,10 +45,10 @@
 </ul>
 <h5>Beispiele für Geräte zum Empfang von Sendern</h5>
 <ul>
-<li><code>define myFernoSwitch Tronferno a=10abcd input</code> (Handsender als Schalter für Hoch/Runter/Stop)</li>
+<li><code>define myFernoSwitch Tronferno a=10abcd input</code> (Handsender als Schalter für Hoch/Runter/Stopp)</li>
 <li><code>define myFernoSun Tronferno a=20abcd input</code>  (Sonnensensor als on/off Schalter  (on: Sonnenschein, off: kein Sonnenschein))</li>
-<li><code> myFernoSwitch2 Tronferno g=2 m=3 input </code> (Programmierzentrale als Schalter für Hoch/Runter/Stop)</li>
-<li><code>define n_toggleHUEDevice3 notify myFernoSwitch:stop set HUEDevice3 toggle</code> (Schalte Hue-Lampe um wenn Stop gedrückt wird)</li>
+<li><code> myFernoSwitch2 Tronferno g=2 m=3 input </code> (Programmierzentrale als Schalter für Hoch/Runter/Stopp)</li>
+<li><code>define n_toggleHUEDevice3 notify myFernoSwitch:stop set HUEDevice3 toggle</code> (Schalte Hue-Lampe um wenn Stopp gedrückt wird)</li>
 <li><code>define n_toggleHUEDevice3 notify Tronferno_Scan:plain:1089ab:stop set HUEDevice3 toggle</code> (...wie oben, aber mit dem allgemeinem Input Gerät "scan")</li>
 <li><code></code> </li>
 </ul>
@@ -59,10 +59,10 @@
 
 <ol>
   <li> Die IDs vorhandener Sende-Geräte einscannen und dann benutzen.
-    Beispiel: Die ID der 2411 benutzen um dann über Gruppen und Empfängernummern die Rolläden anzusprechen.</li>
+    Beispiel: Die ID der 2411 benutzen um dann über Gruppen und Empfängernummern die Rollläden anzusprechen.</li>
 
   <li> Ausgedachte Handsender IDs mit Motoren zu koppeln.
-    Beispiel: Rolladen Nr 1 mit 100001, Nr 2 mit 100002, ...</li>
+    Beispiel: Rollladen 1 mit 100001, Rollladen 2 mit 100002, ...</li>
 
   <li> Empfänger IDs: Funkmotoren haben 5 stellige "Funk-Codes" aufgedruckt, eigentlich gedacht zur Inbetriebnahme.
     Es muss eine 9 davorgestellt werden um die ID zu erhalten.</li>
@@ -71,7 +71,7 @@
 <h5>Drei Arten der Gruppenbildung</h5>
 
 <ol>
-  <li>Gruppen und Empfäger entsprechen der 2411. Gruppenbildung durch die 0 als Joker.  (g=1 m=0 oder g=0 m=1) </li>
+  <li>Gruppen und Empfänger entsprechen der 2411. Gruppenbildung durch die 0 als Joker.  (g=1 m=0 oder g=0 m=1) </li>
 
   <li> Wie bei realen Handsendern. Beispiel: Ein (virtueller) Handsender wird bei allen Motoren einer Etage angemeldet.</li>
 
@@ -93,7 +93,7 @@
   <li>
     <code>define myShutter1 Tronferno a=100001</code><br>
     <code>define myShutter2 Tronferno a=100002</code><br>
-    Now activate Set-mode on the Fernotron receiver and send a STOP by the newly defined device you wish to pair with it.
+    Nun aktiviere Set-Modus am Fernotron Empfänger und sende Stopp vom neu definierten Geräte um es zu koppeln.
  ...</li>
 
 <li><code>define myShutter__0d123 Tronferno a=90d123</code></li>
@@ -104,7 +104,7 @@
 <h4>Attribute</h4>
 <ul>
   <li><a name="repeats">repeats N</a><br>
-        Wiederhohlung einer Nachricht beim Senden zum Verbessern der Chancen das sie ankommt (default ist 2 Wiederhohlungen).
+        Wiederhohlen einer Nachricht beim Senden zum Verbessern der Chancen das sie ankommt (default ist 2 Wiederhohlungen).
   </li>
   <li><a name="pctInverse">pctInverse 1|0</a><br>
         Invertiert die Position-Prozente Normal: Auf=100%, ZU=0%. Invertiert: Auf=0%, Zu=100%<br>
@@ -115,7 +115,7 @@
 <h4>Set</h4>
 <ul>
   <a name=up></a>
-  <li>up - Öffne Rolladen</li>
+  <li>up - Öffne Rollladen</li>
 
   <a name=down></a>
   <li>down - Schließe Rollladen</li>
@@ -124,7 +124,7 @@
   <li>stop - Stoppe den Rollladen</li>
 
   <a name=set></a>
-  <li>set  - Aktiviere Kopplungs Modus am Fernotron Empfänger (SET)</li>
+  <li>set  - Aktiviere Koppel Modus am Fernotron Empfänger (SET)</li>
 
   <a name=sun-down></a>
   <li>sun-down - Bewege Rollladen zur SonnenSensor-Position (wenn Sonnenautomatik aktiv ist und der Rollladen zur Zeit weiter geöffnet ist als die Sonnenposition)</li>
@@ -136,10 +136,10 @@
   <li>sun-inst - Speichere aktuelle Position als neue Sonnenposition</li>
 
   <a name=position></a>
-  <li>position - Bewege den Rollladen zur angegebenen Position in Prozent. (100% ist offen. sprachsteuerung: 1% ist stop, 2% ist sun-down)</li>
+  <li>position - Bewege den Rollladen zur angegebenen Position in Prozent. (100% ist offen. Sprachsteuerung: 1% ist stop, 2% ist sun-down)</li>
 
   <a name=pct></a>
-  <li>pct - Bewege den Rollladen zur angegebenen Position in Prozent. (100% ist offen. sprachsteuerung: 1% ist stop, 2% ist sun-down)</li>
+  <li>pct - Bewege den Rollladen zur angegebenen Position in Prozent. (100% ist offen. Sprachsteuerung: 1% ist stop, 2% ist sun-down)</li>
 
 
   <a name=sun-auto></a>
@@ -153,7 +153,7 @@
    <li><code>set &lt;name&gt; manual off</code></li>
   </ul>
 
-    <p><small>Klugde: Der Manuelle Modus wird erreicht durch ersetzten der Programme des Empfängers. Um wieder in den Automatik-Modus zu wechseln müssen alle Timer neu programmiert werden (mit den in der MCU zwischengespeichterten Daten). Die Original 2411 macht dies auch so.</small>
+    <p><small>Klugde: Der Manuelle Modus wird erreicht durch ersetzten der Programme des Empfängers. Um wieder in den Automatik-Modus zu wechseln müssen alle Timer neu programmiert werden (mit den in der MCU zwischengespeicherten Daten). Die Original 2411 macht dies auch so.</small>
 </li>
 
   <a name=random></a>
@@ -161,7 +161,7 @@
 
 <a name=daily></a>
 <li>daily - Programmiere Tages-Timer des Empfängers<br>
-   Format: HHMMHHMM for auf/zu Timer. Benutze  '-' statt HHMM zum deaktivieren des auf oder zu Timers.<br>
+   Format: HHMMHHMM für auf/zu Timer. Benutze  '-' statt HHMM zum deaktivieren des auf oder zu Timers.<br>
    <ul>
     <li><code>set &lt;name&gt; daily off</code> deaktiviert Tagestimer</li>
     <li><code>set &lt;name&gt; daily "0700-"</code> täglich um 7:00 Uhr öffnen</li>
@@ -171,7 +171,7 @@
 
 <a name=weekly></a>
 <li>weekly - Programmiere Wochentimer des Empfängers<br>
-   Format: Wie Tagestimer (HHMMHHMM) haber 7 mal hintereinander. Von Montag bis Sonntag. Ein '+' kopiert den Timer vom Vortag.<br>
+   Format: Wie Tagestimer (HHMMHHMM) aber 7 mal hintereinander. Von Montag bis Sonntag. Ein '+' kopiert den Timer vom Vortag.<br>
    <ul>
      <li><code>set &lt;name&gt; weekly off</code> deaktiviert Wochentimer</li>
      <li><code>set &lt;name&gt; weekly "0700-++++0900-+"</code>  Mo-Fr um 07:00 Uhr öffnen, Sa-So um 09:00 Uhr öffnen</li>
@@ -184,14 +184,14 @@
     Der Rollladen schließt zur zivilen Dämmerung +/- dem angegebenen Minuten-Offset.<br>
     <ul>
       <li><code>set &lt;name&gt; astro off</code> deaktiviert Astro-Timer</li>
-      <li><code>set &lt;name&gt; astro on</code> schließt zur zvilen Dämmerung</li>
+      <li><code>set &lt;name&gt; astro on</code> schließt zur zivilen Dämmerung</li>
       <li><code>set &lt;name&gt; astro "-10"</code> schließt 10 Minuten vor der zivilen Dämmerung</li>
       <li><code>set &lt;name&gt; astro 10</code> schließt 10 Minuten nach der zivilen Dämmerung</li>
     </ul>
 </li>
 
   <a name=xxx_pair></a>
-  <li>xxx_pair - Binde den Sender der als nächstes sendet an diesen Empfänger. Dies dient dazu, die Position des Motors zu ermitteln, in dem der Mikrocontroller Befehler von gekoppelten Sendern mithört. Man sollte also nur Sender hier binden die auch real diesen Empfänger steuern (also mit ihm real gekoppelt sind).
+  <li>xxx_pair - Binde den Sender der als nächstes sendet an diesen Empfänger. Dies dient dazu, die Position des Motors zu ermitteln, in dem der Mikrocontroller alle Befehle von gekoppelten Sendern mithört. Man sollte also nur Sender hier binden die auch real diesen Empfänger steuern (also mit ihm real gekoppelt sind).
 
   <a name=xxx_unpair></a>
   <li>xxx_unpair - Lösche die Bindung des Senders der als nächstes sendet an diesen Empfänger.</li>
@@ -204,7 +204,7 @@
 <code>attr &lt;name&gt;  genericDeviceType blind</code><br>
 <code>attr &lt;name&gt;  alexaName Schlafraum Rollo</code><br>
 </li>
-<li>Buttons and Slider in FHEMWEB<br>
+<li>Buttons und Schieber in FHEMWEB<br>
 <code>attr &lt;name&gt; webCmd up:stop:down:sun-down:pct</code><br>
 </li>
 <li>Home-Bridge<br>
