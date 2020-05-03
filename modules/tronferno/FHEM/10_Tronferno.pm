@@ -38,6 +38,19 @@ my $msb2fdt = { '10' => FDT_PLAIN, '20' => FDT_SUN, '80' => FDT_CENTRAL,  '90' =
 
 my $def_mcuaddr = 'fernotron.fritz.box.';
 
+sub tf_set_def_match($$) {
+    my ($hash, $def_match) = @_;
+    my $old_def_match = $hash->{helper}{def_match};
+    delete ($main::modules{+MODNAME}{defptr}{$old_def_match}) if defined $old_def_match;
+    if (defined $def_match) {
+        $main::modules{+MODNAME}{defptr}{$def_match} = $hash;
+        $hash->{helper}{def_match} = $def_match;
+    } else {
+        delete ($hash->{helper}{def_match});
+    }
+}
+
+
 sub X_Define($$) {
     my ($hash, $def) = @_;
     my @a       = split("[ \t][ \t]*", $def);
@@ -92,12 +105,7 @@ sub X_Define($$) {
 
     main::AssignIoPort($hash, $iodev);
 
-    my $def_match = "$a,$g,$m";
-    #TODO: remove the old dev_match here and in X_Undef!
-    $hash->{helper}{def_match} = $def_match;
-
-    $main::modules{+MODNAME}{defptr}{$def_match} = $hash;
-    #main::Log3($hash, 0, "def_match: $def_match");
+    tf_set_def_match($hash, "$a,$g,$m");
 
     $defptr->{aDevs}{"$hash"} = $hash;
     if ($is_iDev) {
@@ -124,6 +132,8 @@ sub pctReadingsUpdate($$) {
 sub X_Undef($$) {
     my ($hash, $name) = @_;
     my $defptr  = $main::modules{+MODNAME}{defptr};
+
+    tf_set_def_match($hash, undef);
 
     # remove deleted input devices from defptr
     my $key = $hash->{helper}{inputKey};
@@ -635,7 +645,7 @@ sub Tronferno_Initialize($) {
     $hash->{GetFn}    = 'Tronferno::X_Get';
     $hash->{ParseFn}  = 'Tronferno::X_Parse';
     $hash->{UndefFn}  = 'Tronferno::X_Undef';
-    $hash->{AttrFn}   =  'Tronferno::X_Attr';
+    $hash->{AttrFn}   = 'Tronferno::X_Attr';
     $hash->{AttrList} = 'IODev repeats:0,1,2,3,4,5 pctInverse:1,0';
     $hash->{Match}    = '^TFMCU#.+';
 }
