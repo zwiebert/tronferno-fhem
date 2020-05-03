@@ -652,64 +652,53 @@ sub Tronferno_Initialize($) {
 
 <h3>Tronferno</h3>
 
-<i>Tronferno</i> is a logic FHEM module to control Fernotron shutters via radio frequency. To do this, it utilizes the <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a> micro controller firmware.
-
-<ul>
-<li>Required I/O device: <i>TronfernoMCU</i></li>
-<li>Protocol limitations: It's uni-directional. No information of the receivers status is available. So it's not best suited for automation without user attention.</li>
-<li>Pairing: Senders have 6 digit Hex-Numbers as ID.  To pair, the receiver learns IDs of its paired Senders.</li>
-<li>Sending directly: Motors have also an ID wich can be used to address messages to it without pairing.</li>
-</ul>
+<i>Tronferno</i> is a logic FHEM module to control Fernotron shutters via radio frequency. To do this, it utilizes the <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a> micro controller firmware.is a logic FHEM module to control shutters and power plugs and receive commands from transmitters and sensors using Fernotron protocol. This requires the pyhsical TronfernoMCU module and the  <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a>  MCU firmware.
 
 
-<h4>Defining Devices</h4>
-
-<h5>1. FHEM devices to control Fernotron devices</h5>
-
-Each output device may control a single shutter, or a group of shutters depending on the parameters given in the define statement.
+<h4>Define</h4>
 
 <p>
   <code>
-    define  &lt;name&gt; Tronferno [a=ID] [g=GN] [m=MN]<br>
+    define  &lt;name&gt; Tronferno [a=ID] [g=N] [m=N] [input[=(plain|sun|central)]] [scan]<br>
   </code>
 
 <p>
-  ID : the device ID.  A six digit hexadecimal number. 10xxxx=plain controller, 20xxxx=sun sensor, 80xxxx=central controller unit, 90xxxx=receiver. 0 (default) for using the default central unit of Tronferno-MCU<br>
-  GN : group number (1-7) or 0 (default) for all groups<br>
-  MN : member number  (1-7) or  0 (default) for all group members<br>
-
-<p>
-  'g' or  'n' are only useful combined with an ID of the central controller type.
-
-<h5>2. FHEM Devices to receive Fernotron senders</h5>
+<ul>
+  <li>a=ID : Device ID. Default is the ID of the original Central (stored in the MCU). To use, if a different ID needs to be used.<br>
+             6-digit hex number following the pattern: 10xxxx=plain controller, 20xxxx=sun sensor, 80xxxx=central controller unit, 90xxxx=receiver</li>
+  <li>g=N : group number (1-7)  or 0 (default) for all groups</li>
+  <li>m=N : group member number (1-7) or 0 (default) for all group members</li>
+  <li>scan : Defines a devie which receives alll incoming Fernotron message, if not comsumed by an explicit defined input device. This device will be auto-created as "Tronferno_Scan"</li>
+  <li>input: Defines a device to receive Fernotron message for a given address (a/g/m)<br>
+             The transmitter-types plain, sun oder central can be omitted, and will then be determined by the ID number<br>
+ <li>Note: The options a/g/m have default value 0. It does not matter if these options are just omitted or set to value 0 like in a=0 g=0 m=0.</li>
+</ul>
 
 <p>  Incoming data is handled by input devices. There is one default input device, who handles all messages not matchin a defined input device. The default input device will be auto-created.
-
 <p> Input devices are defined just like output devices, but with the parameter 'input' given in the define.
 
-<p>
-  <code>
-    define  &lt;name&gt; Tronferno a=ID [g=GN] [m=MN] input[=(plain|sun|central)]<br>
-  </code>
-<p>
-The input type (like plain) can be ommitted. Its already determined by the ID (e.g. each ID starting with 10 is a plain controller).
+<h5>Examples of devices for transmitting</h5>
 <ul>
- <li>defining a plain controller as switch for up/down/stop<br>
-      <code>define myFernoSwitch Tronferno a=10abcd input</code></li>
-<li>defining a sun sensor as on/off switch (on: sunshine, off: no sunshine)<br>
-     <code>define myFernoSun Tronferno a=20abcd input </code></li>
-<li>defining a switch for up/down/stop controlled by a Tronferno central unit<br>
-     <code>define myFernoSwitch2 Tronferno a=80abcd g=2 m=3 input</code></li>
-<li>define a notify device to toggle our light device HUEDevice3<br>
-      <code>define myFernoSwitch2 Tronferno a=80abcd g=2 m=3 input</code></li>
- <li>define a notify device to toggle our light device HUEDevice3<br>
-     <code>define n_toggleHUEDevice3 notify myFernoSwitch:stop set HUEDevice3 toggle</code></li>
-<li>Its possible to use the default input device with your notify device, if you don't want to define specific input devices. This works only if you really had no input device defined for that Tronferno ID<br>
-     <code>define n_toggleHUEDevice3 notify Tronferno_Scan:plain:10abcd:stop set HUEDevice3 toggle</code></li>
+<li><code>define tfmcu TronfernoMCU /dev/ttyUSB0</code> (define the required physical device first)</li>
+<li><code>define roll21 Tronferno g=2 m=1</code> (shutter 1 in group 2)</li>
+<li><code>define roll10 Tronferno g=1</code> (shutter-group 1)</li>
+<li><code>define roll00 Tronferno</code> (all shutter-groups)</li>
+<li><code>define plain_101234 Tronferno a=101234</code> (simulated plain sender 101234</li>
+<li><code>define motor_0abcd Tronferno a=90abcd</code> (transmits direct to motor 0abcd. Add the leading digit 9 to the motor code to form an ID!)</li>
+<li><code></code> </li>
+</ul>
+<h5>Examples of devices to receive</h5>
+<ul>
+<li><code>define myFernoSwitch Tronferno a=10abcd input</code> (plain transmitter as switch for up/down/stop)</li>
+<li><code>define myFernoSun Tronferno a=20abcd input</code>  (sun sensor as on/off switch  (on: sun, off: no sun))</li>
+<li><code> myFernoSwitch2 Tronferno g=2 m=3 input </code> (central unit as switch for up/down/stop)</li>
+<li><code>define n_toggleHUEDevice3 notify myFernoSwitch:stop set HUEDevice3 toggle</code> (toggle Hue-lamp when pressing stop)</li>
+<li><code>define n_toggleHUEDevice3 notify Tronferno_Scan:plain:1089ab:stop set HUEDevice3 toggle</code> (...like above but using the catch-all input device "scan")</li>
+<li><code></code> </li>
 </ul>
 
 
-<h4>Adressing and Pairing in Detail</h4>
+
 
 <h5>Three different methods to make messsages find their target Fernotron receiver</h5>
 <ol>
@@ -723,7 +712,7 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
   Prefix that number with a 9 to get an valid ID for defining a device.</li>
 </ol>
 
-<h4>Making Groups</h4>
+<h5>Three kinds of grouping</h5>
 
 <ol>
   <li>groups and members are the same like in 2411. Groups are adressed using the 0 as wildcard.  (g=1 m=0 or g=0 m=1 or g=0 m=0) </li>
@@ -731,6 +720,27 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
   <li> Like with plain controllers or sun sensors. Example: a (virtual) plain controller paired with each shutter of the entire floor.</li>
 
   <li> not possible with receiver IDs</li>
+</ol>
+
+<h5>Three examples</h5>
+<ol>
+  <li>
+    <code>define myShutterGroup1 Tronferno g=1 m=0</code><br>
+    <code>define myShutter11 Tronferno g=1 m=1</code><br>
+    <code>define myShutter12 Tronferno g=1 m=2</code><br>
+    ...
+    <code>define myShutterGroup2 Tronferno g=2 m=0</code><br>
+    <code>define myShutter21 Tronferno g=2 m=1</code><br>
+    <code>define myShutter22 Tronferno g=2 m=2</code><br>
+      </li>
+
+  <li>
+    <code>define myShutter1 Tronferno a=100001</code><br>
+    <code>define myShutter2 Tronferno a=100002</code><br>
+    Now activate Set-mode on the Fernotron receiver and send a STOP by the newly defined device you wish to pair with it.
+ ...</li>
+
+<li><code>define myShutter__0d123 Tronferno a=90d123</code></li>
 </ol>
 
 <a name="Tronfernoattr"></a>
@@ -830,43 +840,20 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 </ul>
 
 
-<h4>Examples</h4>
-
-
+<h4>GUI und speech control</h4>
 <ul>
-      <li>first define the I/O device, so it exists before any myShutter_xx devices which are depending on it.<br>
-      <code>define tfmcu TronfernoMCU 192.168.1.123</code></li>
-</ul>
-
-<h5>Adressing and Pairing in Detail</h5>
-<ol>
-  <li>
-    <code>define myShutterGroup1 Tronferno g=1 m=0</code><br>
-    <code>define myShutter11 Tronferno g=1 m=1</code><br>
-    <code>define myShutter12 Tronferno g=1 m=2</code><br>
-    ...
-    <code>define myShutterGroup2 Tronferno g=2 m=0</code><br>
-    <code>define myShutter21 Tronferno g=2 m=1</code><br>
-    <code>define myShutter22 Tronferno g=2 m=2</code><br>
-      </li>
-
-  <li>
-    <code>define myShutter1 Tronferno a=100001</code><br>
-    <code>define myShutter2 Tronferno a=100002</code><br>
-    Now activate Set-mode on the Fernotron receiver and send a STOP by the newly defined device you wish to pair with it.
- ...</li>
-
-<li><code>define myShutter__0d123 Tronferno a=90d123</code></li>
-</ol>
-
-<h5>More Examples</h5>
-<ul>
-<li>Attribute for alexa module:<br>
-<code>attr myShutter_42 genericDeviceType blind</code><br>
-<code>attr myShutter_42 alexaName bedroom shutter</code><br>
+<li>Alexa<br>
+<code>attr &lt;name&gt;  genericDeviceType blind</code><br>
+<code>attr &lt;name&gt;  alexaName Schlafraum Rollo</code><br>
 </li>
-<li>GUI buttons<br>
-<code>attr myShutter_42 webCmd down:stop:up</code><br>
+<li>buttons and sliders in FHEMWEB<br>
+<code>attr &lt;name&gt; webCmd up:stop:down:sun-down:pct</code><br>
+</li>
+<li>Home-Bridge<br>
+<code>attr &lt;name&gt; room Homekit</code><br>
+<code>attr &lt;name&gt; genericDeviceType blind</code><br>
+<code>attr &lt;name&gt; webCmd down:stop:up</code><br>
+<code>attr &lt;name&gt; userReadings position { ReadingsVal($NAME,"state",0) }</code><br>
 </li>
 </ul>
 
@@ -879,7 +866,7 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 
 <h3>Tronferno</h3>
 
-<i>Tronferno</i> ist ein logisches FHEM-Modul zum steuern von Fernotron Rolladen Motoren über Funk. Es verwendet die <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a> Mikrocontroller Firmware.
+<i>Tronferno</i> ist ein logisches FHEM-Modul zum steuern von Rolladen Motoren und Steckdosen und empfangen von Sendern und Sensoren über das Fernotron-Funkprotokoll mithilfe eines Mikrocontrollers. Es verwendet das physische FHEM-Modul TronfernoMCU um mit der <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a> Mikrocontroller Firmware zu kommunizieren.
 
 <h4>Define</h4>
 
@@ -890,19 +877,20 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 
 <p>
 <ul>
-  <li>a=ID : Geräte ID. ID ist 0 (default), wenn die ID der 2411 benutzt werden soll.  Andernfalls ist eine sechstellige Hex-Nummer, nach dem Muster: 10xxxx=Handsender, 20xxxx=Sonnensensor, 80xxxx=Zentralet, 90xxxx=Motor.</li>
-  <li>g=N : Gruppen-Nummer (1-7) oder  0 (default) für alle Gruppen</li>
-  <li>m=N : Empfänger-Nummer (1-7) or  0 (default) for alle Empfänger</li>
-  <li>scan : Bezeichnet ein Gerät welches alle eingehenden Fernotron-Nachrichten empfängt. Wird automatisch angelegt</li>
-  <li>input: Bezeichnet ein Gerät welches eingehende Fernotron-Nachrichten empfängt die für den Empfänger a/g/m bestimmt sind<br>
-             Die SenderTypen plain, sun oder central können aber brauchen nicht angegeben werden, da  sie sich bereits aus der ID ergeben<br>
- <li>Hinweis: Die Optionen a/g/m haben den Default-Wert 0. Das bedeutet man kann sie ganz weglassen statt "a=0" oder "m=0" zu schreiben.</li>
+  <li>a=ID : Geräte ID. Default ist die ID der 2411 (gespeichert in der MCU). Nur verwenden, wenn eine abweichende ID benutzt werden soll.<br>
+             Sechstellige Hexadezimale-Zahl nach dem Muster: 10xxxx=Handsender, 20xxxx=Sonnensensor, 80xxxx=Zentralet, 90xxxx=Motor.</li>
+  <li>g=N : Gruppen-Nummer (1-7)  oder  0/weglassen für alle Gruppen</li>
+  <li>m=N : Empfänger-Nummer (1-7) oder  0/weglassen für alle Empfänger der Gruppe</li>
+  <li>scan : Definiert ein Gerät welches alle eingehenden Fernotron-Nachrichten empfängt. Wird automatisch angelegt als "Tronferno_Scan"</li>
+  <li>input: Definiert Geräte welches eingehende Fernotron-Nachrichten empfängt die für den Empfänger a/g/m bestimmt sind<br>
+             Die SenderTypen plain, sun oder central brauchen nicht angegeben werden, da  sie sich bereits aus der ID ergeben<br>
+ <li>Hinweis: Die Optionen a/g/m haben den Default-Wert 0. Es ist das selbe ob man sie ganz weglässt oder explizit 0 als Wert benutzt (a=0 g=0 m=0).</li>
 </ul>
 
 
-<p>Jedes der FHEM Geräte kann entweder einen Empfäger oder eine Gruppe von Empfängern steuern. Festgelegt durch die Parameter bei der Gerätedefinition.
-<p>Empfangene Nachrichten von Controllern/Sensoren werden durch Eingabe Geräte verarbeitet. Es gibt ein Default-Eingabegerät, welches alle Nachrichten verarbeitet, für die kein eigenes Eingabe Geräte definiert wurde. Das Default-Eingabegerät wird automatisch angelegt.
-<p> Eingabegeräte werden wie Ausgebegeräte definiert plus dem Parameter 'input' in der Definition:
+<p>Ein Tronferno Gerät kann entweder einen einzelnen Empfäger oder eine Gruppe von Empfängern gleichzeitig adressieren.
+<p>Empfangene Nachrichten von Controllern/Sensoren werden durch Eingabe Geräte verarbeitet. Das (automatish erzeugte) Default-Eingabegerät (Tronferno_Scan) empfängt alle Nachrichten, für die noch kein eigenes Eingabe Geräte definiert wurde.
+<p> Eingabegeräte werden durch Verwenden des Parameters 'input' in der Definition erzeugt.
 
 
 <h5>Beispiele für Geräte zum Senden</h5>
@@ -927,7 +915,7 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 
 
 
-<h5>3 verschiedene Methoden der Adressierung</h5>
+<h5>Drei verschiedene Methoden der Adressierung</h5>
 
 <ol>
   <li> Die IDs vorhandener Sende-Geräte einscannen und dann benutzen.
@@ -940,7 +928,7 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
     Es muss eine 9 davorgestellt werden um die ID zu erhalten.</li>
 </ol>
 
-<h5>3 Arten der Gruppenbildung</h5>
+<h5>Drei Arten der Gruppenbildung</h5>
 
 <ol>
   <li>Gruppen und Empfäger entsprechen der 2411. Gruppenbildung durch die 0 als Joker.  (g=1 m=0 oder g=0 m=1) </li>
@@ -950,7 +938,7 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
   <li> nicht möglich</li>
 </ol>
 
-<h5>3 Beispiele</h5>
+<h5>Drei Beispiele</h5>
 <ol>
   <li>
     <code>define myShutterGroup1 Tronferno g=1 m=0</code><br>
@@ -1094,5 +1082,3 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 # eval: (my-buffer-local-set-key (kbd "C-c C-c") (lambda () (interactive) (shell-command "cd ../../.. && ./build.sh")))
 # eval: (my-buffer-local-set-key (kbd "C-c c") 'compile)
 # End:
-
-define myShutter12 Tronferno a=0 g=1 m=2

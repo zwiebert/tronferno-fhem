@@ -6,7 +6,7 @@
 
 <h3>Tronferno</h3>
 
-<i>Tronferno</i> ist ein logisches FHEM-Modul zum steuern von Fernotron Rolladen Motoren über Funk. Es verwendet die <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a> Mikrocontroller Firmware.
+<i>Tronferno</i> ist ein logisches FHEM-Modul zum steuern von Rolladen Motoren und Steckdosen und empfangen von Sendern und Sensoren über das Fernotron-Funkprotokoll mithilfe eines Mikrocontrollers. Es verwendet das physische FHEM-Modul TronfernoMCU um mit der <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a> Mikrocontroller Firmware zu kommunizieren.
 
 <h4>Define</h4>
 
@@ -17,19 +17,20 @@
 
 <p>
 <ul>
-  <li>a=ID : Geräte ID. ID ist 0 (default), wenn die ID der 2411 benutzt werden soll.  Andernfalls ist eine sechstellige Hex-Nummer, nach dem Muster: 10xxxx=Handsender, 20xxxx=Sonnensensor, 80xxxx=Zentralet, 90xxxx=Motor.</li>
-  <li>g=N : Gruppen-Nummer (1-7) oder  0 (default) für alle Gruppen</li>
-  <li>m=N : Empfänger-Nummer (1-7) or  0 (default) for alle Empfänger</li>
-  <li>scan : Bezeichnet ein Gerät welches alle eingehenden Fernotron-Nachrichten empfängt. Wird automatisch angelegt</li>
-  <li>input: Bezeichnet ein Gerät welches eingehende Fernotron-Nachrichten empfängt die für den Empfänger a/g/m bestimmt sind<br>
-             Die SenderTypen plain, sun oder central können aber brauchen nicht angegeben werden, da  sie sich bereits aus der ID ergeben<br>
- <li>Hinweis: Die Optionen a/g/m haben den Default-Wert 0. Das bedeutet man kann sie ganz weglassen statt "a=0" oder "m=0" zu schreiben.</li>
+  <li>a=ID : Geräte ID. Default ist die ID der 2411 (gespeichert in der MCU). Nur verwenden, wenn eine abweichende ID benutzt werden soll.<br>
+             Sechstellige Hexadezimale-Zahl nach dem Muster: 10xxxx=Handsender, 20xxxx=Sonnensensor, 80xxxx=Zentralet, 90xxxx=Motor.</li>
+  <li>g=N : Gruppen-Nummer (1-7)  oder  0/weglassen für alle Gruppen</li>
+  <li>m=N : Empfänger-Nummer (1-7) oder  0/weglassen für alle Empfänger der Gruppe</li>
+  <li>scan : Definiert ein Gerät welches alle eingehenden Fernotron-Nachrichten empfängt. Wird automatisch angelegt als "Tronferno_Scan"</li>
+  <li>input: Definiert Geräte welches eingehende Fernotron-Nachrichten empfängt die für den Empfänger a/g/m bestimmt sind<br>
+             Die SenderTypen plain, sun oder central brauchen nicht angegeben werden, da  sie sich bereits aus der ID ergeben<br>
+ <li>Hinweis: Die Optionen a/g/m haben den Default-Wert 0. Es ist das selbe ob man sie ganz weglässt oder explizit 0 als Wert benutzt (a=0 g=0 m=0).</li>
 </ul>
 
 
-<p>Jedes der FHEM Geräte kann entweder einen Empfäger oder eine Gruppe von Empfängern steuern. Festgelegt durch die Parameter bei der Gerätedefinition.
-<p>Empfangene Nachrichten von Controllern/Sensoren werden durch Eingabe Geräte verarbeitet. Es gibt ein Default-Eingabegerät, welches alle Nachrichten verarbeitet, für die kein eigenes Eingabe Geräte definiert wurde. Das Default-Eingabegerät wird automatisch angelegt.
-<p> Eingabegeräte werden wie Ausgebegeräte definiert plus dem Parameter 'input' in der Definition:
+<p>Ein Tronferno Gerät kann entweder einen einzelnen Empfäger oder eine Gruppe von Empfängern gleichzeitig adressieren.
+<p>Empfangene Nachrichten von Controllern/Sensoren werden durch Eingabe Geräte verarbeitet. Das (automatish erzeugte) Default-Eingabegerät (Tronferno_Scan) empfängt alle Nachrichten, für die noch kein eigenes Eingabe Geräte definiert wurde.
+<p> Eingabegeräte werden durch Verwenden des Parameters 'input' in der Definition erzeugt.
 
 
 <h5>Beispiele für Geräte zum Senden</h5>
@@ -54,7 +55,7 @@
 
 
 
-<h5>3 verschiedene Methoden der Adressierung</h5>
+<h5>Drei verschiedene Methoden der Adressierung</h5>
 
 <ol>
   <li> Die IDs vorhandener Sende-Geräte einscannen und dann benutzen.
@@ -67,7 +68,7 @@
     Es muss eine 9 davorgestellt werden um die ID zu erhalten.</li>
 </ol>
 
-<h5>3 Arten der Gruppenbildung</h5>
+<h5>Drei Arten der Gruppenbildung</h5>
 
 <ol>
   <li>Gruppen und Empfäger entsprechen der 2411. Gruppenbildung durch die 0 als Joker.  (g=1 m=0 oder g=0 m=1) </li>
@@ -77,7 +78,7 @@
   <li> nicht möglich</li>
 </ol>
 
-<h5>3 Beispiele</h5>
+<h5>Drei Beispiele</h5>
 <ol>
   <li>
     <code>define myShutterGroup1 Tronferno g=1 m=0</code><br>

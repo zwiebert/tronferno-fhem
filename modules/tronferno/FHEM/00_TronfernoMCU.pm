@@ -694,17 +694,36 @@ sub TronfernoMCU_Initialize($) {
 <a name="TronfernoMCU"></a>
 <h3>TronfernoMCU</h3>
 
-
-<p><i>TronfernoMCU</i> is a physical Device for the purpose of 1) controlling Fernotron devices or 2) utilizing Fernotron controllers into FHEM.
+<p><i>TronfernoMCU</i> is a physical Device to connect Tronferno-MCU hardware..
 <ul>
  <li>Provides the IODev requiered by Tronferno logical devices</li>
  <li>Requiered MCU/RF-hardware: <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a></li>
- <li>Can flash the MCU (ESP32 or ESP8266) using the respective SET command. (if conected to FHEM by USB)</i>
- <li>Can configure the MCU using SET commands</li>
- <li>Can connect to MCU by 1) USB or 2) WLAN.</li>
+ <li>Can flash the MCU (ESP32 or ESP8266) using the respective Set command. (if conected to FHEM by USB)</i>
+ <li>Can configure the MCU using Set commands</li>
 </ul>
 
+
+<h4>Define</h4>
+
 <p>
+<code>define &lt;name&gt; TronfernoMCU (USB_PORT|IP4_ADDRESS)</code>
+
+<ul>
+<li><code> &lt;name&gt;</code> the suggested name is "tfmcu"</li>
+<li><code>USB_PORT</code> if MCU is connected to FHEM server by USB</li>
+<li><code>IP4_ADDRES</code> if MCU is connected to FHEM server by network</li>
+</ul>
+
+<p>Make sure this device is defined before any Tronferno devices. At FHEM startup it needs to be created first, or any Fernotron devices defined prior will fail to be created</p>
+
+<p> Multiple devices can be defined if you have multiple MCU units connected. Then the IODev of a Tronferno device has to be set to the name of the correct TronfernoMCU device it is supposed to use</p>
+
+<h5>Examples</h5>
+<ul>
+<li><code>define tfmcu TronfernoMCU /dev/ttyUSB1</code> (connect device by USB cable)</li>
+<li><code>define tfmcu TronfernoMCU 192.168.1.123</code> (connect device by IP network)</li>
+</ul>
+
 <a name="TronfernoMCUset"></a>
 <h4>Set</h4>
 <ul>
@@ -866,29 +885,6 @@ sub TronfernoMCU_Initialize($) {
 
 </ul>
 
-<br>     Examples:
-<br>
-<br> 1) MCU module is connected via TCP/IP
-<br>
-<br>    define tfmcu TronfernoMCU  192.168.1.123
-<br>    define shutter_11 Tronferno g=1 m=1
-<br>    define shutter_12 Tronferno g=1 m=2
-<br>     ..
-<br>    define shutter_77 Tronferno g=7 m=7
-<br>
-<br> 2) MCU module is connected via USB port /dev/ttyUSB1
-<br>
-<br>    define tfmcu TronfernoMCU /dev/ttyUSB1
-<br>    define shutter_11 Tronferno g=1 m=1
-<br>    define shutter_12 Tronferno g=1 m=2
-<br>     ..
-<br>    define shutter_77 Tronferno g=7 m=7
-<br>
-<br>  ### Make sure the I/O device tfmcu is defined before any shutter_xx device ###
-<br>  ### Otherwise the shutter_xx devices can't find their I/O device (because its not defined yet) ###
-
-<p>
-
 =end html
 
 =begin html_DE
@@ -906,7 +902,27 @@ sub TronfernoMCU_Initialize($) {
  <li>Kann sich über Netzwerk oder USB mit dem Mikrocontroller verbinden.</li>
 </ul>
 
+<h4>Define</h4>
+
 <p>
+<code>define &lt;name&gt; TronfernoMCU (USB_PORT|IP4_ADDRESS)</code>
+
+<ul>
+<li><code> &lt;name&gt;</code> empfohlener Name: "tfmcu"</li>
+<li><code>USB_PORT</code> Wenn MCU verbunden mit FHEM über USB</li>
+<li><code>IP4_ADDRES</code> Wenn MCU verbunden mit FHEM über Netzwerk</li>
+</ul>
+
+<p>Dieses Gerät muss vor allen Tronferno Geräten definiert werden die es benutzen. Beim FHEM server start muss es vorher erzeugt werden. Alle vorher erzeugten Tronferno Geräte können nicht angelegt werden.</p>
+
+<p>Mehrere Geräte können definiert werden wenn mehrere MCs vorhanden sind. Dann den IODev der Tronferno Geräte auf den Namen des TronfernoMCU Gerätes setzen, welches verwendet werden soll.</p>
+
+<h5>Beispiele</h5>
+<ul>
+<li><code>define tfmcu TronfernoMCU /dev/ttyUSB1</code> (verbinde mit MC über USB)</li>
+<li><code>define tfmcu TronfernoMCU 192.168.1.123</code> (verbinde mit MC über IP Netzwerk)</li>
+</ul>
+
 <a name="TronfernoMCUset"></a>
 <h4>Set</h4>
 <ul>
@@ -1061,29 +1077,6 @@ sub TronfernoMCU_Initialize($) {
 
 
 </ul>
-
-<br>     Beispiele:
-<br>
-<br> 1) MC verbunden über Netzwerk TCP/IP
-<br>
-<br>    define tfmcu TronfernoMCU  192.168.1.123
-<br>    define shutter_11 Tronferno g=1 m=1
-<br>    define shutter_12 Tronferno g=1 m=2
-<br>     ..
-<br>    define shutter_77 Tronferno g=7 m=7
-<br>
-<br> 2) MC verbunden mit USB port /dev/ttyUSB1
-<br>
-<br>    define tfmcu TronfernoMCU /dev/ttyUSB1
-<br>    define shutter_11 Tronferno g=1 m=1
-<br>    define shutter_12 Tronferno g=1 m=2
-<br>     ..
-<br>    define shutter_77 Tronferno g=7 m=7
-<br>
-<br>  ### Unbedingt das I/O Gerät tfmcu *vor* den Tronferno Geräten  definieren ###
-<br>  ### Andernfalls finden die Tronferno-Geräte ihr I/O Gerät nicht (besonders nach einem Neustart von FHEM) ###
-
-<p>
 
 =end html_DE
 
