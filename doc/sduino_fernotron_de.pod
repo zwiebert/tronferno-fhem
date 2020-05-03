@@ -50,7 +50,7 @@ Dies wird durch die verwendete ID und Gruppen und Empfängernummer bestimmt.
 
 <p>
   <code>
-    define <my_shutter> Fernotron a=ID [g=GN] [m=MN] input[=(plain|sun|central)]<br>
+    define  &lt;name&gt; Fernotron a=ID [g=GN] [m=MN] input[=(plain|sun|central)]<br>
   </code>
 <p>
 Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann bestimmt durch die ID (z.B. jede ID beginnend mit 10 gehört zu Typ plain)

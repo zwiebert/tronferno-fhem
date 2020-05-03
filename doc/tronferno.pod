@@ -22,7 +22,7 @@ Each output device may control a single shutter, or a group of shutters dependin
 
 <p>
   <code>
-    define <my_shutter> Tronferno [a=ID] [g=GN] [m=MN]<br>
+    define  &lt;name&gt; Tronferno [a=ID] [g=GN] [m=MN]<br>
   </code>
 
 <p>
@@ -41,7 +41,7 @@ Each output device may control a single shutter, or a group of shutters dependin
 
 <p>
   <code>
-    define <my_shutter> Tronferno a=ID [g=GN] [m=MN] input[=(plain|sun|central)]<br>
+    define  &lt;name&gt; Tronferno a=ID [g=GN] [m=MN] input[=(plain|sun|central)]<br>
   </code>
 <p>
 The input type (like plain) can be ommitted. Its already determined by the ID (e.g. each ID starting with 10 is a plain controller).
@@ -133,8 +133,8 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
   <li>manual - switch on/off automatic shutter movement<br>
      The manual mode prevents all automatic shutter movement by internal timers or paired sensors<br>
   <ul>
-   <li><code>set <name> manual on</code></li>
-   <li><code>set <name> manual off</code></li>
+   <li><code>set &lt;name&gt; manual on</code></li>
+   <li><code>set &lt;name&gt; manual off</code></li>
   </ul>
 
     <p><small>Note: This is a kludge. It reprograms the Fernotron device with empty timers and disables sun-auto. When 'manual' is switched off again, the timer data, which was stored inside the MCU will be reprogrammed.  Not sure why this is done this way by the original central 2411. There are Fernotron receivers with a button for manual-mode, but the RF controlled motors seems to have no manual flag?</small>
@@ -147,9 +147,9 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 <li>daily - switch off or set the daily timer of a Fernotron device<br>
    Format: HHMMHHMM for up/down timers. Use '-' instead HHMM to disable the up or down timer.<br>
    <ul>
-    <li><code>set <name> daily off</code> disables daily-timer</li>
-    <li><code>set <name> daily "0700-"</code> up by daily-timer at 0700</li>
-    <li><code>set <name> daily "-1200"</code> down at 1200</li>
+    <li><code>set &lt;name&gt; daily off</code> disables daily-timer</li>
+    <li><code>set &lt;name&gt; daily "0700-"</code> up by daily-timer at 0700</li>
+    <li><code>set &lt;name&gt; daily "-1200"</code> down at 1200</li>
   </ul>
 </li>
 
@@ -157,9 +157,9 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 <li>weekly - switch off or set the weekly timer of a Fernotron device<br>
    Format: like daily (HHMMHHMM) but seven times. Starts at Monday. A '+' can be used to copy the previous day.<br>
    <ul>
-     <li><code>set <name> weeky off</code> disables weekly-timer</li>
-     <li><code>set <name> weekly "0700-++++0900-+"</code>  up by weekly-timer at Mon-Fri=0700, Sat-Sun=0900</li>
-     <li><code>set <name> weekly "0600-0530-+++1130-0800-"</code> up at Mon=0600, Tue-Fri=0530, Sat=1130, Sun=0800</li>
+     <li><code>set &lt;name&gt; weeky off</code> disables weekly-timer</li>
+     <li><code>set &lt;name&gt; weekly "0700-++++0900-+"</code>  up by weekly-timer at Mon-Fri=0700, Sat-Sun=0900</li>
+     <li><code>set &lt;name&gt; weekly "0600-0530-+++1130-0800-"</code> up at Mon=0600, Tue-Fri=0530, Sat=1130, Sun=0800</li>
    </ul>
 </li>
 
@@ -167,10 +167,10 @@ The input type (like plain) can be ommitted. Its already determined by the ID (e
 <li>astro - switch on/off or set the astro (civil dusk) timer of a Fernotron device<br>
     The shutter goes down at civil dusk or some minutes before or after if you provide a -/+ minute offset.<br>
     <ul>
-      <li><code>set <name> astro off</code> disables astro-timer</li>
-      <li><code>set <name> astro on</code> down by astro-timer at civil dusk</li>
-      <li><code>set <name> astro "-10"</code> down at 10 minutes before civil dusk</li>
-      <li><code>set <name> astro 10</code> down at 10 minutes after civil dusk</li>
+      <li><code>set &lt;name&gt; astro off</code> disables astro-timer</li>
+      <li><code>set &lt;name&gt; astro on</code> down by astro-timer at civil dusk</li>
+      <li><code>set &lt;name&gt; astro "-10"</code> down at 10 minutes before civil dusk</li>
+      <li><code>set &lt;name&gt; astro 10</code> down at 10 minutes after civil dusk</li>
     </ul>
 </li>
 

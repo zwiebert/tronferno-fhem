@@ -17,7 +17,7 @@ Dieses Repository enthält zwei verschiedene FHEM Module um Fernotron Geräte vi
  * zum steuern von Fernotron Empfänger
  * zum Einbinden von Fernotron-Sendern in FHEM zur allgemeinen Verwendung.
  * Es benötigt SIGNALduino als I/O-Gerät und Radio-Hardware.
- * Beschreibung in der  [deutschen Moduldokumentation](doc/sduino_fernotron_de.pod). 
+ * Beschreibung in der  [deutschen Moduldokumentation](doc/sduino_fernotron_de.pod).
 
 #### Installation und Aktualisierung
 
@@ -48,7 +48,7 @@ SIGNALduino Konfiguration ist beschrieben in [Nachricht im FHEM-Forum](https://f
 
 * zum Steuern von Fernotron Empfängern über die Hardware [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu).
 
-Installation ist unten beschrieben. Die weitere Nutzung in [englische TronfernoMCU I/O Moduldokumentation](doc/tronferno_mcu.pod) und  [englische Tronferno Moduldokumentation](doc/tronferno.pod).
+Installation ist unten beschrieben. Die weitere Nutzung in [deutscher TronfernoMCU I/O Moduldokumentation](doc/tronferno_mcu_de.pod) und  [deutscher Tronferno Moduldokumentation](doc/tronferno_de.pod).
 
 #### Installation und Aktualisierung
 
@@ -78,6 +78,6 @@ attr mroll23 webCmd down:stop:up
 ```
 
 Hierbei sind:
-  * stop:noArg - der anzulegende Set-Befehlt (noArg heißt, es wird dafür kein Texteingabefeld in FHEMWEB erzeugt). 
+  * stop:noArg - der anzulegende Set-Befehlt (noArg heißt, es wird dafür kein Texteingabefeld in FHEMWEB erzeugt).
   * tfmcu/cli  - ist der MQTT Topic an den CLI Befehle gesendet werden können
   * send g=2 m=3 c=down  - das CLI Kommando zum Runterfahren des Rolladens 3 der Gruppe 2

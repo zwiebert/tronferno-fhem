@@ -994,7 +994,7 @@ Each output device may control a single shutter, or a group of shutters dependin
 
 <p>
   <code>
-    define <my_shutter> Fernotron a=ID [g=GN] [m=MN]<br>
+    define  &lt;name&gt; Fernotron a=ID [g=GN] [m=MN]<br>
   </code>
 
 <p>
@@ -1014,7 +1014,7 @@ Each output device may control a single shutter, or a group of shutters dependin
 
 <p>
   <code>
-    define <my_shutter> Fernotron a=ID [g=GN] [m=MN] input[=(plain|sun|central)]<br>
+    define  &lt;name&gt; Fernotron a=ID [g=GN] [m=MN] input[=(plain|sun|central)]<br>
   </code>
 <p>
 The input type (like plain) can be ommitted. Its already determined by the ID (e.g. each ID starting with 10 is a plain controller).
@@ -1190,7 +1190,7 @@ Dies wird durch die verwendete ID und Gruppen und Empfängernummer bestimmt.
 
 <p>
   <code>
-    define <my_shutter> Fernotron a=ID [g=GN] [m=MN] input[=(plain|sun|central)]<br>
+    define  &lt;name&gt; Fernotron a=ID [g=GN] [m=MN] input[=(plain|sun|central)]<br>
   </code>
 <p>
 Der Input-Typ (z.B. plain für Handsender) kann weggelassen werden. Er wird dann bestimmt durch die ID (z.B. jede ID beginnend mit 10 gehört zu Typ plain)
