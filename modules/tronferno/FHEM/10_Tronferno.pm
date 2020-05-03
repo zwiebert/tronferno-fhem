@@ -116,6 +116,8 @@ sub X_Define($$) {
         $defptr->{oDevs}{"$hash"} = $hash;
     }
 
+    tf_transmit_request_position($hash);
+
     return undef;
 }
 
@@ -190,7 +192,7 @@ sub build_cmd_cli($$$) {
     my $g   = $hash->{helper}{ferid_g};
     my $m   = $hash->{helper}{ferid_m};
     my $r   = int(main::AttrVal($name, 'repeats', '1'));
-    my $x   =  ($c =~ /^[0-9]+$/) ? 'p' : 'c';
+    my $x   =  ($c =~ /^[0-9?]+$/) ? 'p' : 'c';
 
     my $msg = "$cmd a=$a g=$g m=$m $x=$c r=$r mid=82;";
     main::Log3($hash, 3, "$name:command: $msg");
@@ -252,6 +254,16 @@ my $map_pair_cmds = {
     xxx_unpair       => 'unpair',
 };
 
+sub tf_build_cmd_reqest_position($) {
+    my ($hash) = @_;
+    return build_cmd($hash, 'send', '?');
+}
+sub tf_transmit_request_position($) {
+    my ($hash) = @_;
+    my $req = tf_build_cmd_reqest_position($hash);
+    my $res = transmit($hash, $req);
+    return $res;
+}
 
 sub get_commandlist()   { return keys %$map_send_cmds, keys %$map_pair_cmds; }
 
