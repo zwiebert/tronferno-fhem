@@ -93,6 +93,7 @@ sub X_Define($$) {
     main::AssignIoPort($hash, $iodev);
 
     my $def_match = "$a,$g,$m";
+    #TODO: remove the old dev_match here and in X_Undef!
     $hash->{helper}{def_match} = $def_match;
 
     $main::modules{+MODNAME}{defptr}{$def_match} = $hash;
@@ -431,7 +432,7 @@ sub parse_position {
            pctReadingsUpdate($hash, $p);
             # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
             return $hash->{NAME};
-        } elsif ($g == 0) {
+        } elsif ($g == 0) { # positions with g=0 will not be sent by MCU? #TODO: Remove this elsif block later?
             for $g (1..7) {
                 for $m (1..7) {
                     my $hash = $main::modules{+MODNAME}{defptr}{"0,$g,$m"};
@@ -442,7 +443,7 @@ sub parse_position {
                 }
             }
             return $result;
-        } elsif ($m == 0) {
+        } elsif (0 && $m == 0) { # no longer forward position from m=0 to all group members #TODO: remove this elsif block later!
             for $m (1..7) {
                 my $hash = $main::modules{+MODNAME}{defptr}{"0,$g,$m"};
                 if ($hash) {
@@ -452,6 +453,7 @@ sub parse_position {
             }
             return $result;
         }
+        # TODO: is there a way to consume non matching postion events to avoid help-me messages in log file?
     }
     return undef;
 }
