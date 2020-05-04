@@ -18,9 +18,20 @@ use strict;
 use warnings;
 use 5.14.0;
 
+package Tronferno;
+
 use IO::Socket;
 
-package Tronferno;
+sub main::AssignIoPort($;$);
+sub main::AttrVal($$$);
+sub main::IOWrite($@);
+sub main::Log3($$$);
+sub main::ReadingsVal($$$);
+sub main::readingsBeginUpdate($);
+sub main::readingsBulkUpdateIfChanged($$$@);
+sub main::readingsEndUpdate($$);
+sub main::readingsSingleUpdate($$$$);
+
 
 use constant MODNAME => 'Tronferno';
 use constant {
@@ -53,13 +64,13 @@ sub tf_set_def_match($$) {
 
 sub X_Define($$) {
     my ($hash, $def) = @_;
-    my @a       = split("[ \t][ \t]*", $def);
-    my $name    = $a[0];
-    my $address = $a[1];
+    my @args    = split("[ \t][ \t]*", $def);
+    my $name    = $args[0];
+    my $address = $args[1];
     my $defptr  = $main::modules{+MODNAME}{defptr};
     my $is_iDev = 0;
 
-    my ($a, $g, $m, $iodev, $mcu_addr) = (0, 0, 0, undef, $def_mcuaddr);
+    my ($ad, $g, $m, $iodev, $mcu_addr) = (0, 0, 0, undef, $def_mcuaddr);
     my $u = 'wrong syntax: define NAME Tronferno a=ID [g=N] [m=N]';
     my $scan = 0;
     my $input = 0;
@@ -68,15 +79,15 @@ sub X_Define($$) {
     $defptr->{iDevs} = {} unless $defptr->{iDevs};
     $defptr->{aDevs} = {} unless $defptr->{aDevs};
 
-    return $u if ($#a < 2);
+    return $u if ($#args < 2);
 
-    shift(@a);
-    shift(@a);
-    foreach my $o (@a) {
+    shift(@args);
+    shift(@args);
+    foreach my $o (@args) {
         my ($key, $value) = split('=', $o);
 
         if ($key eq 'a') {
-            $a = hex($value);
+            $ad = hex($value);
         } elsif ($key eq 'g') {
             $g = int($value);
             return "out of range value $g for g. expected: 0..7" unless (0 <= $g && $g <= 7);
@@ -87,7 +98,7 @@ sub X_Define($$) {
             $iodev = $value;
         } elsif ($key eq 'mcu_addr') {
             $mcu_addr = $value;
-        } elsif ($key eq 'scan' or $key eq 'input' && $value eq 'all') {
+        } elsif ($key eq 'scan' || ($key eq 'input' && $value eq 'all')) {
             $is_iDev = 1;
             $scan = 1;
             $main::modules{+MODNAME}{defptr}{+DEF_INPUT_DEVICE} = $hash;
@@ -98,14 +109,14 @@ sub X_Define($$) {
         }
     }
 
-    $hash->{helper}{ferid_a} = $a;
+    $hash->{helper}{ferid_a} = $ad;
     $hash->{helper}{ferid_g} = $g;
     $hash->{helper}{ferid_m} = $m;
     $hash->{helper}{mcu_addr} = $mcu_addr;
 
     main::AssignIoPort($hash, $iodev);
 
-    tf_set_def_match($hash, "$a,$g,$m");
+    tf_set_def_match($hash, "$ad,$g,$m");
 
     $defptr->{aDevs}{"$hash"} = $hash;
     if ($is_iDev) {
@@ -188,13 +199,13 @@ sub build_cmd_cli($$$) {
     my ($hash, $cmd, $c) = @_;
     my $name = $hash->{NAME};
 
-    my $a   = ($cmd eq 'pair') ? '?' : $hash->{helper}{ferid_a};
+    my $ad   = ($cmd eq 'pair') ? '?' : $hash->{helper}{ferid_a};
     my $g   = $hash->{helper}{ferid_g};
     my $m   = $hash->{helper}{ferid_m};
     my $r   = int(main::AttrVal($name, 'repeats', '1'));
     my $x   =  ($c =~ /^[0-9?]+$/) ? 'p' : 'c';
 
-    my $msg = "$cmd a=$a g=$g m=$m $x=$c r=$r mid=82;";
+    my $msg = "$cmd a=$ad g=$g m=$m $x=$c r=$r mid=82;";
     main::Log3($hash, 3, "$name:command: $msg");
     return $msg;
 }
@@ -203,14 +214,14 @@ sub build_cmd_json($$$) {
     my ($hash, $cmd, $c) = @_;
     my $name = $hash->{NAME};
 
-    my $a   = ($cmd eq 'pair') ? '"?"' : $hash->{helper}{ferid_a};
+    my $ad   = ($cmd eq 'pair') ? '"?"' : $hash->{helper}{ferid_a};
     my $g   = $hash->{helper}{ferid_g};
     my $m   = $hash->{helper}{ferid_m};
     my $r   = int(main::AttrVal($name, 'repeats', '1'));
     my $x   =  ($c =~ /^[0-9]+$/) ? 'p' : 'c';
 
 
-    my $msg = "{\"to\":\"tfmcu\",\"$cmd\":{\"a\":$a,\"g\":$g,\"m\":$m,\"$x\":\"$c\",\"r\":$r,\"mid\":82}};";
+    my $msg = "{\"to\":\"tfmcu\",\"$cmd\":{\"a\":$ad,\"g\":$g,\"m\":$m,\"$x\":\"$c\",\"r\":$r,\"mid\":82}};";
     main::Log3($hash, 3, "$name:command: $msg");
     return $msg;
 }
@@ -229,12 +240,12 @@ sub build_timer($$) {
     my ($hash, $opts) = @_;
     my $name = $hash->{NAME};
 
-    my $a   = $hash->{helper}{ferid_a};
+    my $ad   = $hash->{helper}{ferid_a};
     my $g   = $hash->{helper}{ferid_g};
     my $m   = $hash->{helper}{ferid_m};
     #my $r   = int(main::AttrVal($name, 'repeats', '1'));
     $opts = " $opts" if $opts;
-    my $msg = "timer a=$a g=$g m=$m mid=82$opts;";
+    my $msg = "timer a=$ad g=$g m=$m mid=82$opts;";
     main::Log3($hash, 3, "$name:command: $msg");
     return $msg;
 }
@@ -405,13 +416,13 @@ sub X_Get($$$@) {
 sub parse_position {
     my ($io_hash, $data) = @_;
     my $name = $io_hash->{NAME};
-    my ($a, $g, $m, $p, $mm) = (0, 0, 0, 0, undef);
+    my ($ad, $g, $m, $p, $mm) = (0, 0, 0, 0, undef);
     my $result = undef;
     foreach my $arg (split(/\s+/, $data)) {
         my ($key, $value) = split('=', $arg);
 
         if ($key eq 'a') {
-            $a = hex($value);
+            $ad = hex($value);
 
         } elsif ($key eq 'g') {
             $g = int($value);
@@ -429,14 +440,14 @@ sub parse_position {
         }
     }
     if (defined ($mm)) {
-        for $g (0..7) {
+        for my $g (0..7) {
             my $gm =hex($$mm[$g]);
-            for $m (0..7) {
+            for my $m (0..7) {
                 if ($gm & (1 << $m)) {
                     my $def_match = "0,$g,$m";
-                    my $hash = $main::modules{+MODNAME}{defptr}{$def_match}; #FIXME: add support for $a different than zero
+                    my $hash = $main::modules{+MODNAME}{defptr}{$def_match}; #FIXME: add support for $ad different than zero
                     if ($hash) {
-                       pctReadingsUpdate($hash, $p);
+                        pctReadingsUpdate($hash, $p);
                         $result = $hash->{NAME};
                     }
                 }
@@ -448,29 +459,20 @@ sub parse_position {
     } else {
         my $def_match = "0,$g,$m";
         #main::Log3($io_hash, 3, "def_match: $def_match");
-        my $hash = $main::modules{+MODNAME}{defptr}{$def_match}; #FIXME: add support for $a different than zero
+        my $hash = $main::modules{+MODNAME}{defptr}{$def_match}; #FIXME: add support for $ad different than zero
 
         if ($hash) {
            pctReadingsUpdate($hash, $p);
-            # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
-            return $hash->{NAME};
+           # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
+           return $hash->{NAME};
         } elsif ($g == 0) { # positions with g=0 will not be sent by MCU? #TODO: Remove this elsif block later?
-            for $g (1..7) {
-                for $m (1..7) {
+            for my $g (1..7) {
+                for my $m (1..7) {
                     my $hash = $main::modules{+MODNAME}{defptr}{"0,$g,$m"};
                     if ($hash) {
-                         pctReadingsUpdate($hash, $p);
+                        pctReadingsUpdate($hash, $p);
                         $result = $hash->{NAME};
                     }
-                }
-            }
-            return $result;
-        } elsif (0 && $m == 0) { # no longer forward position from m=0 to all group members #TODO: remove this elsif block later!
-            for $m (1..7) {
-                my $hash = $main::modules{+MODNAME}{defptr}{"0,$g,$m"};
-                if ($hash) {
-                    pctReadingsUpdate($hash, $p);
-                    $result = $hash->{NAME};
                 }
             }
             return $result;
@@ -482,18 +484,18 @@ sub parse_position {
 
 # update Reading of default input device, if there was no matching input device
 sub defaultInputMakeReading($$$$$$) {
-    my ($hash, $fdt, $a, $g, $m, $c) = @_;
+    my ($hash, $fdt, $ad, $g, $m, $c) = @_;
 
     my $kind = $fdt;
-    $a = sprintf("%06x", $a);
+    $ad = sprintf("%06x", $ad);
 
     return undef unless $kind;
 
     my $gm = $kind eq FDT_CENTRAL ? " g=$g m=$m" : '';
 
     ### combine parts and update reading
-    my $human_readable = "$kind a=$a$gm c=$c";
-    my $state = "$kind:$a" . ($kind eq FDT_CENTRAL ? "-$g-$m" : '')  . ":$c";
+    my $human_readable = "$kind a=$ad$gm c=$c";
+    my $state = "$kind:$ad" . ($kind eq FDT_CENTRAL ? "-$g-$m" : '')  . ":$c";
     $state =~ tr/ /:/; # don't want spaces in reading
     my $do_trigger =  !($kind eq FDT_RECV || $kind eq 'unknown'); # unknown and receiver should not trigger events
 
@@ -505,13 +507,13 @@ sub defaultInputMakeReading($$$$$$) {
 sub parse_c {
     my ($io_hash, $data) = @_;
     my $name = $io_hash->{NAME};
-    my ($a, $g, $m, $p, $fdt, $c) = (0, 0, 0, 0, "", "");
+    my ($ad, $g, $m, $p, $fdt, $c) = (0, 0, 0, 0, "", "");
     my $result = undef;
     foreach my $arg (split(/\s+/, $data)) {
         my ($key, $value) = split('=', $arg);
 
         if ($key eq 'a') {
-            $a = hex($value);
+            $ad = hex($value);
         } elsif ($key eq 'g') {
             $g = int($value);
             return "out of range value $g for g. expected: 0..7" unless (0 <= $g && $g <= 7);
@@ -526,12 +528,12 @@ sub parse_c {
     }
 
     my $default =  $main::modules{+MODNAME}{defptr}{+DEF_INPUT_DEVICE};
-    my $hash = $default;# getInputDeviceByA($a);
+    my $hash = $default;# getInputDeviceByA($ad);
 
     return 'UNDEFINED Tronferno_Scan Tronferno scan' unless ($default || $hash); # autocreate default input device
 
     if ($hash->{helper}{ferInputType} eq 'scan') {
-        defaultInputMakeReading($default, $fdt, $a, $g, $m, $c) or return undef;
+        defaultInputMakeReading($default, $fdt, $ad, $g, $m, $c) or return undef;
     } else {
         #inputMakeReading($fsb, $hash) or return undef;
     }
@@ -541,7 +543,7 @@ sub parse_c {
 sub parse_timer {
     my ($io_hash, $data) = @_;
     my $name = $io_hash->{NAME};
-    my ($a, $g, $m, $p, $fdt, $c) = (0, 0, 0, 0, "", "");
+    my ($ad, $g, $m, $p, $fdt, $c) = (0, 0, 0, 0, "", "");
     my $defptr  = $main::modules{+MODNAME}{defptr};
     my $result = undef;
     my $timer_string = '';
@@ -557,7 +559,7 @@ sub parse_timer {
         my ($key, $value) = split('=', $arg);
 
         if ($key eq 'a') {
-            $a = hex($value);
+            $ad = hex($value);
         } elsif ($key eq 'g') {
             $g = int($value);
             return undef unless (0 <= $g && $g <= 7);
@@ -584,7 +586,7 @@ sub parse_timer {
 #       $timer->{'astro'} = index($flags, 'A') >= 0 ? 'on' : 'off';
     }
 
-    main::Log3($io_hash, 4, "Tronferno: a=$a, g=$g, m=$m");
+    main::Log3($io_hash, 4, "Tronferno: a=$ad, g=$g, m=$m");
 
 
     my $hash = undef;
@@ -1102,7 +1104,8 @@ sub Tronferno_Initialize($) {
 =end html_DE
 
 # Local Variables:
-# compile-command: "perl -cw -MO=Lint ./10_Tronferno.pm"
+# compile-command: "perl -cw -MO=Lint ./10_Tronferno.pm 2>&1 | grep -v 'Undefined subroutine'"
 # eval: (my-buffer-local-set-key (kbd "C-c C-c") (lambda () (interactive) (shell-command "cd ../../.. && ./build.sh")))
 # eval: (my-buffer-local-set-key (kbd "C-c c") 'compile)
+# eval: (my-buffer-local-set-key (kbd "C-c p") (lambda () (interactive) (shell-command "perlcritic  ./10_Tronferno.pm")))
 # End:
