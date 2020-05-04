@@ -105,6 +105,97 @@ while(my($k, $v) = each %$mco) {
     }
 }
 
+sub wdcon_mcu_restart($) {
+    my ($hash) = @_;
+    my $wdcon = $hash->{helper}{wdcon};
+    #TODO: do restart with lagging USB
+    main::Log3 ($hash->{NAME}, 1, "MCU connection lag. Try to restart MCU");
+    main::DevIo_SimpleWrite($hash, "config restart=1;", 2);
+    main::DevIo_SimpleWrite($hash, "config restart=1;", 2);
+    main::DevIo_SimpleWrite($hash, "config restart=1;", 2);
+    $wdcon->{state} = 'restart';
+}
+sub wdcon_get_next_msgid($) {
+    my ($hash) = @_;
+    my $wdcon = $hash->{helper}{wdcon};
+    ++$wdcon->{msgid};
+    $wdcon->{msgid} %= 256;
+    return $wdcon->{msgid};
+}
+sub wdcon_test_transmit($) {
+    my ($hash) = @_;
+    my $wdcon = $hash->{helper}{wdcon};
+
+    my $tod = main::gettimeofday();
+    $wdcon->{tod} = $tod;
+    my $msgid = wdcon_get_next_msgid($hash);
+    $wdcon->{expected} = 'warning@'.$msgid.':unknown-option: unknown';
+    main::DevIo_SimpleWrite($hash, "cmd unknown=0 mid=$msgid;", 2);
+    $wdcon->{state} = 'sent';
+}
+sub wdcon_test_check_reply_line($$) {
+    my ($hash, $line) = @_;
+    my $wdcon = $hash->{helper}{wdcon};
+    my $expected =  $wdcon->{expected};
+    if ($expected) {
+        #print "expected: <$expected>\n";
+        #print "received: <$line>\n";
+        if ($expected eq $line) {
+            $wdcon->{state} = 'received';
+            $wdcon->{expected} = '';
+            $wdcon->{fail_count} = 0;
+        }
+    }
+}
+sub wdcon_test_timer_cb($) {
+    my ($hash) = @_;
+    if(main::DevIo_IsOpen($hash)) {
+        my $wdcon = $hash->{helper}{wdcon};
+        my $long_interval = $wdcon->{interval};
+        my $short_interval = 3;
+        my $reconnect_interval = 20;
+        my $state = $wdcon->{state};
+
+        if ($state eq 'none') {
+            wdcon_test_transmit($hash);
+        } elsif ($state eq 'sent') {
+            if (++$wdcon->{fail_count} > $wdcon->{max_fail_count}) {
+                wdcon_mcu_restart($hash);
+            } else {
+                wdcon_test_transmit($hash);
+            }
+        } elsif ($state eq 'received') {
+            $wdcon->{state} = 'none';
+            goto success;
+        } elsif ($state eq 'restart') {
+            goto success;
+            devio_close_device($hash);
+            $wdcon->{state} = 'reconnect';
+            goto reconnect;
+        } elsif ($state eq 'reconnect') {
+            devio_open_device($hash);
+            return;
+        } elsif ($state eq 'xxx') {
+        }
+
+        main::InternalTimer( main::gettimeofday() + $short_interval, 'TronfernoMCU::wdcon_test_timer_cb', $hash);
+        return;
+      success:
+        $wdcon->{fail_count} = 0;
+        main::InternalTimer( main::gettimeofday() + $long_interval, 'TronfernoMCU::wdcon_test_timer_cb', $hash);
+        return;
+      reconnect:
+        main::InternalTimer( main::gettimeofday() + $reconnect_interval, 'TronfernoMCU::wdcon_test_timer_cb', $hash);
+        return;
+    }
+}
+;;
+sub wdcon_test_init($$) {
+    my ($hash, $interval) = @_;
+    $hash->{helper}{wdcon} = { interval => $interval, fail_count => 0, time_for_reply => 3, max_fail_count => 3, msgid => 0, state => 'none' };
+    wdcon_test_timer_cb($hash);
+}
+
 sub devio_open_device($) {
     my ($hash) = @_;
     my $dn = $hash->{DeviceName} // 'undef';
@@ -211,6 +302,8 @@ sub X_Read($$)
         }
 
         $line =~ tr/\r\n//d;
+
+        wdcon_test_check_reply_line($hash, $line);
 
         main::Log3 ($name, 4, "TronfernoMCU ($name) - received line: >>>>>$line<<<<<");
 
@@ -636,6 +729,7 @@ sub X_Init($)
     my ($hash) = @_;
     # get shutter positions and firmware version
     main::DevIo_SimpleWrite($hash, "send p=?;mcu version=full;config all=?;", 2);
+    wdcon_test_init($hash, 60 * 5); # XXX: Change timeout TODO:
     # get mcu config
    # mcu_read_all_config($hash);
     return undef;
@@ -1083,4 +1177,5 @@ sub TronfernoMCU_Initialize($) {
 # Local Variables:
 # compile-command: "perl -cw -MO=Lint ./00_TronfernoMCU.pm"
 # eval: (my-buffer-local-set-key (kbd "C-c C-c") (lambda () (interactive) (shell-command "cd ../../.. && ./build.sh")))
+# eval: (my-buffer-local-set-key (kbd "C-c c") 'compile)
 # End:
