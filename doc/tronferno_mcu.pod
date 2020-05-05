@@ -37,6 +37,11 @@
 <h4>Set</h4>
 <ul>
 
+  <a name="mcc.all"></a>
+  <li>mcc.all<br>
+    Get all configuration data from MCU<br>
+    <code>set tfmcu mcc.all ?</code><br></li>
+
   <a name="mcc.baud"></a>
   <li>mcc.baud<br>
     Baud rate of MCU's serial interface</li>
@@ -93,14 +98,12 @@
 
   <a name="mcc.mqtt-enable"></a>
   <li>mcc.mqtt-enable - enables/disables builtin MQTT client<br>
-    <code>set tfmc mcc.mqtt-enable 1</code><br>
-    <code>set tfmc mcc.mqtt-enable 0</code><br>
+    <code>set tfmcu mcc.mqtt-enable 1</code><br>
+    <code>set tfmcu mcc.mqtt-enable 0</code><br>
 <br>
     <code>attr MQTT2_tronferno42 setList cli tfmcu/cli $EVENT</code><br>
     <code>set MQTT2_tronferno42 cli send g=4 m=2 c=down</code><br>
 <br>
-    <small>MQTT support is still experimental.</small><br>
-    <small>Note: MQTT is only supportet on esp32 hardware (for now)</small><br>
     </li>
 
   <a name="mcc.mqtt-url"></a>
@@ -119,21 +122,20 @@
     </li>
 
   <a name="mcc.http-enable"></a>
-  <li>mcc.http-enable - enables/disables builtin HTTP server<br>
-    <code>set tfmc mcc.http-enable 1</code><br>
-    <code>set tfmc mcc.http-enable 0</code><br>
+  <li>mcc.http-enable - enables/disables builtin webserver<br>
+    <code>set tfmcu mcc.http-enable 1</code><br>
+    <code>set tfmcu mcc.http-enable 0</code><br>
 <br>
-    <small>HTTP support is still experimental.</small><br>
-    <small>Note: HTTP is only supportet on esp32 hardware (for now)</small><br>
+    <small>Note: ESP32 only</small><br>
     </li>
 
   <a name="mcc.http-user"></a>
-  <li>mcc.http-user - set optional HTTP login user name<br>
+  <li>mcc.http-user - set optional webserver login user name<br>
     <code>set tfmcu mcc.http-user myUserName</code>
     </li>
 
   <a name="mcc.http-password"></a>
-  <li>mcc.http-password - set optional HTTP login password<br>
+  <li>mcc.http-password - set optional webserver login password<br>
     <code>set tfmcu mcc.http-password myPassword</code>
     </li>
 

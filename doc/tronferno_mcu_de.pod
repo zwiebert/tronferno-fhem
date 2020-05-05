@@ -40,6 +40,11 @@
 <h4>Set</h4>
 <ul>
 
+  <a name="mcc.all"></a>
+  <li>mcc.all<br>
+    Lese die komplette Konfiguration aus dem Miktrocontroller aus<br>
+    <code>set tfmcu mcc.all ?</code><br></li>
+
   <a name="mcc.cu"></a>
   <li>mcc.cu<br>
    Programmierzentralen-ID (sechsstellige Hex Nummer im Batteriefach der 2411 Zentrale)</li>
@@ -92,8 +97,8 @@
 
   <a name="mcc.mqtt-enable"></a>
   <li>mcc.mqtt-enable - aktiviere MQTT Klient des MCs<br>
-    <code>set tfmc mcc.mqtt-enable 1</code><br>
-    <code>set tfmc mcc.mqtt-enable 0</code><br>
+    <code>set tfmcu mcc.mqtt-enable 1</code><br>
+    <code>set tfmcu mcc.mqtt-enable 0</code><br>
 <br>
     <code>attr MQTT2_tronferno42 setList cli tfmcu/cli $EVENT</code><br>
     <code>set MQTT2_tronferno42 cli send g=4 m=2 c=down</code><br>
@@ -118,8 +123,8 @@
 
   <a name="mcc.http-enable"></a>
   <li>mcc.http-enable - aktiviert den Webserver des MCs (Browseroberfläche)<br>
-    <code>set tfmc mcc.http-enable 1</code><br>
-    <code>set tfmc mcc.http-enable 0</code><br>
+    <code>set tfmcu mcc.http-enable 1</code><br>
+    <code>set tfmcu mcc.http-enable 0</code><br>
 <br>
     <small>Hinweis: Nur ESP32</small><br>
     </li>
