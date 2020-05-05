@@ -433,7 +433,7 @@ sub X_Read($$)
                 $hash->{"mcu-$k"} = $v;
            }
         } elsif ($line =~ /^tf: info: start: tronferno-mcu$/) {
-
+            devio_at_connect($hash);
         } elsif ($line =~ /^tf:.* ipaddr:\s*([0-9.]*);$/) {
             main::readingsSingleUpdate($hash, 'mcu.ip4-address', $1, 1);
         }
