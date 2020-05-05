@@ -107,6 +107,7 @@ my $mco = {
     MCFG_HTTP_USER => 'http-user',
     MCFG_HTTP_ENABLE => 'http-enable',
     MCFG_NETWORK => 'network',
+    MCFG_ALL => 'all',
 };
 
 my $mcof = {};
@@ -125,6 +126,8 @@ while(my($k, $v) = each %$mco) {
         $usage .= " $vp:0,1";
     } elsif ($k eq 'MCFG_NETWORK') {
         $usage .= " $vp:none,ap,wlan,lan";
+    } elsif ($k eq 'MCFG_ALL') {
+        $usage .= " $vp:?";
     } else {
         $usage .= " $vp";
     }
@@ -812,6 +815,11 @@ sub TronfernoMCU_Initialize($) {
 <h4>Set</h4>
 <ul>
 
+  <a name="mcc.all"></a>
+  <li>mcc.all<br>
+    Get all configuration data from MCU<br>
+    <code>set tfmcu mcc.all ?</code><br></li>
+
   <a name="mcc.baud"></a>
   <li>mcc.baud<br>
     Baud rate of MCU's serial interface</li>
@@ -1007,6 +1015,11 @@ sub TronfernoMCU_Initialize($) {
 <a name="TronfernoMCUset"></a>
 <h4>Set</h4>
 <ul>
+
+  <a name="mcc.all"></a>
+  <li>mcc.all<br>
+    Lese die komplette Konfiguration aus dem Miktrocontroller aus<br>
+    <code>set tfmcu mcc.all ?</code><br></li>
 
   <a name="mcc.cu"></a>
   <li>mcc.cu<br>
