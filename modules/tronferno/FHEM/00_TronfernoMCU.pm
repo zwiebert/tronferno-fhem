@@ -52,12 +52,14 @@ sub X_Set($$@);
 sub X_Undef($$);
 sub X_Write ($$);
 sub cb_async_system_cmd($);
+sub devio_at_connect($);
 sub devio_close_device($);
 sub devio_get_serial_device_name($);
 sub devio_openDev_cb($);
 sub devio_openDev_init_cb($);
 sub devio_open_device($;$);
 sub devio_reopen_device($);
+sub devio_write_line($$);
 sub devio_updateReading_connection($$);
 sub file_read_last_line($);
 sub file_slurp($$);
@@ -66,6 +68,7 @@ sub fw_get($$;$);
 sub fw_get_and_write_flash($$;$$);
 sub fw_get_next_file($);
 sub fw_get_next_file_cb($$$);
+sub fw_get_updateReading($$);
 sub fw_mk_list_file($$);
 sub fw_write_flash($$);
 sub log_get_success($);
@@ -74,6 +77,7 @@ sub mcu_download_firmware($);
 sub mcu_read_all_config($);
 sub mcu_read_config($$);
 sub run_system_cmd($$$$$$);
+sub sys_cmd_updateReading($$);
 sub sys_cmd_get_success($);
 sub sys_cmd_rm_log_internals($);
 sub wdcon_cure_lag($);
@@ -86,8 +90,9 @@ sub wdcon_test_transmit($);
 my $def_mcuaddr = 'fernotron.fritz.box.';
 my $mcu_port = 7777;
 my $mcu_baud = 115200;
-my $FW_WRT_ID = 'fw_write_flash';
-my $FW_ERA_ID = 'fw_erase_flash';
+my $FW_WRT_ID = 'mcu.firmware.write';
+my $FW_ERA_ID = 'mcu.firmware.erase';
+my $FW_GET_ID = 'mcu.firmware.fetch';
 
 my $mcfg_prefix = 'mcc.';
 my $mco = {
@@ -141,9 +146,9 @@ sub wdcon_cure_lag($) {
     my $wdcon = $hash->{helper}{wdcon};
     #TODO: do restart with lagging USB
     main::Log3 ($hash->{NAME}, 1, "MCU connection lag. Try to restart MCU");
-    main::DevIo_SimpleWrite($hash, "config restart=1;", 2);
-    main::DevIo_SimpleWrite($hash, "config restart=1;", 2);
-    main::DevIo_SimpleWrite($hash, "config restart=1;", 2);
+    devio_write_line($hash, "config restart=1;");
+    devio_write_line($hash, "config restart=1;");
+    devio_write_line($hash, "config restart=1;");
     $wdcon->{state} = 'lag_cured';
 }
 sub wdcon_get_next_msgid($) {
@@ -161,7 +166,7 @@ sub wdcon_test_transmit($) {
     $wdcon->{tod} = $tod;
     my $msgid = wdcon_get_next_msgid($hash);
     $wdcon->{expected} = 'warning@'.$msgid.':unknown-option: unknown';
-    main::DevIo_SimpleWrite($hash, "cmd unknown=0 mid=$msgid;", 2);
+    devio_write_line($hash, "cmd unknown=0 mid=$msgid;");
     $wdcon->{state} = 'sent';
 }
 sub wdcon_test_check_reply_line($$) {
@@ -232,14 +237,18 @@ sub devio_open_device($;$) {
     my ($hash, $reopen) = @_;
     my $dn = $hash->{DeviceName} // 'undef';
     $reopen = $reopen // 0;
+
+    $hash->{helper}{reconnect_counter} = 0 unless $reopen;
     # open connection with custom init and error callback function (non-blocking connection establishment)
     main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_open_device() for ($dn) (reopen=$reopen)");
     devio_updateReading_connection($hash, $reopen ? 'reopening' : 'opening');
     return main::DevIo_OpenDev($hash, $reopen, "TronfernoMCU::devio_openDev_init_cb", "TronfernoMCU::devio_openDev_cb");
 }
 sub devio_reopen_device($) {
-	    my ($hash) = @_;
-	    devio_open_device($hash, 1);
+    my ($hash) = @_;
+    my $counter =  $hash->{helper}{reconnect_counter} // 0;
+    $hash->{helper}{reconnect_counter} = $counter + 1;
+    devio_open_device($hash, 1);
 }
 
 sub devio_close_device($) {
@@ -260,16 +269,26 @@ sub devio_get_serial_device_name($) {
 }
 
 sub devio_updateReading_connection($$) {
-	my ($hash, $state) = @_;
-	main::readingsSingleUpdate($hash, 'mcu.connection', $state, 1);
+    my ($hash, $state) = @_;
+    my $rec_ct = $hash->{helper}{reconnect_counter} // 0;
+    my $do_trigger = $state ne 'reconnecting' || !($rec_ct % 10);
+    main::readingsSingleUpdate($hash, 'mcu.connection', $state, $do_trigger);
+}
+
+sub devio_at_connect($) {
+    my ($hash) = @_;
+    devio_write_line($hash, "xxx xxx xxx;xxx xxx xxx;xxx xxx;"); # get rid of any garbage in the pipe
+    devio_write_line($hash, "send p=?;mcu version=full;config all=?;");
 }
 
 sub devio_openDev_init_cb($)
 {
     my ($hash) = @_;
-    main::DevIo_SimpleWrite($hash, "send p=?;mcu version=full;config all=?;", 2);
+    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_openDev_init_cb()");
+    #devio_at_connect($hash);
+    main::InternalTimer(main::gettimeofday() + 5, 'TronfernoMCU::devio_at_connect', $hash);
     devio_updateReading_connection($hash, $hash->{helper}{connection_type});
-    wdcon_test_init($hash, 60 * 5) if $hash->{helper}{connection_type} eq 'usb';
+    #wdcon_test_init($hash, 60 * 5) if $hash->{helper}{connection_type} eq 'usb';
     return undef;
 }
 
@@ -277,10 +296,17 @@ sub devio_openDev_cb($)
 {
     my ($hash, $error) = @_;
     my $name = $hash->{NAME};
-
+    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_openDev_cb()");
     main::Log3 ($name, 5, "TronfernoMCU ($name) - error while connecting: $error") if ($error);
     devio_updateReading_connection($hash, "error: $error") if ($error);
     return undef;
+}
+
+sub devio_write_line($$) {
+    my ($hash, $line) = @_;
+    my $name = $hash->{NAME};
+    main::Log3 ($name, 5, "TronfernoMCU ($name) - write line: <$line>");
+	main::DevIo_SimpleWrite($hash, $line, 2);
 }
 
 # called when a new definition is created (by hand or from configuration read on FHEM startup)
@@ -346,9 +372,11 @@ sub X_Ready($)
 # called when data was received
 sub X_Read($$)
 {
-    # if DevIo_Expect() returns something we call this function with an additional argument
+	    # if DevIo_Expect() returns something we call this function with an additional argument
     my ($hash, $data) = @_;
     my $name = $hash->{NAME};
+
+    #main::Log3 ($hash->{NAME}, 5, "tronferno-mcu X_Read()");
 
     # read the available data (or don't if called from X_Set)
     $data = main::DevIo_SimpleRead($hash) unless (defined($data));
@@ -404,6 +432,8 @@ sub X_Read($$)
                 my ($k, $v) = split('=', $kv);
                 $hash->{"mcu-$k"} = $v;
            }
+        } elsif ($line =~ /^tf: info: start: tronferno-mcu$/) {
+
         } elsif ($line =~ /^tf:.* ipaddr:\s*([0-9.]*);$/) {
             main::readingsSingleUpdate($hash, 'mcu.ip4-address', $1, 1);
         }
@@ -414,7 +444,7 @@ sub X_Read($$)
 
 sub mcu_read_all_config($) {
     my ($hash) = @_;
-    main::DevIo_SimpleWrite($hash, "config all=?;", 2);
+    devio_write_line($hash, "config all=?;");
 }
 
 sub mcu_read_config($$) {
@@ -423,16 +453,16 @@ sub mcu_read_config($$) {
     for my $o (@args) {
         $msg .= "$o=?";
     }
-    main::DevIo_SimpleWrite($hash, "config $msg;", 2);
+    devio_write_line($hash, "config $msg;");
 }
 
 sub mcu_config($$$) {
     my ($hash, $opt, $arg) = @_;
     my $msg =  "$opt=$arg";
     $msg .=  " $opt=?" unless ($arg eq '?' || $opt eq 'wlan-password');
-    $msg .= ' restart=1' if 0 == index($opt, 'wlan-') || ($opt == 'network'); # do restart after changing any network option
+    $msg .= ' restart=1' if 0 == index($opt, 'wlan-') || ($opt eq 'network'); # do restart after changing any network option
 
-    main::DevIo_SimpleWrite($hash, "config $msg;", 2);
+    devio_write_line($hash, "config $msg;");
 }
 
 sub mcu_download_firmware($) {
@@ -489,6 +519,12 @@ while(my($k, $v) = each %$firmware) {
     $usage .= " $k".$v->{args};
 }
 
+sub fw_get_updateReading($$) {
+    my ($hash, $value) = @_;
+    my $fwg =  $hash->{helper}{fw_get};
+    main::readingsSingleUpdate($hash, $fwg->{id}, $value, 1);
+}
+
 sub fw_get_next_file_cb($$$) {
     my ($param, $err, $data) = @_;
     my $hash = $param->{hash};
@@ -503,7 +539,7 @@ sub fw_get_next_file_cb($$$) {
         fw_get_next_file($hash);
     } else {
         # error
-        main::readingsSingleUpdate($hash, $fwg->{id}, 'error', 1);
+        fw_get_updateReading($hash, 'error');
     }
 }
 
@@ -516,7 +552,7 @@ sub fw_get_next_file($) {
     my $idx = $fwg->{file_idx}++;
 
     unless ($idx < $count) {
-        main::readingsSingleUpdate($hash, $fwg->{id}, 'done', 1);
+        fw_get_updateReading($hash, 'done');
         if ($fwg->{write_func}) {
             &{$fwg->{write_func}}(@{$fwg->{write_args}});
         }
@@ -553,7 +589,7 @@ sub fw_get_and_write_flash($$;$$) {
     $fwg->{files} = $fw->{files};
     $fwg->{uri} = $uri;
     $fwg->{dst_base} = $dst_base;
-    $fwg->{id} = 'fw_get';
+    $fwg->{id} = $FW_GET_ID;
 
     if ($write_flash) {
         $fwg->{write_func} = \&fw_write_flash;
@@ -568,7 +604,7 @@ sub fw_get_and_write_flash($$;$$) {
         callback   => \&fw_get_next_file_cb,
     };
 
-    main::readingsSingleUpdate($hash, $fwg->{id}, 'run', 1);
+    fw_get_updateReading($hash, 'run');
     fw_get_next_file($hash);
 }
 
@@ -618,6 +654,11 @@ sub sys_cmd_rm_log_internals($) {
     delete ($hash->{"$FW_ERA_ID.log"});
 }
 
+sub sys_cmd_updateReading($$) {
+    my ($hash, $value) = @_;
+    my $sys_cmd =  $hash->{helper}{sys_cmd};
+    main::readingsSingleUpdate($hash, $sys_cmd->{id}, $value, 1);
+}
 sub cb_async_system_cmd($) {
     my ($hash) = @_;
     my $start_time = $hash->{helper}{sys_cmd}{start_time};
@@ -631,11 +672,11 @@ sub cb_async_system_cmd($) {
         my $failed = !sys_cmd_get_success($hash);
         my $result = $failed ? 'error' : 'done';
 
-        main::readingsSingleUpdate($hash, $id, "$result", 1);
+        sys_cmd_updateReading($hash, "$result");
         file_slurp($hash->{helper}{sys_cmd}{log}, \$logstr) if $failed;
         $hash->{"$id.log"} = substr($logstr, 0, 300) if $failed;
 
-        if ($id  eq 'fw_get') {
+        if ($id  eq $FW_GET_ID) {
             main::asyncOutput($cl, "firmware download command failed:\n\n" . $logstr) if ($cl && $failed);
         } elsif ($id eq $FW_WRT_ID) {
             main::asyncOutput($cl, "write-flash command failed:\n\n" . $logstr) if ($cl && $failed);
@@ -645,7 +686,7 @@ sub cb_async_system_cmd($) {
             devio_open_device($hash);
         }
     } elsif ($start_time + $timeout < main::gettimeofday()) {
-        main::readingsSingleUpdate($hash, $id, 'timeout', 1);
+        sys_cmd_updateReading($hash, 'timeout');
     } else {
         main::InternalTimer(main::gettimeofday() + 4, 'TronfernoMCU::cb_async_system_cmd', $hash);
         return; # return here to not reach cleanup code at bottom
@@ -747,11 +788,11 @@ sub X_Set($$@) {
     } elsif($cmd eq 'mcu-firmware.esp8266') {
     } elsif($cmd eq 'mcu-firmware.atmega328') {
     } elsif($cmd eq "statusRequest") {
-        #main::DevIo_SimpleWrite($hash, "get_status\r\n", 2);
+        #devio_write_line($hash, "get_status\r\n");
     } elsif($cmd eq "on") {
-        #main::DevIo_SimpleWrite($hash, "on\r\n", 2);
+        #devio_write_line($hash, "on\r\n");
     } elsif($cmd eq "off") {
-        #main::DevIo_SimpleWrite($hash, "off\r\n", 2);
+        #devio_write_line($hash, "off\r\n");
     } else {
         return $u;
     }
@@ -765,7 +806,7 @@ sub X_Write ($$)
     my $name = $hash->{NAME};
 
     main::Log3 ($name, 5, "TronfernoMCU ($name) _Write(): $addr: $msg");
-    main::DevIo_SimpleWrite($hash, $msg, 2, 1);
+    devio_write_line($hash, $msg);
     return undef;
 }
 
