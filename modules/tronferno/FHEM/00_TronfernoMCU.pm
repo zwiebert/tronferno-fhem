@@ -74,8 +74,6 @@ sub fw_write_flash($$);
 sub log_get_success($);
 sub mcu_config($$$);
 sub mcu_download_firmware($);
-sub mcu_read_all_config($);
-sub mcu_read_config($$);
 sub run_system_cmd($$$$$$);
 sub sys_cmd_updateReading($$);
 sub sys_cmd_get_success($);
@@ -277,7 +275,7 @@ sub devio_updateReading_connection($$) {
 
 sub devio_at_connect($) {
     my ($hash) = @_;
-    devio_write_line($hash, "xxx xxx xxx;xxx xxx xxx;xxx xxx;"); # get rid of any garbage in the pipe
+    devio_write_line($hash, "xxx;xxx;"); # get rid of any garbage in the pipe
     devio_write_line($hash, "send p=?;mcu version=full;config all=?;");
 }
 
@@ -440,20 +438,6 @@ sub X_Read($$)
     }
 
     $hash->{PARTIAL} = $remain;
-}
-
-sub mcu_read_all_config($) {
-    my ($hash) = @_;
-    devio_write_line($hash, "config all=?;");
-}
-
-sub mcu_read_config($$) {
-    my ($hash, @args) = @_;
-    my $msg = "";
-    for my $o (@args) {
-        $msg .= "$o=?";
-    }
-    devio_write_line($hash, "config $msg;");
 }
 
 sub mcu_config($$$) {
