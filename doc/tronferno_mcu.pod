@@ -3,12 +3,11 @@
 <a name="TronfernoMCU"></a>
 <h3>TronfernoMCU</h3>
 
-<p><i>TronfernoMCU</i> is a physical Device to connect Tronferno-MCU hardware..
+<p><i>TronfernoMCU</i> is a physical device to connect Tronferno-MCU hardware..
 <ul>
- <li>Provides the IODev requiered by Tronferno logical devices</li>
- <li>Requiered MCU/RF-hardware: <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a></li>
- <li>Can flash the MCU (ESP32 or ESP8266) using the respective Set command. (if conected to FHEM by USB)</i>
- <li>Can configure the MCU using Set commands</li>
+ <li>Implements the IODev requiered by Tronferno logical devices</li>
+ <li>Requires MCU/RF-hardware: <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a></li>
+ <li>Is able to download, flash (if connected to USB) and configure the MCU firmware</i>
 </ul>
 
 
@@ -31,6 +30,16 @@
 <ul>
 <li><code>define tfmcu TronfernoMCU /dev/ttyUSB1</code> (connect device by USB cable)</li>
 <li><code>define tfmcu TronfernoMCU 192.168.1.123</code> (connect device by IP network)</li>
+</ul>
+
+<a name="TronfernoMCUreadings"></a>
+<h4>Readings</h4>
+<ul>
+   <li>mcu.ip4-address - Last known IPv4 address of the MCU</li>
+   <li>mcu.connection - State of connection to MCU: closed, connecting, usb, tcp, reconnecting, error:MSG</li> 
+   <li>mcu.firmware.fetch - status of downloading firmware: run,done,error,timeout</li>
+   <li>mcu.firmware.write - status of writing firmware: run,done,error,timeout</li>
+   <li>mcu.firmware.erase - status of erassing entire Flash-ROM: run,done,error,timeout</li>
 </ul>
 
 <a name="TronfernoMCUset"></a>
@@ -83,18 +92,19 @@
      <li>ap: create WLAN accesspoint</li>
      <li>wlan: connect to existing WLAN</li>
      <li>lan: connect to Router via Ethernet</li>
-     <li>Note: MCU will be restarted after setting this option</li>
-</ul></li>
+</ul>
+     <small>Note: MCU will be restarted after setting this option<br>
+</li>
 
   <a name="mcc.wlan-password"></a>
   <li>mcc.wlan-passord<br>
     Password used by MCU to connect to WLAN/WiFi<br>
-    Note: MCU will be restarted after setting this option </li>
+    <small>Note: MCU will be restarted after setting this option<br></li>
 
   <a name="mcc.wlan-ssid"></a>
   <li>mcc.wlan-ssid<br>
     WLAN/WiFi SSID to connect to<br>
-    Note: MCU will be restarted after setting this option</li>
+    <small>Note: MCU will be restarted after setting this option<br></li>
 
   <a name="mcc.mqtt-enable"></a>
   <li>mcc.mqtt-enable - enables/disables builtin MQTT client<br>
@@ -123,10 +133,9 @@
 
   <a name="mcc.http-enable"></a>
   <li>mcc.http-enable - enables/disables builtin webserver<br>
+    <small>(ESP32 only)</small><br>
     <code>set tfmcu mcc.http-enable 1</code><br>
     <code>set tfmcu mcc.http-enable 0</code><br>
-<br>
-    <small>Note: ESP32 only</small><br>
     </li>
 
   <a name="mcc.http-user"></a>
@@ -146,13 +155,11 @@
     <ul>
      <li>download<br>
          Downloads firmware and flash-tool from github.<br>
-         Files can be found at /tmp/TronfernoMCU<br>
-         Status is shown in reading fw_get (run,done,error,timeout).</li>
+         Files can be found at /tmp/TronfernoMCU</li>
      <li>write-flash<br>
          Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Expected MCU: Plain ESP32 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
-         Status is shown in reading fw_write_flash (run,done,error,timeout). Shell output may be displayed at error in Internals.</li>
+         Expected MCU: Plain ESP32 with 4MB flash. Edit the flash_esp32.sh command for different hardware.</li>
      <li>upgrade<br>
         Combines download and write-flash for convinience.
          </li>
@@ -178,18 +185,15 @@
      <li>write-flash<br>
          Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Expected MCU: Plain ESP8266 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
-         Status is shown in reading fw_write_flash (run,done,error,timeout). Shell output may be displayed at error in Internals.</li>
+         Expected MCU: Plain ESP8266 with 4MB flash. Edit the flash_esp32.sh command for different hardware.</li>
      <li>upgrade<br>
         Combines download and write-flash for convinience.
      <li>xxx.erase-flash<br>
           Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
-         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error in Internals.</li>
+         Required Tools: python, pyserial; <code>apt install python  python-serial</code></li>
      <li>download-beta-version<br>
          Downloads beta-firmware and flash-tool from github.<br>
-         Files can be found at /tmp/TronfernoMCU<br>
-         Status is shown in reading fw_get (run,done,error,timeout).</li>
+         Files can be found at /tmp/TronfernoMCU</li>
     </ul>
   </li>
 

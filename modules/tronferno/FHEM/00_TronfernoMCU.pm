@@ -41,10 +41,6 @@ require File::Basename;
 
 sub File::Path::make_path;
 
-
-# protos to avoid module-reloading errors if signature has changed
-# (because it was annoying to have the subs in the right order for this)
-
 sub X_Define($$);
 sub X_Read($$);
 sub X_Ready($);
@@ -85,7 +81,6 @@ sub wdcon_test_init($$);
 sub wdcon_test_timer_cb($);
 sub wdcon_test_transmit($);
 
-my $def_mcuaddr = 'fernotron.fritz.box.';
 my $mcu_port = 7777;
 my $mcu_baud = 115200;
 my $FW_WRT_ID = 'mcu.firmware.write';
@@ -307,20 +302,12 @@ sub devio_write_line($$) {
 	main::DevIo_SimpleWrite($hash, $line, 2);
 }
 
-# called when a new definition is created (by hand or from configuration read on FHEM startup)
+### Note: using defmod, X_Define can be called multiple times without any call to X_Undef
 sub X_Define($$)
 {
     my ($hash, $def) = @_;
     my @args = split("[ \t]+", $def);
-
-    my $name = $args[0];
-
-    # $args[1] is always equals the module name "MY_MODULE"
-
-    # first argument is the hostname or IP address of the device (e.g. "192.168.1.120")
-    my $dev = $args[2];
-
-    $dev = $def_mcuaddr unless($dev); # FIXME: remove this line
+    my ($name, $mod_name, $dev) = @args;
 
     return "no device given" unless($dev);
 
@@ -335,11 +322,9 @@ sub X_Define($$)
         $dev .= ":$mcu_port" if(index($dev, ':') < 0);
     }
 
-    # first close connection if maybe open (on definition modify)
+
     devio_close_device($hash);
-    # now change old device name to new one
     $hash->{DeviceName} = $dev;
-    # open connection with custom init and error callback function (non-blocking connection establishment)
     devio_open_device($hash);
 
     return undef;
@@ -361,16 +346,13 @@ sub X_Undef($$)
 sub X_Ready($)
 {
     my ($hash) = @_;
-
     main::Log3 ($hash->{NAME}, 5, "tronferno-mcu X_Ready()");
-    # try to reopen the connection in case the connection is lost
     return devio_reopen_device($hash);
 }
 
 # called when data was received
 sub X_Read($$)
 {
-	    # if DevIo_Expect() returns something we call this function with an additional argument
     my ($hash, $data) = @_;
     my $name = $hash->{NAME};
 
@@ -378,7 +360,7 @@ sub X_Read($$)
 
     # read the available data (or don't if called from X_Set)
     $data = main::DevIo_SimpleRead($hash) unless (defined($data));
-    # stop processing if no data is available (device disconnected)
+
     return if(!defined($data));
 
     my $buf = $hash->{PARTIAL} . $data;
@@ -826,12 +808,11 @@ sub TronfernoMCU_Initialize($) {
 <a name="TronfernoMCU"></a>
 <h3>TronfernoMCU</h3>
 
-<p><i>TronfernoMCU</i> is a physical Device to connect Tronferno-MCU hardware..
+<p><i>TronfernoMCU</i> is a physical device to connect Tronferno-MCU hardware..
 <ul>
- <li>Provides the IODev requiered by Tronferno logical devices</li>
- <li>Requiered MCU/RF-hardware: <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a></li>
- <li>Can flash the MCU (ESP32 or ESP8266) using the respective Set command. (if conected to FHEM by USB)</i>
- <li>Can configure the MCU using Set commands</li>
+ <li>Implements the IODev requiered by Tronferno logical devices</li>
+ <li>Requires MCU/RF-hardware: <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a></li>
+ <li>Is able to download, flash (if connected to USB) and configure the MCU firmware</i>
 </ul>
 
 
@@ -854,6 +835,16 @@ sub TronfernoMCU_Initialize($) {
 <ul>
 <li><code>define tfmcu TronfernoMCU /dev/ttyUSB1</code> (connect device by USB cable)</li>
 <li><code>define tfmcu TronfernoMCU 192.168.1.123</code> (connect device by IP network)</li>
+</ul>
+
+<a name="TronfernoMCUreadings"></a>
+<h4>Readings</h4>
+<ul>
+   <li>mcu.ip4-address - Last known IPv4 address of the MCU</li>
+   <li>mcu.connection - State of connection to MCU: closed, connecting, usb, tcp, reconnecting, error:MSG</li> 
+   <li>mcu.firmware.fetch - status of downloading firmware: run,done,error,timeout</li>
+   <li>mcu.firmware.write - status of writing firmware: run,done,error,timeout</li>
+   <li>mcu.firmware.erase - status of erassing entire Flash-ROM: run,done,error,timeout</li>
 </ul>
 
 <a name="TronfernoMCUset"></a>
@@ -906,18 +897,19 @@ sub TronfernoMCU_Initialize($) {
      <li>ap: create WLAN accesspoint</li>
      <li>wlan: connect to existing WLAN</li>
      <li>lan: connect to Router via Ethernet</li>
-     <li>Note: MCU will be restarted after setting this option</li>
-</ul></li>
+</ul>
+     <small>Note: MCU will be restarted after setting this option<br>
+</li>
 
   <a name="mcc.wlan-password"></a>
   <li>mcc.wlan-passord<br>
     Password used by MCU to connect to WLAN/WiFi<br>
-    Note: MCU will be restarted after setting this option </li>
+    <small>Note: MCU will be restarted after setting this option<br></li>
 
   <a name="mcc.wlan-ssid"></a>
   <li>mcc.wlan-ssid<br>
     WLAN/WiFi SSID to connect to<br>
-    Note: MCU will be restarted after setting this option</li>
+    <small>Note: MCU will be restarted after setting this option<br></li>
 
   <a name="mcc.mqtt-enable"></a>
   <li>mcc.mqtt-enable - enables/disables builtin MQTT client<br>
@@ -946,10 +938,9 @@ sub TronfernoMCU_Initialize($) {
 
   <a name="mcc.http-enable"></a>
   <li>mcc.http-enable - enables/disables builtin webserver<br>
+    <small>(ESP32 only)</small><br>
     <code>set tfmcu mcc.http-enable 1</code><br>
     <code>set tfmcu mcc.http-enable 0</code><br>
-<br>
-    <small>Note: ESP32 only</small><br>
     </li>
 
   <a name="mcc.http-user"></a>
@@ -969,13 +960,11 @@ sub TronfernoMCU_Initialize($) {
     <ul>
      <li>download<br>
          Downloads firmware and flash-tool from github.<br>
-         Files can be found at /tmp/TronfernoMCU<br>
-         Status is shown in reading fw_get (run,done,error,timeout).</li>
+         Files can be found at /tmp/TronfernoMCU</li>
      <li>write-flash<br>
          Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Expected MCU: Plain ESP32 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
-         Status is shown in reading fw_write_flash (run,done,error,timeout). Shell output may be displayed at error in Internals.</li>
+         Expected MCU: Plain ESP32 with 4MB flash. Edit the flash_esp32.sh command for different hardware.</li>
      <li>upgrade<br>
         Combines download and write-flash for convinience.
          </li>
@@ -1001,18 +990,15 @@ sub TronfernoMCU_Initialize($) {
      <li>write-flash<br>
          Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Expected MCU: Plain ESP8266 with 4MB flash. Edit the flash_esp32.sh command for different hardware.<br>
-         Status is shown in reading fw_write_flash (run,done,error,timeout). Shell output may be displayed at error in Internals.</li>
+         Expected MCU: Plain ESP8266 with 4MB flash. Edit the flash_esp32.sh command for different hardware.</li>
      <li>upgrade<br>
         Combines download and write-flash for convinience.
      <li>xxx.erase-flash<br>
           Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
-         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error in Internals.</li>
+         Required Tools: python, pyserial; <code>apt install python  python-serial</code></li>
      <li>download-beta-version<br>
          Downloads beta-firmware and flash-tool from github.<br>
-         Files can be found at /tmp/TronfernoMCU<br>
-         Status is shown in reading fw_get (run,done,error,timeout).</li>
+         Files can be found at /tmp/TronfernoMCU</li>
     </ul>
   </li>
 
@@ -1029,11 +1015,9 @@ sub TronfernoMCU_Initialize($) {
 
 <p><i>TronfernoMCU</i> ist ein physisches FHEM Gerät zum steuern von Fernotron-Empfängern und Empfang von Fernotron Sendern.
 <ul>
- <li>Erzeugt das IODev benötigt von den logischen Tronferno FHEM Geräten</li>
- <li>MCU/RF-hardware/firmware: <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a></li>
- <li>Kann die Firmware flashen für den Mikrocontroller (ESP32 oder ESP8266) mit den jeweiligen SET Kommandos. (wenn über USB verbunden mit FHEM Server)</i>
- <li>Kann Mikrocontroller konfigurieren mit SET Kommandos</li>
- <li>Kann sich über Netzwerk oder USB mit dem Mikrocontroller verbinden.</li>
+ <li>Implementiert das IODev benötigt von logischen Tronferno FHEM Geräten</li>
+ <li>Benötigt MCU/RF-hardware/firmware: <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a></li>
+ <li>Erlaubt download, flashen (über USB) und konfigurieren der MCU Firmware.</i>
 </ul>
 
 <h4>Define</h4>
@@ -1055,6 +1039,16 @@ sub TronfernoMCU_Initialize($) {
 <ul>
 <li><code>define tfmcu TronfernoMCU /dev/ttyUSB1</code> (verbinde mit MC über USB)</li>
 <li><code>define tfmcu TronfernoMCU 192.168.1.123</code> (verbinde mit MC über IP Netzwerk)</li>
+</ul>
+
+<a name="TronfernoMCUreadings"></a>
+<h4>Readings</h4>
+<ul>
+   <li>mcu.ip4-address - Letzte bekannte IPv4-Adresse des MC</li>
+   <li>mcu.connection - Status der Verbindung zu MC: closed, connecting, usb, tcp, reconnecting, error:MSG</li> 
+   <li>mcu.firmware.fetch - Status beim Download der Firmware: run,done,error,timeout</li>
+   <li>mcu.firmware.write - Status beim Schreiben der Firmware: run,done,error,timeout</li>
+   <li>mcu.firmware.erase - Status beim Löschen des Flash-ROM: run,done,error,timeout</li>
 </ul>
 
 <a name="TronfernoMCUset"></a>
@@ -1123,8 +1117,6 @@ sub TronfernoMCU_Initialize($) {
 <br>
     <code>attr MQTT2_tronferno42 setList cli tfmcu/cli $EVENT</code><br>
     <code>set MQTT2_tronferno42 cli send g=4 m=2 c=down</code><br>
-<br>
-    <small>Hinweis: ESP32 und ESP8266</small><br>
     </li>
 
   <a name="mcc.mqtt-url"></a>
@@ -1144,10 +1136,10 @@ sub TronfernoMCU_Initialize($) {
 
   <a name="mcc.http-enable"></a>
   <li>mcc.http-enable - aktiviert den Webserver des MCs (Browseroberfläche)<br>
+    <small>(Nur ESP32)</small><br>
     <code>set tfmcu mcc.http-enable 1</code><br>
     <code>set tfmcu mcc.http-enable 0</code><br>
-<br>
-    <small>Hinweis: Nur ESP32</small><br>
+
     </li>
 
   <a name="mcc.http-user"></a>
@@ -1171,19 +1163,16 @@ sub TronfernoMCU_Initialize($) {
      <li>write-flash<br>
          Flasht die Firmware über den USB Port definiert in diesem Gerät.<br>
          Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
-         MCU: ESP32/4MB/WLAN angeschlossen über USB.<br>
-         Status ist sichtbar im Reading fw_write_flash (run,done,error,timeout).</li>
+         MCU: ESP32/4MB/WLAN angeschlossen über USB.</li>
      <li>upgrade<br>
         Kombiniert download und flashen in einem Schritt.
          </li>
      <li>xxx.erase-flash<br>
           Optional: Löschen des FLASH-ROM. Alle gespeicherten Daten auf dem MC gehen verloren!</br>
-         Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
-         Status ist sichtbar im Reading fw_erase_flash (run,done,error,timeout).</li>
+         Benötigt: python, pyserial; <code>apt install python  python-serial</code></li>
      <li>download-beta-version<br>
          Download der letzten beta-firmware und Flash Programm.<br>
-         Dateien werden kopiert nach /tmp/TronfernoMCU<br>
-         Status ist sichtbar im Reading fw_get (run,done,error,timeout).</li>
+         Dateien werden kopiert nach /tmp/TronfernoMCU</li>
     </ul>
   </li>
 
@@ -1198,19 +1187,16 @@ sub TronfernoMCU_Initialize($) {
      <li>write-flash<br>
          Flasht die Firmware über den USB Port definiert in diesem Gerät.<br>
          Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
-         MCU: ESP8266/4MB/WLAN angeschlossen über USB.<br>
-         Status ist sichtbar im Reading fw_write_flash (run,done,error,timeout).</li>
+         MCU: ESP8266/4MB/WLAN angeschlossen über USB.</li>
      <li>upgrade<br>
         Kombiniert download und flashen in einem Schritt.
          </li>
      <li>xxx.erase-flash<br>
           Optional: Löschen des FLASH-ROM. Alles gespeicherten Daten auf dem MC gehen verloren!</br>
-         Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
-         Status ist sichtbar im Reading fw_erase_flash (run,done,error,timeout).</li>
+         Benötigt: python, pyserial; <code>apt install python  python-serial</code></li>
      <li>download-beta-version<br>
          Download der letzten beta-firmware und Flash Programm.<br>
-         Dateien werden kopiert nach /tmp/TronfernoMCU<br>
-         Status ist sichtbar im Reading fw_get (run,done,error,timeout).</li>
+         Dateien werden kopiert nach /tmp/TronfernoMCU</li>
     </ul>
   </li>
 

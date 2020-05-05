@@ -8,11 +8,9 @@
 
 <p><i>TronfernoMCU</i> ist ein physisches FHEM Gerät zum steuern von Fernotron-Empfängern und Empfang von Fernotron Sendern.
 <ul>
- <li>Erzeugt das IODev benötigt von den logischen Tronferno FHEM Geräten</li>
- <li>MCU/RF-hardware/firmware: <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a></li>
- <li>Kann die Firmware flashen für den Mikrocontroller (ESP32 oder ESP8266) mit den jeweiligen SET Kommandos. (wenn über USB verbunden mit FHEM Server)</i>
- <li>Kann Mikrocontroller konfigurieren mit SET Kommandos</li>
- <li>Kann sich über Netzwerk oder USB mit dem Mikrocontroller verbinden.</li>
+ <li>Implementiert das IODev benötigt von logischen Tronferno FHEM Geräten</li>
+ <li>Benötigt MCU/RF-hardware/firmware: <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a></li>
+ <li>Erlaubt download, flashen (über USB) und konfigurieren der MCU Firmware.</i>
 </ul>
 
 <h4>Define</h4>
@@ -34,6 +32,16 @@
 <ul>
 <li><code>define tfmcu TronfernoMCU /dev/ttyUSB1</code> (verbinde mit MC über USB)</li>
 <li><code>define tfmcu TronfernoMCU 192.168.1.123</code> (verbinde mit MC über IP Netzwerk)</li>
+</ul>
+
+<a name="TronfernoMCUreadings"></a>
+<h4>Readings</h4>
+<ul>
+   <li>mcu.ip4-address - Letzte bekannte IPv4-Adresse des MC</li>
+   <li>mcu.connection - Status der Verbindung zu MC: closed, connecting, usb, tcp, reconnecting, error:MSG</li> 
+   <li>mcu.firmware.fetch - Status beim Download der Firmware: run,done,error,timeout</li>
+   <li>mcu.firmware.write - Status beim Schreiben der Firmware: run,done,error,timeout</li>
+   <li>mcu.firmware.erase - Status beim Löschen des Flash-ROM: run,done,error,timeout</li>
 </ul>
 
 <a name="TronfernoMCUset"></a>
@@ -102,8 +110,6 @@
 <br>
     <code>attr MQTT2_tronferno42 setList cli tfmcu/cli $EVENT</code><br>
     <code>set MQTT2_tronferno42 cli send g=4 m=2 c=down</code><br>
-<br>
-    <small>Hinweis: ESP32 und ESP8266</small><br>
     </li>
 
   <a name="mcc.mqtt-url"></a>
@@ -123,10 +129,10 @@
 
   <a name="mcc.http-enable"></a>
   <li>mcc.http-enable - aktiviert den Webserver des MCs (Browseroberfläche)<br>
+    <small>(Nur ESP32)</small><br>
     <code>set tfmcu mcc.http-enable 1</code><br>
     <code>set tfmcu mcc.http-enable 0</code><br>
-<br>
-    <small>Hinweis: Nur ESP32</small><br>
+
     </li>
 
   <a name="mcc.http-user"></a>
@@ -150,19 +156,16 @@
      <li>write-flash<br>
          Flasht die Firmware über den USB Port definiert in diesem Gerät.<br>
          Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
-         MCU: ESP32/4MB/WLAN angeschlossen über USB.<br>
-         Status ist sichtbar im Reading fw_write_flash (run,done,error,timeout).</li>
+         MCU: ESP32/4MB/WLAN angeschlossen über USB.</li>
      <li>upgrade<br>
         Kombiniert download und flashen in einem Schritt.
          </li>
      <li>xxx.erase-flash<br>
           Optional: Löschen des FLASH-ROM. Alle gespeicherten Daten auf dem MC gehen verloren!</br>
-         Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
-         Status ist sichtbar im Reading fw_erase_flash (run,done,error,timeout).</li>
+         Benötigt: python, pyserial; <code>apt install python  python-serial</code></li>
      <li>download-beta-version<br>
          Download der letzten beta-firmware und Flash Programm.<br>
-         Dateien werden kopiert nach /tmp/TronfernoMCU<br>
-         Status ist sichtbar im Reading fw_get (run,done,error,timeout).</li>
+         Dateien werden kopiert nach /tmp/TronfernoMCU</li>
     </ul>
   </li>
 
@@ -177,19 +180,16 @@
      <li>write-flash<br>
          Flasht die Firmware über den USB Port definiert in diesem Gerät.<br>
          Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
-         MCU: ESP8266/4MB/WLAN angeschlossen über USB.<br>
-         Status ist sichtbar im Reading fw_write_flash (run,done,error,timeout).</li>
+         MCU: ESP8266/4MB/WLAN angeschlossen über USB.</li>
      <li>upgrade<br>
         Kombiniert download und flashen in einem Schritt.
          </li>
      <li>xxx.erase-flash<br>
           Optional: Löschen des FLASH-ROM. Alles gespeicherten Daten auf dem MC gehen verloren!</br>
-         Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
-         Status ist sichtbar im Reading fw_erase_flash (run,done,error,timeout).</li>
+         Benötigt: python, pyserial; <code>apt install python  python-serial</code></li>
      <li>download-beta-version<br>
          Download der letzten beta-firmware und Flash Programm.<br>
-         Dateien werden kopiert nach /tmp/TronfernoMCU<br>
-         Status ist sichtbar im Reading fw_get (run,done,error,timeout).</li>
+         Dateien werden kopiert nach /tmp/TronfernoMCU</li>
     </ul>
   </li>
 

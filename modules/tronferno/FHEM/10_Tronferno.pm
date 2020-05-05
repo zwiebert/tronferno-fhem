@@ -30,8 +30,37 @@ sub readingsBulkUpdateIfChanged($$$@);
 sub readingsEndUpdate($$);
 sub readingsSingleUpdate($$$$);
 
+sub Tronferno_Initialize($);
+
+sub JSON::from_json;
 
 package Tronferno;
+
+sub X_Attr(@);
+sub X_Define($$);
+sub X_Get($$$@);
+sub X_Parse($$);
+sub X_Set($$@);
+sub X_Undef($$);
+sub build_cmd($$$);
+sub build_cmd_cli($$$);
+sub build_cmd_json($$$);
+sub build_timer($$);
+sub defaultInputMakeReading($$$$$$);
+sub dispatch_pct($$$);
+sub dispatch_pct_obj($);
+sub get_commandlist();
+sub parse_c($$);
+sub parse_json($$);
+sub parse_position($$);
+sub parse_timer($$);
+sub pctReadingsUpdate($$);
+sub pctTrans($$);
+sub tf_build_cmd_reqest_position($);
+sub tf_set_def_match($$);
+sub tf_transmit_request_position($);
+sub transmit($$);
+sub transmit_by_socket($$);
 
 use IO::Socket;
 require JSON;
@@ -440,7 +469,7 @@ sub dispatch_pct($$$) {
     return $hash;
 }
 
-sub parse_position {
+sub parse_position($$) {
     my ($io_hash, $data) = @_;
     my $name = $io_hash->{NAME};
     my ($ad, $g, $m, $p, $mm) = (0, 0, 0, 0, undef);
@@ -508,7 +537,7 @@ sub defaultInputMakeReading($$$$$$) {
     return 1;
 }
 
-sub parse_c {
+sub parse_c($$) {
     my ($io_hash, $data) = @_;
     my $name = $io_hash->{NAME};
     my ($ad, $g, $m, $p, $fdt, $c) = (0, 0, 0, 0, "", "");
@@ -544,7 +573,7 @@ sub parse_c {
     return $hash->{NAME}
 }
 
-sub parse_timer {
+sub parse_timer($$) {
     my ($io_hash, $data) = @_;
     my $name = $io_hash->{NAME};
     my ($ad, $g, $m, $p, $fdt, $c) = (0, 0, 0, 0, "", "");
@@ -612,7 +641,7 @@ sub parse_timer {
     return $hash->{NAME}
 }
 
-sub parse_json {
+sub parse_json($$) {
     my ($io_hash, $json) = @_;
     my $obj = JSON::from_json($json);
     my $from = $obj->{from};
@@ -620,7 +649,7 @@ sub parse_json {
     return undef;
 }
 
-sub X_Parse {
+sub X_Parse($$) {
     my ($io_hash, $message) = @_;
     my $name = $io_hash->{NAME};
     my $result = undef;
