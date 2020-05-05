@@ -382,6 +382,11 @@ sub X_Read($$)
             main::Log3 ($name, 4, "$name: dispatch: $msg");
             main::Dispatch($hash, $msg);
 
+        } elsif ($line =~ /^(\{.*\})$/) {
+            my $msg =  "TFMCU#JSON:$1";
+            main::Log3 ($name, 4, "$name: dispatch: $msg");
+            main::Dispatch($hash, $msg);
+
         } elsif ($line =~ /^tf:.* timer: (.*);$/) {
             my $msg = "TFMCU#timer $1";
             main::Log3 ($name, 4, "$name: dispatch: $msg");
