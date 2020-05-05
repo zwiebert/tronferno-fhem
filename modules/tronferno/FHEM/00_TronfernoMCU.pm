@@ -13,6 +13,25 @@ use strict;
 use warnings;
 use 5.14.0;
 
+package main;
+
+sub DevIo_CloseDev($@);
+sub DevIo_IsOpen($);
+sub DevIo_OpenDev($$$;$);
+sub DevIo_SimpleRead($);
+sub DevIo_SimpleWrite($$$;$);
+sub Dispatch($$;$$);
+sub HttpUtils_NonblockingGet($);
+sub InternalTimer($$$;$);
+sub Log3($$$);
+sub asyncOutput($$);
+sub gettimeofday();
+sub readingsSingleUpdate($$$$);
+sub readingsSingleUpdate($$$$);
+
+
+sub TronfernoMCU_Initialize($);
+
 package TronfernoMCU;
 
 require DevIo;
@@ -21,19 +40,7 @@ require File::Path;
 require File::Basename;
 
 sub File::Path::make_path;
-sub main::DevIo_CloseDev($@);
-sub main::DevIo_IsOpen($);
-sub main::DevIo_OpenDev($$$;$);
-sub main::DevIo_SimpleRead($);
-sub main::DevIo_SimpleWrite($$$;$);
-sub main::Dispatch($$;$$);
-sub main::HttpUtils_NonblockingGet($);
-sub main::InternalTimer($$$;$);
-sub main::Log3($$$);
-sub main::asyncOutput($$);
-sub main::gettimeofday();
-sub main::readingsSingleUpdate($$$$);
-sub main::readingsSingleUpdate($$$$);
+
 
 # protos to avoid module-reloading errors if signature has changed
 # (because it was annoying to have the subs in the right order for this)
@@ -66,6 +73,7 @@ sub mcu_read_all_config($);
 sub mcu_read_config($$);
 sub run_system_cmd($$$$$$);
 sub sys_cmd_get_success($);
+sub sys_cmd_rm_log_internals($);
 sub wdcon_cure_lag($);
 sub wdcon_get_next_msgid($);
 sub wdcon_test_check_reply_line($$);
@@ -277,9 +285,11 @@ sub X_Define($$)
     #append default baudrate / portnumber
     if (index($dev, '/') != -1) {
         #serial device
+        $hash->{helper}{connection_type} = 'usb';
         $dev .= '@' . "$mcu_baud" if (index($dev, '@') < 0);
     } else {
         #TCP/IP connection
+        $hash->{helper}{connection_type} = 'tcp';
         $dev .= ":$mcu_port" if(index($dev, ':') < 0);
     }
 
@@ -329,7 +339,7 @@ sub X_Read($$)
 
     my $buf = $hash->{PARTIAL} . $data;
 
-    main::Log3 ($name, 5, "TronfernoMCU ($name) - received data: >>>$data<<<");
+    #main::Log3 ($name, 5, "TronfernoMCU ($name) - received data: >>>$data<<<");
 
     my $remain = '';
     foreach my $line (split(/^/m, $buf)) {
@@ -342,7 +352,7 @@ sub X_Read($$)
 
         wdcon_test_check_reply_line($hash, $line);
 
-        main::Log3 ($name, 4, "TronfernoMCU ($name) - received line: >>>>>$line<<<<<");
+        main::Log3 ($name, 4, "TronfernoMCU ($name) - received line: <$line>");
 
         if ($line =~ /^([AU]:position:\s*.+);$/) {
             my $msg =  "TFMCU#$1";
@@ -858,14 +868,12 @@ sub TronfernoMCU_Initialize($) {
 
   <a name="mcc.mqtt-enable"></a>
   <li>mcc.mqtt-enable - enables/disables builtin MQTT client<br>
-    <code>set tfmc mcc.mqtt-enable 1</code><br>
-    <code>set tfmc mcc.mqtt-enable 0</code><br>
+    <code>set tfmcu mcc.mqtt-enable 1</code><br>
+    <code>set tfmcu mcc.mqtt-enable 0</code><br>
 <br>
     <code>attr MQTT2_tronferno42 setList cli tfmcu/cli $EVENT</code><br>
     <code>set MQTT2_tronferno42 cli send g=4 m=2 c=down</code><br>
 <br>
-    <small>MQTT support is still experimental.</small><br>
-    <small>Note: MQTT is only supportet on esp32 hardware (for now)</small><br>
     </li>
 
   <a name="mcc.mqtt-url"></a>
@@ -884,21 +892,20 @@ sub TronfernoMCU_Initialize($) {
     </li>
 
   <a name="mcc.http-enable"></a>
-  <li>mcc.http-enable - enables/disables builtin HTTP server<br>
-    <code>set tfmc mcc.http-enable 1</code><br>
-    <code>set tfmc mcc.http-enable 0</code><br>
+  <li>mcc.http-enable - enables/disables builtin webserver<br>
+    <code>set tfmcu mcc.http-enable 1</code><br>
+    <code>set tfmcu mcc.http-enable 0</code><br>
 <br>
-    <small>HTTP support is still experimental.</small><br>
-    <small>Note: HTTP is only supportet on esp32 hardware (for now)</small><br>
+    <small>Note: ESP32 only</small><br>
     </li>
 
   <a name="mcc.http-user"></a>
-  <li>mcc.http-user - set optional HTTP login user name<br>
+  <li>mcc.http-user - set optional webserver login user name<br>
     <code>set tfmcu mcc.http-user myUserName</code>
     </li>
 
   <a name="mcc.http-password"></a>
-  <li>mcc.http-password - set optional HTTP login password<br>
+  <li>mcc.http-password - set optional webserver login password<br>
     <code>set tfmcu mcc.http-password myPassword</code>
     </li>
 
@@ -1053,8 +1060,8 @@ sub TronfernoMCU_Initialize($) {
 
   <a name="mcc.mqtt-enable"></a>
   <li>mcc.mqtt-enable - aktiviere MQTT Klient des MCs<br>
-    <code>set tfmc mcc.mqtt-enable 1</code><br>
-    <code>set tfmc mcc.mqtt-enable 0</code><br>
+    <code>set tfmcu mcc.mqtt-enable 1</code><br>
+    <code>set tfmcu mcc.mqtt-enable 0</code><br>
 <br>
     <code>attr MQTT2_tronferno42 setList cli tfmcu/cli $EVENT</code><br>
     <code>set MQTT2_tronferno42 cli send g=4 m=2 c=down</code><br>
@@ -1079,8 +1086,8 @@ sub TronfernoMCU_Initialize($) {
 
   <a name="mcc.http-enable"></a>
   <li>mcc.http-enable - aktiviert den Webserver des MCs (Browseroberfläche)<br>
-    <code>set tfmc mcc.http-enable 1</code><br>
-    <code>set tfmc mcc.http-enable 0</code><br>
+    <code>set tfmcu mcc.http-enable 1</code><br>
+    <code>set tfmcu mcc.http-enable 0</code><br>
 <br>
     <small>Hinweis: Nur ESP32</small><br>
     </li>

@@ -22,11 +22,20 @@
 ## Project: https://github.com/zwiebert/tronferno-fhem
 ################################################################################
 
+package main;
 
 use strict;
-
+use warnings;
 use 5.14.0;
 
+
+
+sub main::AssignIoPort($;$);
+sub main::AttrVal($$$);
+sub main::IOWrite($@);
+sub main::Log3($$$);
+sub main::ReadingsVal($$$);
+sub main::readingsSingleUpdate($$$$);
 
 package Fernotron::Protocol;
 ################################################################################
@@ -369,7 +378,7 @@ sub fer_bin2word($) {
 # split long bit string to array of 10bit strings. disregard trailing bits.
 sub fer_bitMsg_split($) {
     my @bitArr = unpack('(A10)*', shift);
-    $#bitArr -= 1 if length($bitArr[$#bitArr]) < 10;
+    $#bitArr -= 1 if length($bitArr[-1]) < 10;
     return \@bitArr;
 }
 
@@ -785,7 +794,7 @@ sub X_Define($$) {
         my $value = $fdt;
         $fdt = getFDTypeByA($a) unless $fdt;
 
-        return "$name: invalid input type: $value in define. Choose one of: sun, plain, central" unless (defined($fdt) and "$fdt" eq FDT_SUN || "$fdt" eq FDT_PLAIN || "$fdt" eq FDT_CENTRAL);
+        return "$name: invalid input type: $value in define. Choose one of: sun, plain, central" unless (defined($fdt) && ("$fdt" eq FDT_SUN || "$fdt" eq FDT_PLAIN || "$fdt" eq FDT_CENTRAL));
         $hash->{helper}{ferInputType} = $fdt;
         my $key =  sprintf('%6x', $a);
         $key .= "-$g-$m" if ("$fdt" eq FDT_CENTRAL);

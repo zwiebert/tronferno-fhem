@@ -18,19 +18,23 @@ use strict;
 use warnings;
 use 5.14.0;
 
+package main;
+
+sub AssignIoPort($;$);
+sub AttrVal($$$);
+sub IOWrite($@);
+sub Log3($$$);
+sub ReadingsVal($$$);
+sub readingsBeginUpdate($);
+sub readingsBulkUpdateIfChanged($$$@);
+sub readingsEndUpdate($$);
+sub readingsSingleUpdate($$$$);
+
+
 package Tronferno;
 
 use IO::Socket;
-
-sub main::AssignIoPort($;$);
-sub main::AttrVal($$$);
-sub main::IOWrite($@);
-sub main::Log3($$$);
-sub main::ReadingsVal($$$);
-sub main::readingsBeginUpdate($);
-sub main::readingsBulkUpdateIfChanged($$$@);
-sub main::readingsEndUpdate($$);
-sub main::readingsSingleUpdate($$$$);
+require JSON;
 
 
 use constant MODNAME => 'Tronferno';
@@ -410,8 +414,31 @@ sub X_Get($$$@) {
     }
 
     return undef;
+ }
+
+
+sub dispatch_pct_obj($) {
+    my ($pct) = @_;
+    my $hash = undef;
+    while (my ($key, $value) = each (%$pct)) {
+    	my $g = substr($key,0,1);
+    	my $m = substr($key,1,1);
+    	my $tmp = dispatch_pct($g,$m,$value);
+    	$hash = $tmp if $tmp;
+    }
+    return $hash->{NAME} if $hash;
+    return undef;
 }
 
+sub dispatch_pct($$$) {
+    my ($g, $m, $p) = @_;
+    my $def_match = "0,$g,$m";
+    my $hash = $main::modules{+MODNAME}{defptr}{$def_match};
+    if ($hash) {
+        pctReadingsUpdate($hash, $p);
+    }
+    return $hash;
+}
 
 sub parse_position {
     my ($io_hash, $data) = @_;
@@ -439,47 +466,24 @@ sub parse_position {
             return "out of range value $p for p. expected: 0..100" unless (0 <= $p && $m <= 100);
         }
     }
+
     if (defined ($mm)) {
         for my $g (0..7) {
             my $gm =hex($$mm[$g]);
             for my $m (0..7) {
                 if ($gm & (1 << $m)) {
-                    my $def_match = "0,$g,$m";
-                    my $hash = $main::modules{+MODNAME}{defptr}{$def_match}; #FIXME: add support for $ad different than zero
-                    if ($hash) {
-                        pctReadingsUpdate($hash, $p);
-                        $result = $hash->{NAME};
-                    }
+                    my $hash = dispatch_pct($g,$m,$p);
+                    $result =  $hash->{NAME} if $hash;
                 }
             }
         }
-
-        return $result;
-
     } else {
-        my $def_match = "0,$g,$m";
-        #main::Log3($io_hash, 3, "def_match: $def_match");
-        my $hash = $main::modules{+MODNAME}{defptr}{$def_match}; #FIXME: add support for $ad different than zero
-
-        if ($hash) {
-           pctReadingsUpdate($hash, $p);
-           # Rückgabe des Gerätenamens, für welches die Nachricht bestimmt ist.
-           return $hash->{NAME};
-        } elsif ($g == 0) { # positions with g=0 will not be sent by MCU? #TODO: Remove this elsif block later?
-            for my $g (1..7) {
-                for my $m (1..7) {
-                    my $hash = $main::modules{+MODNAME}{defptr}{"0,$g,$m"};
-                    if ($hash) {
-                        pctReadingsUpdate($hash, $p);
-                        $result = $hash->{NAME};
-                    }
-                }
-            }
-            return $result;
-        }
-        # TODO: is there a way to consume non matching postion events to avoid help-me messages in log file?
+        my $hash = dispatch_pct($g,$m,$p);
+        $result =  $hash->{NAME} if $hash;
     }
-    return undef;
+    # TODO: is there a way to consume non matching postion events to avoid help-me messages in log file?
+
+    return $result;
 }
 
 # update Reading of default input device, if there was no matching input device
@@ -608,6 +612,13 @@ sub parse_timer {
     return $hash->{NAME}
 }
 
+sub parse_json {
+    my ($io_hash, $json) = @_;
+    my $obj = JSON::from_json($json);
+    my $from = $obj->{from};
+    return dispatch_pct_obj($obj->{pct}) if (exists($obj->{pct}));
+    return undef;
+}
 
 sub X_Parse {
     my ($io_hash, $message) = @_;
@@ -620,6 +631,8 @@ sub X_Parse {
         return parse_c($io_hash, $1);
     } elsif ($message =~ /^TFMCU#timer (.+)$/) {
         return parse_timer($io_hash, $1);
+    } elsif ($message =~ /^TFMCU#JSON:(.+)$/) {
+        return parse_json($io_hash, $1);
     }
     return undef;
 }
