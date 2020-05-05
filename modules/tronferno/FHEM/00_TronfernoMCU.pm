@@ -54,9 +54,11 @@ sub X_Write ($$);
 sub cb_async_system_cmd($);
 sub devio_close_device($);
 sub devio_get_serial_device_name($);
-sub devio_openDev_failed_cb($);
-sub devio_openDev_succeeded_cb($);
-sub devio_open_device($);
+sub devio_openDev_cb($);
+sub devio_openDev_init_cb($);
+sub devio_open_device($;$);
+sub devio_reopen_device($);
+sub devio_updateReading_connection($$);
 sub file_read_last_line($);
 sub file_slurp($$);
 sub fw_erase_flash($$);
@@ -226,12 +228,18 @@ sub wdcon_test_init($$) {
 }
 
 ## DevIO ##
-sub devio_open_device($) {
-    my ($hash) = @_;
+sub devio_open_device($;$) {
+    my ($hash, $reopen) = @_;
     my $dn = $hash->{DeviceName} // 'undef';
+    $reopen = $reopen // 0;
     # open connection with custom init and error callback function (non-blocking connection establishment)
-    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_open_device() for ($dn)");
-    return main::DevIo_OpenDev($hash, 0, "TronfernoMCU::devio_openDev_succeeded_cb", "TronfernoMCU::devio_openDev_failed_cb");
+    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_open_device() for ($dn) (reopen=$reopen)");
+    devio_updateReading_connection($hash, $reopen ? 'reopening' : 'opening');
+    return main::DevIo_OpenDev($hash, $reopen, "TronfernoMCU::devio_openDev_init_cb", "TronfernoMCU::devio_openDev_cb");
+}
+sub devio_reopen_device($) {
+	    my ($hash) = @_;
+	    devio_open_device($hash, 1);
 }
 
 sub devio_close_device($) {
@@ -239,6 +247,7 @@ sub devio_close_device($) {
     my $dn = $hash->{DeviceName} // 'undef';
     # close connection if maybe open (on definition modify)
     main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_close_device() for ($dn)");
+    devio_updateReading_connection($hash, 'closed');
     return main::DevIo_CloseDev($hash); # if(main::DevIo_IsOpen($hash));
 }
 
@@ -250,21 +259,27 @@ sub devio_get_serial_device_name($) {
     return $dev;
 }
 
-sub devio_openDev_succeeded_cb($)
+sub devio_updateReading_connection($$) {
+	my ($hash, $state) = @_;
+	main::readingsSingleUpdate($hash, 'mcu.connection', $state, 1);
+}
+
+sub devio_openDev_init_cb($)
 {
     my ($hash) = @_;
     main::DevIo_SimpleWrite($hash, "send p=?;mcu version=full;config all=?;", 2);
-    wdcon_test_init($hash, 60 * 5); # XXX
+    devio_updateReading_connection($hash, $hash->{helper}{connection_type});
+    wdcon_test_init($hash, 60 * 5) if $hash->{helper}{connection_type} eq 'usb';
     return undef;
 }
 
-sub devio_openDev_failed_cb($)
+sub devio_openDev_cb($)
 {
     my ($hash, $error) = @_;
     my $name = $hash->{NAME};
 
     main::Log3 ($name, 5, "TronfernoMCU ($name) - error while connecting: $error") if ($error);
-
+    devio_updateReading_connection($hash, "error: $error") if ($error);
     return undef;
 }
 
@@ -325,7 +340,7 @@ sub X_Ready($)
 
     main::Log3 ($hash->{NAME}, 5, "tronferno-mcu X_Ready()");
     # try to reopen the connection in case the connection is lost
-    return devio_open_device($hash);
+    return devio_reopen_device($hash);
 }
 
 # called when data was received
