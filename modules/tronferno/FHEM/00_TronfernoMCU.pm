@@ -82,6 +82,8 @@ sub wdcon_test_init($$);
 sub wdcon_test_timer_cb($);
 sub wdcon_test_transmit($);
 
+sub parse_handle_json($$);
+
 my $mcu_port = 7777;
 my $mcu_baud = 115200;
 my $FW_WRT_ID = 'mcu.firmware.write';
@@ -271,7 +273,8 @@ sub devio_updateReading_connection($$) {
 sub devio_at_connect($) {
     my ($hash) = @_;
     devio_write_line($hash, "xxx;xxx;"); # get rid of any garbage in the pipe
-    devio_write_line($hash, "send p=?;mcu version=full;config all=?;");
+    devio_write_line($hash, '{"mcu":{"version":"full"}};' . '{"config":{"all":"?"}};');
+    main::Dispatch($hash, 'TFMCU#JSON:{"reload":1}');
 }
 
 sub devio_openDev_init_cb($)
@@ -352,6 +355,36 @@ sub X_Ready($)
     return devio_reopen_device($hash);
 }
 
+sub parse_handle_config($$) {
+	my ($hash, $config) = @_;
+	while (my ($key, $val) = each(%$config)) {
+		if (exists $mcor->{$key}) {
+	    $hash->{$mcor->{$key}} = $val;
+		} else {
+			$hash->{"$mcfg_prefix$key"} = $val;
+		}
+	}
+}
+
+sub parse_handle_mcu($$) {
+    my ($hash, $mcu) = @_;
+    my $mcu_prefix = 'mcu.';
+    while (my ($key, $val) = each(%$mcu)) {
+    	$hash->{"$mcu_prefix$key"} = $val;
+    }
+}
+
+sub parse_handle_json($$) {
+	my ($hash, $json) = @_;
+	my $all = JSON::decode_json($json);
+
+    do { my $key = 'config'; parse_handle_config($hash, $all->{$key}); delete($all->{$key}); } if exists $all->{config};
+    do { my $key = 'mcu'; parse_handle_mcu($hash, $all->{$key}); delete($all->{$key}); } if exists $all->{mcu};
+	
+	delete $all->{from};
+	return %$all ? JSON::encode_json($all) : '';
+}
+
 # called when data was received
 sub X_Read($$)
 {
@@ -382,7 +415,7 @@ sub X_Read($$)
 
         main::Log3 ($name, 4, "TronfernoMCU ($name) - received line: <$line>");
 
-        if ($line =~ /^([AU]:position:\s*.+);$/) {
+        if ($line =~ /^([U]:position:\s*.+);$/) {
             my $msg =  "TFMCU#$1";
             main::Log3 ($name, 4, "$name: dispatch: $msg");
             main::Dispatch($hash, $msg);
@@ -393,7 +426,9 @@ sub X_Read($$)
             main::Dispatch($hash, $msg);
 
         } elsif ($line =~ /^(\{.*\})$/) {
-            my $msg =  "TFMCU#JSON:$1";
+        	my $json = parse_handle_json($hash, $1);
+        	next unless ($json);
+            my $msg =  "TFMCU#JSON:$json";
             main::Log3 ($name, 4, "$name: dispatch: $msg");
             main::Dispatch($hash, $msg);
 
@@ -402,18 +437,6 @@ sub X_Read($$)
             main::Log3 ($name, 4, "$name: dispatch: $msg");
             main::Dispatch($hash, $msg);
 
-        } elsif ($line =~ /^tf:.* config: (.*);$/) {
-            for my $kv (split (' ', $1)) {
-                my ($k, $v) = split('=', $kv);
-                $k = $mcor->{$k};
-                $hash->{$k} = $v if $k;
-            }
-
-        } elsif ($line =~ /^tf:.* mcu: (.*);$/) {
-            for my $kv (split (' ', $1)) {
-                my ($k, $v) = split('=', $kv);
-                $hash->{"mcu-$k"} = $v;
-           }
         } elsif ($line =~ /^tf: info: start: tronferno-mcu$/) {
             devio_at_connect($hash);
         } elsif ($line =~ /^tf:.* ipaddr:\s*([0-9.]*);$/) {
