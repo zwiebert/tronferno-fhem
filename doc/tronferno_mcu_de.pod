@@ -38,7 +38,7 @@
 <h4>Readings</h4>
 <ul>
    <li>mcu.ip4-address - Letzte bekannte IPv4-Adresse des MC</li>
-   <li>mcu.connection - Status der Verbindung zu MC: closed, connecting, usb, tcp, reconnecting, error:MSG</li> 
+   <li>mcu.connection - Status der Verbindung zu MC: closed, connecting, usb, tcp, reconnecting, error:MSG</li>
    <li>mcu.firmware.fetch - Status beim Download der Firmware: run,done,error,timeout</li>
    <li>mcu.firmware.write - Status beim Schreiben der Firmware: run,done,error,timeout</li>
    <li>mcu.firmware.erase - Status beim Löschen des Flash-ROM: run,done,error,timeout</li>
@@ -84,23 +84,24 @@
   <a name="mcc.network"></a>
   <li>mcc.network<br>
     Netzwerk zum Verbinden des Controllers: none, ap, wlan, lan<br>
-<ul>
-     <li>none: Kein Netzwerk</li>
-     <li>ap:  Wlan Zugangspunkt erzeugen (für Erstkonfiguration)</li>
-     <li>wlan: Verbinde mit vorhandenem WLAN</li>
-     <li>lan: Verbinde mit Router über Ethernet</li>
-     <li>Hinweis: MC wird neugestartet nach setzen einer dieser Optionen</li>
-</ul></li>
+    <ul>
+      <li>none: Kein Netzwerk</li>
+      <li>ap:  Wlan Zugangspunkt erzeugen (für Erstkonfiguration)</li>
+      <li>wlan: Verbinde mit vorhandenem WLAN</li>
+      <li>lan: Verbinde mit Router über Ethernet</li>
+    </ul>
+    <small>(MC wird neugestartet nach setzen dieser Option)</small></li>
+
   <a name="mcc.wlan-password"></a>
   <li>mcc.wlan-password<br>
     Passwort zum Verbinden mit bestehendem WLAN Netz<br>
-   Hinweis: MC wird neugestartet nach setzen dieser Option</li>
+    <small>(MC wird neugestartet nach setzen dieser Option)</small></li>
 
 
   <a name="mcc.wlan-ssid"></a>
   <li>mcc.wlan-ssid<br>
     SSID es bestehenden WLAN Netzes<br>
-    Hinweis: MC wird neugestartet nach setzen dieser Option</li>
+    <small>(MC wird neugestartet nach setzen dieser Option)</small></li>
 
 
   <a name="mcc.mqtt-enable"></a>
