@@ -791,9 +791,6 @@ sub X_Set($$@) {
 sub X_Write ($$)
 {
     my ( $hash, $addr, $msg) = @_;
-    my $name = $hash->{NAME};
-
-    main::Log3 ($name, 5, "TronfernoMCU ($name) _Write(): $addr: $msg");
     devio_write_line($hash, $msg);
     return undef;
 }
