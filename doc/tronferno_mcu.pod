@@ -36,7 +36,7 @@
 <h4>Readings</h4>
 <ul>
    <li>mcu.ip4-address - Last known IPv4 address of the MCU</li>
-   <li>mcu.connection - State of connection to MCU: closed, connecting, usb, tcp, reconnecting, error:MSG</li> 
+   <li>mcu.connection - State of connection to MCU: closed, connecting, usb, tcp, reconnecting, error:MSG</li>
    <li>mcu.firmware.fetch - status of downloading firmware: run,done,error,timeout</li>
    <li>mcu.firmware.write - status of writing firmware: run,done,error,timeout</li>
    <li>mcu.firmware.erase - status of erassing entire Flash-ROM: run,done,error,timeout</li>
@@ -93,18 +93,18 @@
      <li>wlan: connect to existing WLAN</li>
      <li>lan: connect to Router via Ethernet</li>
 </ul>
-     <small>Note: MCU will be restarted after setting this option<br>
+     <small>(MCU will be restarted after setting this option)</small><br>
 </li>
 
   <a name="mcc.wlan-password"></a>
   <li>mcc.wlan-passord<br>
     Password used by MCU to connect to WLAN/WiFi<br>
-    <small>Note: MCU will be restarted after setting this option<br></li>
+    <small>(MCU will be restarted after setting this option)</small><br></li>
 
   <a name="mcc.wlan-ssid"></a>
   <li>mcc.wlan-ssid<br>
     WLAN/WiFi SSID to connect to<br>
-    <small>Note: MCU will be restarted after setting this option<br></li>
+    <small>(MCU will be restarted after setting this option)</small><br></li>
 
   <a name="mcc.mqtt-enable"></a>
   <li>mcc.mqtt-enable - enables/disables builtin MQTT client<br>

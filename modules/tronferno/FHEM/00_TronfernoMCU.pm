@@ -26,11 +26,15 @@ sub InternalTimer($$$;$);
 sub Log3($$$);
 sub asyncOutput($$);
 sub gettimeofday();
+sub ReadingsVal($$$);
 sub readingsSingleUpdate($$$$);
 sub readingsSingleUpdate($$$$);
-
 
 sub TronfernoMCU_Initialize($);
+
+package JSON;
+sub to_json($);
+sub from_json($);
 
 package TronfernoMCU;
 
@@ -80,6 +84,8 @@ sub wdcon_test_check_reply_line($$);
 sub wdcon_test_init($$);
 sub wdcon_test_timer_cb($);
 sub wdcon_test_transmit($);
+
+sub parse_handle_json($$);
 
 my $mcu_port = 7777;
 my $mcu_baud = 115200;
@@ -167,8 +173,6 @@ sub wdcon_test_check_reply_line($$) {
     my $wdcon = $hash->{helper}{wdcon};
     my $expected =  $wdcon->{expected};
     if ($expected) {
-        #print "expected: <$expected>\n";
-        #print "received: <$line>\n";
         if ($expected eq $line) {
             $wdcon->{state} = 'received';
             $wdcon->{expected} = '';
@@ -176,52 +180,51 @@ sub wdcon_test_check_reply_line($$) {
         }
     }
 }
+sub wdcon_test_states($) {
+    my ($hash) = @_;
+    my $wdcon = $hash->{helper}{wdcon};
+    my $state = $wdcon->{state};
+
+    if ($state eq 'none') {
+        wdcon_test_transmit($hash);
+    } elsif ($state eq 'sent') {
+        if (++$wdcon->{fail_count} > $wdcon->{max_fail_count}) {
+            wdcon_cure_lag($hash);
+        } else {
+            wdcon_test_transmit($hash);
+        }
+    } elsif ($state eq 'received') {
+        $wdcon->{state} = 'none';
+        return 'done';
+    } elsif ($state eq 'lag_cured') {
+        return 'done';
+    } elsif ($state eq 'xxxx') {
+        devio_close_device($hash);
+        $wdcon->{state} = 'reconnect';
+        return 'reconnect';
+    } elsif ($state eq 'reconnect') {
+        devio_open_device($hash);
+        return '???';
+    } elsif ($state eq 'xxx') {
+        return 'xxx';
+    }
+    return '';
+}
 sub wdcon_test_timer_cb($) {
     my ($hash) = @_;
-    if(main::DevIo_IsOpen($hash)) {
-        my $wdcon = $hash->{helper}{wdcon};
-        my $long_interval = $wdcon->{interval};
-        my $short_interval = 3;
-        my $reconnect_interval = 20;
-        my $state = $wdcon->{state};
+    my $wdcon = $hash->{helper}{wdcon};
+    my $res = wdcon_test_states($hash);
+    my $iv = $res eq 'done' ? $wdcon->{interval} :  $wdcon->{short_interval};
 
-        if ($state eq 'none') {
-            wdcon_test_transmit($hash);
-        } elsif ($state eq 'sent') {
-            if (++$wdcon->{fail_count} > $wdcon->{max_fail_count}) {
-                wdcon_cure_lag($hash);
-            } else {
-                wdcon_test_transmit($hash);
-            }
-        } elsif ($state eq 'received') {
-            $wdcon->{state} = 'none';
-            goto DONE;
-        } elsif ($state eq 'lag_cured') {
-            goto DONE;
-        } elsif ($state eq 'xxxx') {
-            devio_close_device($hash);
-            $wdcon->{state} = 'reconnect';
-            goto RECONNECT;
-        } elsif ($state eq 'reconnect') {
-            devio_open_device($hash);
-            return;
-        } elsif ($state eq 'xxx') {
-        }
+    return unless main::ReadingsVal($hash, 'mcu.connection', '') eq 'usb';
 
-        main::InternalTimer( main::gettimeofday() + $short_interval, 'TronfernoMCU::wdcon_test_timer_cb', $hash);
-        return;
-      DONE:
-        $wdcon->{fail_count} = 0;
-        main::InternalTimer( main::gettimeofday() + $long_interval, 'TronfernoMCU::wdcon_test_timer_cb', $hash);
-        return;
-      RECONNECT:
-        main::InternalTimer( main::gettimeofday() + $reconnect_interval, 'TronfernoMCU::wdcon_test_timer_cb', $hash);
-        return;
-    }
+    main::InternalTimer( main::gettimeofday() + $iv, 'TronfernoMCU::wdcon_test_timer_cb', $hash);
+
+    $wdcon->{fail_count} = 0 if $res eq 'done';
 }
 sub wdcon_test_init($$) {
     my ($hash, $interval) = @_;
-    $hash->{helper}{wdcon} = { interval => $interval, fail_count => 0, time_for_reply => 3, max_fail_count => 3, msgid => 0, state => 'none' };
+    $hash->{helper}{wdcon} = { interval => $interval, short_interval => 3, fail_count => 0, time_for_reply => 3, max_fail_count => 3, msgid => 0, state => 'none' };
     wdcon_test_timer_cb($hash);
 }
 
@@ -271,17 +274,19 @@ sub devio_updateReading_connection($$) {
 sub devio_at_connect($) {
     my ($hash) = @_;
     devio_write_line($hash, "xxx;xxx;"); # get rid of any garbage in the pipe
-    devio_write_line($hash, "send p=?;mcu version=full;config all=?;");
+    devio_write_line($hash, '{"mcu":{"version":"full"}};' . '{"config":{"all":"?"}};');
+    main::Dispatch($hash, 'TFMCU#JSON:{"reload":1}');
 }
 
 sub devio_openDev_init_cb($)
 {
     my ($hash) = @_;
+    my $conn_type = $hash->{helper}{connection_type};
     main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_openDev_init_cb()");
     #devio_at_connect($hash);
     main::InternalTimer(main::gettimeofday() + 5, 'TronfernoMCU::devio_at_connect', $hash);
-    devio_updateReading_connection($hash, $hash->{helper}{connection_type});
-    #wdcon_test_init($hash, 60 * 5) if $hash->{helper}{connection_type} eq 'usb';
+    devio_updateReading_connection($hash, $conn_type);
+    main::InternalTimer(main::gettimeofday() + 30, 'TronfernoMCU::wdcon_test_init', $hash) if $conn_type eq 'usb';
     return undef;
 }
 
@@ -298,8 +303,9 @@ sub devio_openDev_cb($)
 sub devio_write_line($$) {
     my ($hash, $line) = @_;
     my $name = $hash->{NAME};
+    return unless main::DevIo_IsOpen($hash);
     main::Log3 ($name, 5, "TronfernoMCU ($name) - write line: <$line>");
-	main::DevIo_SimpleWrite($hash, $line, 2);
+    main::DevIo_SimpleWrite($hash, $line, 2);
 }
 
 ### Note: using defmod, X_Define can be called multiple times without any call to X_Undef
@@ -350,6 +356,45 @@ sub X_Ready($)
     return devio_reopen_device($hash);
 }
 
+sub parse_handle_config($$) {
+    my ($hash, $config) = @_;
+    while (my ($key, $val) = each(%$config)) {
+        if (exists $mcor->{$key}) {
+	    $hash->{$mcor->{$key}} = $val;
+        } else {
+            $hash->{"$mcfg_prefix$key"} = $val;
+        }
+    }
+}
+
+sub parse_handle_mcu($$) {
+    my ($hash, $mcu) = @_;
+    my $mcu_prefix = 'mcu.';
+    while (my ($key, $val) = each(%$mcu)) {
+    	$hash->{"$mcu_prefix$key"} = $val;
+    }
+}
+
+sub parse_handle_json($$) {
+    my ($hash, $json) = @_;
+    my $all = JSON::from_json($json);
+
+    do { my $key = 'config'; parse_handle_config($hash, $all->{$key}); delete($all->{$key}); } if exists $all->{config};
+    do { my $key = 'mcu'; parse_handle_mcu($hash, $all->{$key}); delete($all->{$key}); } if exists $all->{mcu};
+
+    ### XXX: Transitional code
+    ### FIX wrong top level placement of autoGM objects ###
+    for my $key (%$all) {
+        if (rindex($key,'auto',0) == 0) {
+            $all->{auto} = {} unless exists $all->{auto};
+            $all->{auto}{$key} = $all->{$key};
+        }
+    }
+
+    delete $all->{from};
+    return scalar(%$all) ? JSON::to_json($all) : '';
+}
+
 # called when data was received
 sub X_Read($$)
 {
@@ -380,38 +425,29 @@ sub X_Read($$)
 
         main::Log3 ($name, 4, "TronfernoMCU ($name) - received line: <$line>");
 
-        if ($line =~ /^([AU]:position:\s*.+);$/) {
+        if ($line =~ /^([U]:position:\s*.+);$/) {
             my $msg =  "TFMCU#$1";
-            main::Log3 ($name, 4, "$name: dispatch: $msg");
             main::Dispatch($hash, $msg);
 
-        } elsif ($line =~ /^([Cc]:.*);$/) {
-            my $msg =  "TFMCU#$1";
-            main::Log3 ($name, 4, "$name: dispatch: $msg");
+        } elsif ($line =~ /^A:position: g=([1-7]) m=([0-7]) p=(\d+);$/) { # XXX: transitional code
+            my $msg =  'TFMCU#JSON:{"pct":{"'. $1 . $2 . "\":$3}}";
             main::Dispatch($hash, $msg);
 
+        } elsif ($line =~ /^RC:type=(\w+) a=([0-9a-fA-F]{6})( g=([0-7]))?( m=([0-7]))? c=(\w+);$/) {
+            my $msg =  'TFMCU#JSON:{"RC":{';
+            $msg .= '"type":"'.$1.'"';
+            $msg .= ',"a":"'.$2.'"';
+            $msg .= ',"c":"'.$7.'"';
+            $msg .= ',"g":'.$4 if defined $4;
+            $msg .= ',"m":'.$6 if defined $6;
+            $msg .=  '}}';
+            main::Dispatch($hash, $msg);
         } elsif ($line =~ /^(\{.*\})$/) {
-            my $msg =  "TFMCU#JSON:$1";
-            main::Log3 ($name, 4, "$name: dispatch: $msg");
+            my $json = parse_handle_json($hash, $1);
+            next unless ($json);
+            my $msg =  "TFMCU#JSON:$json";
             main::Dispatch($hash, $msg);
 
-        } elsif ($line =~ /^tf:.* timer: (.*);$/) {
-            my $msg = "TFMCU#timer $1";
-            main::Log3 ($name, 4, "$name: dispatch: $msg");
-            main::Dispatch($hash, $msg);
-
-        } elsif ($line =~ /^tf:.* config: (.*);$/) {
-            for my $kv (split (' ', $1)) {
-                my ($k, $v) = split('=', $kv);
-                $k = $mcor->{$k};
-                $hash->{$k} = $v if $k;
-            }
-
-        } elsif ($line =~ /^tf:.* mcu: (.*);$/) {
-            for my $kv (split (' ', $1)) {
-                my ($k, $v) = split('=', $kv);
-                $hash->{"mcu-$k"} = $v;
-           }
         } elsif ($line =~ /^tf: info: start: tronferno-mcu$/) {
             devio_at_connect($hash);
         } elsif ($line =~ /^tf:.* ipaddr:\s*([0-9.]*);$/) {
@@ -424,11 +460,11 @@ sub X_Read($$)
 
 sub mcu_config($$$) {
     my ($hash, $opt, $arg) = @_;
-    my $msg =  "$opt=$arg";
-    $msg .=  " $opt=?" unless ($arg eq '?' || $opt eq 'wlan-password');
-    $msg .= ' restart=1' if 0 == index($opt, 'wlan-') || ($opt eq 'network'); # do restart after changing any network option
+    my $msg = { config => { }};
+    $msg->{config}{$opt} = $arg;
+    $msg->{config}{restart} = 1 if 0 == index($opt, 'wlan-') || ($opt eq 'network'); # do restart after changing any network option
 
-    devio_write_line($hash, "config $msg;");
+    devio_write_line($hash, JSON::to_json($msg) . ';');
 }
 
 sub mcu_download_firmware($) {
@@ -500,7 +536,7 @@ sub fw_get_next_file_cb($$$) {
     if (!$err && open (my $fh, '>', $fwg->{dst_file})) {
         # save file
         binmode($fh);
-        print $fh $data;
+        print($fh, $data);
         close ($fh);
         fw_get_next_file($hash);
     } else {
@@ -769,9 +805,6 @@ sub X_Set($$@) {
 sub X_Write ($$)
 {
     my ( $hash, $addr, $msg) = @_;
-    my $name = $hash->{NAME};
-
-    main::Log3 ($name, 5, "TronfernoMCU ($name) _Write(): $addr: $msg");
     devio_write_line($hash, $msg);
     return undef;
 }
@@ -841,7 +874,7 @@ sub TronfernoMCU_Initialize($) {
 <h4>Readings</h4>
 <ul>
    <li>mcu.ip4-address - Last known IPv4 address of the MCU</li>
-   <li>mcu.connection - State of connection to MCU: closed, connecting, usb, tcp, reconnecting, error:MSG</li> 
+   <li>mcu.connection - State of connection to MCU: closed, connecting, usb, tcp, reconnecting, error:MSG</li>
    <li>mcu.firmware.fetch - status of downloading firmware: run,done,error,timeout</li>
    <li>mcu.firmware.write - status of writing firmware: run,done,error,timeout</li>
    <li>mcu.firmware.erase - status of erassing entire Flash-ROM: run,done,error,timeout</li>
@@ -898,18 +931,18 @@ sub TronfernoMCU_Initialize($) {
      <li>wlan: connect to existing WLAN</li>
      <li>lan: connect to Router via Ethernet</li>
 </ul>
-     <small>Note: MCU will be restarted after setting this option<br>
+     <small>(MCU will be restarted after setting this option)</small><br>
 </li>
 
   <a name="mcc.wlan-password"></a>
   <li>mcc.wlan-passord<br>
     Password used by MCU to connect to WLAN/WiFi<br>
-    <small>Note: MCU will be restarted after setting this option<br></li>
+    <small>(MCU will be restarted after setting this option)</small><br></li>
 
   <a name="mcc.wlan-ssid"></a>
   <li>mcc.wlan-ssid<br>
     WLAN/WiFi SSID to connect to<br>
-    <small>Note: MCU will be restarted after setting this option<br></li>
+    <small>(MCU will be restarted after setting this option)</small><br></li>
 
   <a name="mcc.mqtt-enable"></a>
   <li>mcc.mqtt-enable - enables/disables builtin MQTT client<br>
@@ -1045,7 +1078,7 @@ sub TronfernoMCU_Initialize($) {
 <h4>Readings</h4>
 <ul>
    <li>mcu.ip4-address - Letzte bekannte IPv4-Adresse des MC</li>
-   <li>mcu.connection - Status der Verbindung zu MC: closed, connecting, usb, tcp, reconnecting, error:MSG</li> 
+   <li>mcu.connection - Status der Verbindung zu MC: closed, connecting, usb, tcp, reconnecting, error:MSG</li>
    <li>mcu.firmware.fetch - Status beim Download der Firmware: run,done,error,timeout</li>
    <li>mcu.firmware.write - Status beim Schreiben der Firmware: run,done,error,timeout</li>
    <li>mcu.firmware.erase - Status beim Löschen des Flash-ROM: run,done,error,timeout</li>
@@ -1091,23 +1124,24 @@ sub TronfernoMCU_Initialize($) {
   <a name="mcc.network"></a>
   <li>mcc.network<br>
     Netzwerk zum Verbinden des Controllers: none, ap, wlan, lan<br>
-<ul>
-     <li>none: Kein Netzwerk</li>
-     <li>ap:  Wlan Zugangspunkt erzeugen (für Erstkonfiguration)</li>
-     <li>wlan: Verbinde mit vorhandenem WLAN</li>
-     <li>lan: Verbinde mit Router über Ethernet</li>
-     <li>Hinweis: MC wird neugestartet nach setzen einer dieser Optionen</li>
-</ul></li>
+    <ul>
+      <li>none: Kein Netzwerk</li>
+      <li>ap:  Wlan Zugangspunkt erzeugen (für Erstkonfiguration)</li>
+      <li>wlan: Verbinde mit vorhandenem WLAN</li>
+      <li>lan: Verbinde mit Router über Ethernet</li>
+    </ul>
+    <small>(MC wird neugestartet nach setzen dieser Option)</small></li>
+
   <a name="mcc.wlan-password"></a>
   <li>mcc.wlan-password<br>
     Passwort zum Verbinden mit bestehendem WLAN Netz<br>
-   Hinweis: MC wird neugestartet nach setzen dieser Option</li>
+    <small>(MC wird neugestartet nach setzen dieser Option)</small></li>
 
 
   <a name="mcc.wlan-ssid"></a>
   <li>mcc.wlan-ssid<br>
     SSID es bestehenden WLAN Netzes<br>
-    Hinweis: MC wird neugestartet nach setzen dieser Option</li>
+    <small>(MC wird neugestartet nach setzen dieser Option)</small></li>
 
 
   <a name="mcc.mqtt-enable"></a>
