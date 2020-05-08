@@ -26,12 +26,15 @@ sub InternalTimer($$$;$);
 sub Log3($$$);
 sub asyncOutput($$);
 sub gettimeofday();
-sub main::ReadingsVal($$$);
+sub ReadingsVal($$$);
 sub readingsSingleUpdate($$$$);
 sub readingsSingleUpdate($$$$);
-
 
 sub TronfernoMCU_Initialize($);
+
+package JSON;
+sub to_json($);
+sub from_json($);
 
 package TronfernoMCU;
 
@@ -170,8 +173,6 @@ sub wdcon_test_check_reply_line($$) {
     my $wdcon = $hash->{helper}{wdcon};
     my $expected =  $wdcon->{expected};
     if ($expected) {
-        #print "expected: <$expected>\n";
-        #print "received: <$line>\n";
         if ($expected eq $line) {
             $wdcon->{state} = 'received';
             $wdcon->{expected} = '';
@@ -304,7 +305,7 @@ sub devio_write_line($$) {
     my $name = $hash->{NAME};
     return unless main::DevIo_IsOpen($hash);
     main::Log3 ($name, 5, "TronfernoMCU ($name) - write line: <$line>");
-	main::DevIo_SimpleWrite($hash, $line, 2);
+    main::DevIo_SimpleWrite($hash, $line, 2);
 }
 
 ### Note: using defmod, X_Define can be called multiple times without any call to X_Undef
@@ -356,14 +357,14 @@ sub X_Ready($)
 }
 
 sub parse_handle_config($$) {
-	my ($hash, $config) = @_;
-	while (my ($key, $val) = each(%$config)) {
-		if (exists $mcor->{$key}) {
+    my ($hash, $config) = @_;
+    while (my ($key, $val) = each(%$config)) {
+        if (exists $mcor->{$key}) {
 	    $hash->{$mcor->{$key}} = $val;
-		} else {
-			$hash->{"$mcfg_prefix$key"} = $val;
-		}
-	}
+        } else {
+            $hash->{"$mcfg_prefix$key"} = $val;
+        }
+    }
 }
 
 sub parse_handle_mcu($$) {
@@ -375,14 +376,14 @@ sub parse_handle_mcu($$) {
 }
 
 sub parse_handle_json($$) {
-	my ($hash, $json) = @_;
-	my $all = JSON::decode_json($json);
+    my ($hash, $json) = @_;
+    my $all = JSON::from_json($json);
 
     do { my $key = 'config'; parse_handle_config($hash, $all->{$key}); delete($all->{$key}); } if exists $all->{config};
     do { my $key = 'mcu'; parse_handle_mcu($hash, $all->{$key}); delete($all->{$key}); } if exists $all->{mcu};
-	
-	delete $all->{from};
-	return %$all ? JSON::encode_json($all) : '';
+
+    delete $all->{from};
+    return scalar(%$all) ? JSON::to_json($all) : '';
 }
 
 # called when data was received
@@ -417,24 +418,20 @@ sub X_Read($$)
 
         if ($line =~ /^([U]:position:\s*.+);$/) {
             my $msg =  "TFMCU#$1";
-            main::Log3 ($name, 4, "$name: dispatch: $msg");
             main::Dispatch($hash, $msg);
 
-        } elsif ($line =~ /^([Cc]:.*);$/) {
+        } elsif ($line =~ /^([RS][Cc]:.*);$/) {
             my $msg =  "TFMCU#$1";
-            main::Log3 ($name, 4, "$name: dispatch: $msg");
             main::Dispatch($hash, $msg);
 
         } elsif ($line =~ /^(\{.*\})$/) {
-        	my $json = parse_handle_json($hash, $1);
-        	next unless ($json);
+            my $json = parse_handle_json($hash, $1);
+            next unless ($json);
             my $msg =  "TFMCU#JSON:$json";
-            main::Log3 ($name, 4, "$name: dispatch: $msg");
             main::Dispatch($hash, $msg);
 
         } elsif ($line =~ /^tf:.* timer: (.*);$/) {
             my $msg = "TFMCU#timer $1";
-            main::Log3 ($name, 4, "$name: dispatch: $msg");
             main::Dispatch($hash, $msg);
 
         } elsif ($line =~ /^tf: info: start: tronferno-mcu$/) {
@@ -449,11 +446,11 @@ sub X_Read($$)
 
 sub mcu_config($$$) {
     my ($hash, $opt, $arg) = @_;
-    my $msg =  "$opt=$arg";
-    $msg .=  " $opt=?" unless ($arg eq '?' || $opt eq 'wlan-password');
-    $msg .= ' restart=1' if 0 == index($opt, 'wlan-') || ($opt eq 'network'); # do restart after changing any network option
+    my $msg = { config => { }};
+    $msg->{config}{$opt} = $arg;
+    $msg->{config}{restart} = 1 if 0 == index($opt, 'wlan-') || ($opt eq 'network'); # do restart after changing any network option
 
-    devio_write_line($hash, "config $msg;");
+    devio_write_line($hash, JSON::to_json($msg) . ';');
 }
 
 sub mcu_download_firmware($) {
@@ -525,7 +522,7 @@ sub fw_get_next_file_cb($$$) {
     if (!$err && open (my $fh, '>', $fwg->{dst_file})) {
         # save file
         binmode($fh);
-        print $fh $data;
+        print($fh, $data);
         close ($fh);
         fw_get_next_file($hash);
     } else {
