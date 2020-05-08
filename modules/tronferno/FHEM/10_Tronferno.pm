@@ -47,6 +47,7 @@ sub build_agmObj($$);
 sub build_pctReqObj($$);
 sub build_shsReqObj($$);
 sub defaultInputMakeReading($$$$$$);
+sub inputMakeReading($$$$$$);
 sub get_commandlist();
 sub mod_dispatch_auto($$$$);
 sub mod_dispatch_pct($$$$);
@@ -78,10 +79,10 @@ sub deleteHash($);
 sub mod_deleteHash_by_devName($);
 sub io_getDefaultInputDevice($);
 sub io_getCode($$$$$);
-
+sub getFDTypeByA($);
 
 use constant MODNAME => 'Tronferno';
-my $dbll = 0;
+my $dbll = 6;
 
 use constant {
     FDT_SUN                 => 'sun',
@@ -97,13 +98,16 @@ use constant {
 my $msb2fdt =
 { '10' => FDT_PLAIN, '20' => FDT_SUN, '80' => FDT_CENTRAL, '90' => FDT_RECV };
 
+
+
 sub X_Define($$) {
     my ($hash, $def) = @_;
     my @args    = split("[ \t][ \t]*", $def);
     my $name    = $args[0] // '';
     my $address = $args[1] // '';
     my $is_iDev = 0;
-
+     my $fdt = '';
+     
     main::Log3($hash, $dbll, "Tronferno X_Define(@_)");
 
 
@@ -138,13 +142,23 @@ sub X_Define($$) {
             $scan = 1;
             setDefaultInputDevice($hash);
             $hash->{helper}{inputKey}     = DEF_INPUT_DEVICE;
-            $hash->{helper}{ferInputType} = 'scan';
+            $fdt = 'all';
             $type = 'scan';
+        } elsif ($key eq 'input' && $value ne 'all') {
+            $is_iDev  = 1;
+            $type = 'in';
+            $fdt = $value;  
         } else {
             return "$name: unknown argument $o in define"; #FIXME add usage text
         }
     }
 
+    if ($is_iDev) {
+    	my $value = $fdt;
+        $fdt = getFDTypeByA($ad) unless $fdt;
+        return "$name: invalid input type: $value in define. Choose one of: sun, plain, central, all" unless (defined($fdt) && ("$fdt" eq FDT_SUN || "$fdt" eq FDT_PLAIN || "$fdt" eq FDT_CENTRAL || "$fdt" eq 'all'));
+        $hash->{helper}{ferInputType} = $fdt;
+     }
     $hash->{helper}{ferid_a}  = $ad;
     $hash->{helper}{ferid_g}  = $g;
     $hash->{helper}{ferid_m}  = $m;
@@ -199,8 +213,16 @@ sub setDefaultInputDevice($) {
 }
 sub io_getCode($$$$$) {
     my ($io_hash, $ad, $g, $m, $type) = @_;
-    "{$io_hash->{NAME}}:$ad:$g:$m:$type";
+     $ad =  sprintf('%6x', $ad) if $ad;
+    "$io_hash->{NAME}:$ad:$g:$m:$type";
 }
+sub getFDTypeByA($) {
+    my ($a) = @_;
+    my $msb = sprintf('%x', ($a >> 16));
+    my $fdt = $msb2fdt->{"$msb"};
+    return $fdt;
+}
+
 
 sub pctTrans($$) {
     my ($hash, $pct) = @_;
@@ -525,14 +547,10 @@ sub mod_getMatchingDevices($) {
 
 sub mod_dispatch_auto($$$$) {
     my ($io_hash, $g, $m, $autogm) = @_;
-    my $io_name = $io_hash->{NAME};
-    my $result = undef;
-    mod_forEachMatchingDevice({ IODev => $io_hash, g => $g, m => $m }, sub ($) {
-        my ($hash) = @_;
-        in_process_auto($hash, $g, $m, $autogm);
-        $result = $hash;
-                              });
-    return $result;
+    
+    my $hash = mod_getHash_by_Code(io_getCode($io_hash, 0, $g, $m, 'out'));
+    in_process_auto($hash, $g, $m, $autogm) if $hash;
+    return $hash;
 }
 
 sub mod_dispatch_auto_obj($$) {
@@ -549,14 +567,9 @@ sub mod_dispatch_auto_obj($$) {
 
 sub mod_dispatch_shs($$$$) {
     my ($io_hash, $g, $m, $shsgm) = @_;
-    my $io_name = $io_hash->{NAME};
-    my $result = undef;
-    mod_forEachMatchingDevice({ IODev => $io_hash, g => $g, m => $m }, sub ($) {
-        my ($hash) = @_;
-        shsReadingsUpdate($hash, $shsgm);
-        $result = $hash;
-                              });
-    return $result;
+    my $hash = mod_getHash_by_Code(io_getCode($io_hash, 0, $g, $m, 'out'));
+    shsReadingsUpdate($hash, $shsgm) if $hash;
+    return $hash;
 }
 
 sub mod_dispatch_shs_obj($$) {
@@ -585,14 +598,10 @@ sub mod_dispatch_pct_obj($$) {
 
 sub mod_dispatch_pct($$$$) {
     my ($io_hash, $g, $m, $p) = @_;
-    my $result = undef;
 
-    mod_forEachMatchingDevice({ IODev => $io_hash, g => $g, m => $m }, sub ($) {
-        my ($hash) = @_;
-        pctReadingsUpdate($hash, $p);
-        $result = $hash;
-                              });
-    return $result;
+    my $hash = mod_getHash_by_Code(io_getCode($io_hash, 0, $g, $m, 'out'));
+    pctReadingsUpdate($hash, $p) if $hash;
+    return $hash;
 }
 
 sub mod_parse_position($$) {
@@ -647,6 +656,27 @@ sub mod_parse_position($$) {
 }
 
 # update Reading of default input device, if there was no matching input device
+sub inputMakeReading($$$$$$) {
+    my ($hash, $fdt, $ad, $g, $m, $c) = @_;
+    my $inputType = $hash->{helper}{ferInputType};
+    my $do_trigger = 1;
+    my $state = undef;
+
+    if ($inputType eq FDT_SUN) {
+        $state = $c eq 'sun-down' ? 'on'
+            : $c eq 'sun-up' ? 'off' : undef;
+    } elsif ($inputType eq FDT_PLAIN) {
+        $state = $c;
+    } elsif ($inputType eq FDT_CENTRAL) {
+        $state = $c;
+    }
+
+    return undef unless defined ($state);
+
+    main::readingsSingleUpdate($hash, 'state',  $state, $do_trigger);
+    return 1;
+}
+# update Reading of default input device, if there was no matching input device
 sub defaultInputMakeReading($$$$$$) {
     my ($hash, $fdt, $ad, $g, $m, $c) = @_;
 
@@ -693,21 +723,14 @@ sub mod_parse_cmd($$) {
             $fdt = $value;
         }
     }
+    
+    my $hash = mod_getHash_by_Code(io_getCode($io_hash, $ad, $g, $m, 'in'));
+    return do { inputMakeReading($hash, $fdt, $ad, $g, $m, $c); $hash->{NAME} } if $hash;
+        
+    $hash = mod_getHash_by_Code(io_getCode($io_hash, 0, 0, 0, 'scan'));
+    return do { defaultInputMakeReading($hash, $fdt, $ad, $g, $m, $c); $hash->{NAME} } if $hash;
 
-    my $default = io_getDefaultInputDevice($io_hash);
-    my $hash = $default;    # getInputDeviceByA($ad);
-
-    return 'UNDEFINED Tronferno_Scan Tronferno scan'
-        unless ($default || $hash);    # autocreate default input device
-
-    if ($hash->{helper}{ferInputType} eq 'scan') {
-        defaultInputMakeReading($default, $fdt, $ad, $g, $m, $c)
-            or return undef;
-    } else {
-
-        #inputMakeReading($fsb, $hash) or return undef;
-    }
-    return $hash->{NAME};
+    return 'UNDEFINED Tronferno_Scan Tronferno scan';
 }
 
 sub in_process_auto($$$$) {
