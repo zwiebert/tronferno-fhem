@@ -70,6 +70,13 @@ sub req_reload_mcu_data($);
 sub transmit($$);
 sub transmit_obj($$);
 
+sub mod_getAllHashes();
+sub mod_getHash_by_devName($);
+sub setHash_by_devName($$);
+sub deleteHash($);
+sub mod_deleteHash_by_devName($);
+sub io_getDefaultInputDevice($);
+
 
 use constant MODNAME => 'Tronferno';
 my $dbll = 6;
@@ -106,9 +113,8 @@ sub X_Define($$) {
 
     return $u if ($#args < 2);
 
+    setHash_by_devName($hash, $name);
 
-    $hash->{helper}{CODE} = $code;
-    $main::modules{+MODNAME }{defptr}->{$code} = $hash;
 
     shift(@args);
     shift(@args);
@@ -128,9 +134,9 @@ sub X_Define($$) {
         } elsif ($key eq 'iodev') {
             $iodev = $value;
         } elsif ($key eq 'scan' || ($key eq 'input' && $value eq 'all')) {
-            $is_iDev                                                = 1;
-            $scan                                                   = 1;
-            $main::modules{+MODNAME }{defptr}->{ +DEF_INPUT_DEVICE } = $hash; #XXX TODO
+            $is_iDev  = 1;
+            $scan = 1;
+            setDefaultInputDevice($hash);
             $hash->{helper}{inputKey}     = DEF_INPUT_DEVICE;
             $hash->{helper}{ferInputType} = 'scan';
         } else {
@@ -149,6 +155,38 @@ sub X_Define($$) {
     return undef;
 }
 
+sub mod_getAllHashes() {
+	return values(%{$main::modules{+MODNAME }{defptr}});
+}
+sub mod_getHash_by_devName($) {
+	my ($devName) = @_;
+	return $main::modules{+MODNAME }{defptr}->{$devName};
+}
+sub setHash_by_devName($$) {
+	my ($hash, $devName) = @_;
+	$hash->{helper}{DEVNAME} = $devName;
+    $main::modules{+MODNAME }{defptr}->{$devName} = $hash;
+}
+sub deleteHash($) {
+	my ($hash) = @_;
+	my $defptr = $main::modules{ +MODNAME }{defptr};
+    my $devName = $hash->{helper}{DEVNAME};
+    delete($defptr->{$devName});
+}
+sub mod_deleteHash_by_devName($) {
+    my ($devName) = @_;
+    my $hash = mod_getHash_by_devName($devName);
+    my $defptr = $main::modules{ +MODNAME }{defptr};
+    delete($defptr->{$devName});
+}
+sub io_getDefaultInputDevice($) {
+	my ($io_hash) = @_;
+	return $main::modules{ +MODNAME }{defptr}{ +DEF_INPUT_DEVICE };
+}
+sub setDefaultInputDevice($) {
+    my ($hash) = @_;
+    return $main::modules{ +MODNAME }{defptr}{ +DEF_INPUT_DEVICE };
+}
 sub pctTrans($$) {
     my ($hash, $pct) = @_;
     return $pct if 0 == main::AttrVal($hash->{NAME}, 'pctInverse', 0);
@@ -162,11 +200,9 @@ sub pctReadingsUpdate($$) {
 
 sub X_Undef($$) {
     my ($hash, $name) = @_;
-    main::Log3($hash, $dbll, "Tronferno X_Undef()");
+    main::Log3($hash, $dbll, "Tronferno X_Undef($hash, $name)");
 
-    my $defptr = $main::modules{ +MODNAME }{defptr};
-    my $code = $hash->{helper}{CODE};
-    delete($defptr->{$code});
+    mod_deleteHash_by_devName($name);
     return undef;
 }
 
@@ -441,16 +477,16 @@ sub mod_dispatch_forEachHash_callSub($$) {
 
 sub shsReadingsUpdate($$) {
     my ($hash, $shsgm) = @_;
-    main::readingsSingleUpdate($hash, 'mcu.tag.NAME', $shsgm->{'tag.NAME'}, 1)
+    main::readingsSingleUpdate($hash, 'name', $shsgm->{'tag.NAME'}, 1)
         if exists($shsgm->{'tag.NAME'});
 }
 
 sub mod_forEachMatchingDevice($$) {
     my ($args, $subRef) = @_;
 
-    my $defptr = $main::modules{ +MODNAME }{defptr};
+    my $hashes = mod_getAllHashes();
     my @result = ();
-    for my $hash (values(%$defptr)) {
+    for my $hash (values(%$hashes)) {
         next if exists($args->{m}) && $args->{m} != $hash->{helper}{ferid_m};
         next if exists($args->{g}) && $args->{g} != $hash->{helper}{ferid_g};
         next if exists($args->{IODev}) && $args->{IODev} != $hash->{IODev};
@@ -645,7 +681,7 @@ sub mod_parse_cmd($$) {
         }
     }
 
-    my $default = $main::modules{ +MODNAME }{defptr}{ +DEF_INPUT_DEVICE };
+    my $default = io_getDefaultInputDevice($io_hash);
     my $hash = $default;    # getInputDeviceByA($ad);
 
     return 'UNDEFINED Tronferno_Scan Tronferno scan'
@@ -719,22 +755,16 @@ sub mod_parse_json($$) {
 
 sub X_Parse($$) {
     my ($io_hash, $message) = @_;
-    main::Log3($io_hash, $dbll, "Tronferno X_Parse()");
+    main::Log3($io_hash, $dbll, "Tronferno X_Parse($io_hash, $message)");
     my $name   = $io_hash->{NAME};
     my $result = undef;
-    my $defptr = $main::modules{ +MODNAME }{defptr};
 
 
     return mod_parse_cmd($io_hash, $1) if ($message =~ /^TFMCU#R[Cc]:(.+)$/);
 
-    main::Log3($io_hash, $dbll, "xparse: defptr=$defptr\n");
+    return mod_parse_position($io_hash, $1) if ($message =~ /^TFMCU#U:position:\s*(.+)$/);
 
-    return '' unless $defptr; #XXX: change this when using JSON only (MQTT)
-
-
-    return mod_parse_position($io_hash, $1) if ($message =~ /^TFMCU#[AU]:position:\s*(.+)$/);
-
-    return mod_parse_cmd($io_hash, $1) if ($message =~ /^TFMCU#R[Cc]:(.+)$/);
+    return mod_parse_cmd($io_hash, $1) if ($message =~ /^TFMCU#RC:(.+)$/);
 
     return mod_parse_timer($io_hash, $1) if ($message =~ /^TFMCU#timer (.+)$/);
 
@@ -756,14 +786,23 @@ sub X_Attr(@) {
             my $r = int($attrValue);
             return "invalid argument '$attrValue'. Expected: 0..5"
                 unless (0 <= $r and $r <= 5);
-        }
-        if ($attrName eq 'pctInverse') {
+        } elsif ($attrName eq 'pctInverse') {
             my $v = int($attrValue);
             return "invalid argument '$attrValue'. Expected: 0..1"
                 unless (0 <= $v and $v <= 1);
+        } elsif ($attrName eq 'autoAlias') {
+            my $fmt = int($attrValue);
+            
         }
     }
     return undef;
+}
+
+sub X_Rename($$) {
+    my ($new_name, $old_name) = @_;
+    my $hash = mod_getHash_by_devName($old_name);
+    mod_deleteHash_by_devName($old_name);
+    setHash_by_devName($hash, $new_name);
 }
 
 package main;
@@ -777,6 +816,8 @@ sub Tronferno_Initialize($) {
     $hash->{ParseFn}  = 'Tronferno::X_Parse';
     $hash->{UndefFn}  = 'Tronferno::X_Undef';
     $hash->{AttrFn}   = 'Tronferno::X_Attr';
+    $hash->{RenameFn} = "Tronferno::X_Rename";
+    
     $hash->{AttrList} = 'IODev repeats:0,1,2,3,4,5 pctInverse:1,0';
     $hash->{Match}    = '^TFMCU#.+';
 }

@@ -420,7 +420,11 @@ sub X_Read($$)
             my $msg =  "TFMCU#$1";
             main::Dispatch($hash, $msg);
 
-        } elsif ($line =~ /^([RS][Cc]:.*);$/) {
+        } elsif ($line =~ /^A:position: g=([1-7]) m=([0-7]) p=(\d+);$/) { # XXX: transitional code
+            my $msg =  'TFMCU#JSON:{"pct":{"'. $1 . $2 . "\":$3}}";
+            main::Dispatch($hash, $msg);
+
+        } elsif ($line =~ /^(RC:.*);$/) {
             my $msg =  "TFMCU#$1";
             main::Dispatch($hash, $msg);
 
@@ -428,10 +432,6 @@ sub X_Read($$)
             my $json = parse_handle_json($hash, $1);
             next unless ($json);
             my $msg =  "TFMCU#JSON:$json";
-            main::Dispatch($hash, $msg);
-
-        } elsif ($line =~ /^tf:.* timer: (.*);$/) {
-            my $msg = "TFMCU#timer $1";
             main::Dispatch($hash, $msg);
 
         } elsif ($line =~ /^tf: info: start: tronferno-mcu$/) {
