@@ -382,6 +382,15 @@ sub parse_handle_json($$) {
     do { my $key = 'config'; parse_handle_config($hash, $all->{$key}); delete($all->{$key}); } if exists $all->{config};
     do { my $key = 'mcu'; parse_handle_mcu($hash, $all->{$key}); delete($all->{$key}); } if exists $all->{mcu};
 
+    ### XXX: Transitional code
+    ### FIX wrong top level placement of autoGM objects ###
+    for my $key (%$all) {
+        if (rindex($key,'auto',0) == 0) {
+            $all->{auto} = {} unless exists $all->{auto};
+            $all->{auto}{$key} = $all->{$key};
+        }
+    }
+
     delete $all->{from};
     return scalar(%$all) ? JSON::to_json($all) : '';
 }
@@ -424,10 +433,15 @@ sub X_Read($$)
             my $msg =  'TFMCU#JSON:{"pct":{"'. $1 . $2 . "\":$3}}";
             main::Dispatch($hash, $msg);
 
-        } elsif ($line =~ /^(RC:.*);$/) {
-            my $msg =  "TFMCU#$1";
+        } elsif ($line =~ /^RC:type=(\w+) a=([0-9a-fA-F]{6})( g=([0-7]))?( m=([0-7]))? c=(\w+);$/) {
+            my $msg =  'TFMCU#JSON:{"RC":{';
+            $msg .= '"type":"'.$1.'"';
+            $msg .= ',"a":"'.$2.'"';
+            $msg .= ',"c":"'.$7.'"';
+            $msg .= ',"g":'.$4 if defined $4;
+            $msg .= ',"m":'.$6 if defined $6;
+            $msg .=  '}}';
             main::Dispatch($hash, $msg);
-
         } elsif ($line =~ /^(\{.*\})$/) {
             my $json = parse_handle_json($hash, $1);
             next unless ($json);

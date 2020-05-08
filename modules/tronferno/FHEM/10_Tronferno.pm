@@ -57,7 +57,7 @@ sub mod_dispatch_shs_auto($$);
 sub mod_dispatch_shs_obj($$);
 sub mod_forEachMatchingDevice($$);
 sub mod_getMatchingDevices($);
-sub mod_parse_cmd($$);
+sub mod_dispatch_input_obj($$);
 sub mod_parse_json($$);
 sub mod_parse_position($$);
 sub mod_parse_timer($$);
@@ -106,8 +106,8 @@ sub X_Define($$) {
     my $name    = $args[0] // '';
     my $address = $args[1] // '';
     my $is_iDev = 0;
-     my $fdt = '';
-     
+    my $fdt = '';
+
     main::Log3($hash, $dbll, "Tronferno X_Define(@_)");
 
 
@@ -147,7 +147,7 @@ sub X_Define($$) {
         } elsif ($key eq 'input' && $value ne 'all') {
             $is_iDev  = 1;
             $type = 'in';
-            $fdt = $value;  
+            $fdt = $value;
         } else {
             return "$name: unknown argument $o in define"; #FIXME add usage text
         }
@@ -158,7 +158,7 @@ sub X_Define($$) {
         $fdt = getFDTypeByA($ad) unless $fdt;
         return "$name: invalid input type: $value in define. Choose one of: sun, plain, central, all" unless (defined($fdt) && ("$fdt" eq FDT_SUN || "$fdt" eq FDT_PLAIN || "$fdt" eq FDT_CENTRAL || "$fdt" eq 'all'));
         $hash->{helper}{ferInputType} = $fdt;
-     }
+    }
     $hash->{helper}{ferid_a}  = $ad;
     $hash->{helper}{ferid_g}  = $g;
     $hash->{helper}{ferid_m}  = $m;
@@ -174,26 +174,26 @@ sub X_Define($$) {
 }
 
 sub mod_getAllHashes() {
-	return values(%{$main::modules{+MODNAME }{defptr}{all}});
+    return values(%{$main::modules{+MODNAME }{defptr}{all}});
 }
 sub mod_getHash_by_devName($) {
-	my ($devName) = @_;
-	return $main::defs{$devName};
+    my ($devName) = @_;
+    return $main::defs{$devName};
 }
 sub mod_getHash_by_Code($) {
-	my ($code) = @_;
-	return $main::modules{+MODNAME }{defptr}{all}{$code};
+    my ($code) = @_;
+    return $main::modules{+MODNAME }{defptr}{all}{$code};
 }
 sub setHash($) {
-	my ($hash) = @_;
-	my $key = $hash->{CODE};
-	$main::modules{ +MODNAME }{defptr}{all} = {} unless exists $main::modules{ +MODNAME }{defptr}{all};
+    my ($hash) = @_;
+    my $key = $hash->{CODE};
+    $main::modules{ +MODNAME }{defptr}{all} = {} unless exists $main::modules{ +MODNAME }{defptr}{all};
     $main::modules{ +MODNAME }{defptr}{all}->{$key} = $hash;
     main::Log3($hash, $dbll, "number of devices: " . scalar(%{$main::modules{+MODNAME }{defptr}{all}}));
 }
 sub deleteHash($) {
-	my ($hash) = @_;
-	my $defptr = $main::modules{ +MODNAME }{defptr};
+    my ($hash) = @_;
+    my $defptr = $main::modules{ +MODNAME }{defptr};
     my $key = $hash->{NAME};
     delete($defptr->{all}{$key});
 }
@@ -204,8 +204,8 @@ sub mod_deleteHash_by_devName($) {
     delete($defptr->{all}{$devName});
 }
 sub io_getDefaultInputDevice($) {
-	my ($io_hash) = @_;
-	return $main::modules{ +MODNAME }{defptr}{ +DEF_INPUT_DEVICE };
+    my ($io_hash) = @_;
+    return $main::modules{ +MODNAME }{defptr}{ +DEF_INPUT_DEVICE };
 }
 sub setDefaultInputDevice($) {
     my ($hash) = @_;
@@ -213,7 +213,7 @@ sub setDefaultInputDevice($) {
 }
 sub io_getCode($$$$$) {
     my ($io_hash, $ad, $g, $m, $type) = @_;
-     $ad =  sprintf('%6x', $ad) if $ad;
+    $ad =  sprintf('%6x', $ad) if $ad;
     "$io_hash->{NAME}:$ad:$g:$m:$type";
 }
 sub getFDTypeByA($) {
@@ -547,7 +547,7 @@ sub mod_getMatchingDevices($) {
 
 sub mod_dispatch_auto($$$$) {
     my ($io_hash, $g, $m, $autogm) = @_;
-    
+
     my $hash = mod_getHash_by_Code(io_getCode($io_hash, 0, $g, $m, 'out'));
     in_process_auto($hash, $g, $m, $autogm) if $hash;
     return $hash;
@@ -699,34 +699,20 @@ sub defaultInputMakeReading($$$$$$) {
     return 1;
 }
 
-sub mod_parse_cmd($$) {
-    my ($io_hash, $data) = @_;
+sub mod_dispatch_input_obj($$) {
+    my ($io_hash, $obj) = @_;
     my $name = $io_hash->{NAME};
-    my ($ad, $g, $m, $p, $fdt, $c) = (0, 0, 0, 0, "", "");
-    my $result = undef;
-    foreach my $arg (split(/\s+/, $data)) {
-        my ($key, $value) = split('=', $arg);
 
-        if ($key eq 'a') {
-            $ad = hex($value);
-        } elsif ($key eq 'g') {
-            $g = int($value);
-            return "out of range value $g for g. expected: 0..7"
-                unless (0 <= $g && $g <= 7);
-        } elsif ($key eq 'm') {
-            $m = int($value);
-            return "out of range value $m for m. expected: 0..7"
-                unless (0 <= $m && $m <= 7);
-        } elsif ($key eq 'c') {
-            $c = $value;
-        } elsif ($key eq 'type') {
-            $fdt = $value;
-        }
-    }
-    
+    my $ad = hex($obj->{a} // 0);
+    my $g = $obj->{g} // 0;
+    my $m = $obj->{m} // 0;
+    my $fdt = $obj->{type} // getFDTypeByA($ad);
+    my $c = $obj->{c} // '';
+
+    main::Log3($io_hash, 0, "ad=$ad");
     my $hash = mod_getHash_by_Code(io_getCode($io_hash, $ad, $g, $m, 'in'));
     return do { inputMakeReading($hash, $fdt, $ad, $g, $m, $c); $hash->{NAME} } if $hash;
-        
+
     $hash = mod_getHash_by_Code(io_getCode($io_hash, 0, 0, 0, 'scan'));
     return do { defaultInputMakeReading($hash, $fdt, $ad, $g, $m, $c); $hash->{NAME} } if $hash;
 
@@ -775,15 +761,10 @@ sub mod_parse_json($$) {
     my $res_pct = mod_dispatch_pct_obj($io_hash, $obj->{pct}) if exists $obj->{pct};
     my $res_shs = mod_dispatch_shs_obj($io_hash, $obj->{shs}) if exists $obj->{shs};
     my $res_reload = mod_reload_mcu_data($io_hash) if exists $obj->{reload};
-
-    ### FIX wrong top level placement of autoGM objects ###
-    for my $key (%$obj) {
-        if (rindex($key,'auto',0) == 0) {
-            $obj->{auto} = {} unless exists $obj->{auto};
-            $obj->{auto}{$key} = $obj->{$key};
-        }
-    }
     my $res_auto = mod_dispatch_auto_obj($io_hash, $obj->{auto}) if exists $obj->{auto};
+
+
+    return mod_dispatch_input_obj($io_hash, $obj->{RC}) if exists $obj->{RC};
 
     my $hash = $res_pct // $res_shs // $res_reload // $res_auto;
     return $hash ? $hash->{NAME} : undef;
@@ -795,12 +776,7 @@ sub X_Parse($$) {
     my $name   = $io_hash->{NAME};
     my $result = undef;
 
-
-    return mod_parse_cmd($io_hash, $1) if ($message =~ /^TFMCU#R[Cc]:(.+)$/);
-
     return mod_parse_position($io_hash, $1) if ($message =~ /^TFMCU#U:position:\s*(.+)$/);
-
-    return mod_parse_cmd($io_hash, $1) if ($message =~ /^TFMCU#RC:(.+)$/);
 
     return mod_parse_timer($io_hash, $1) if ($message =~ /^TFMCU#timer (.+)$/);
 
@@ -828,7 +804,7 @@ sub X_Attr(@) {
                 unless (0 <= $v and $v <= 1);
         } elsif ($attrName eq 'autoAlias') {
             my $fmt = int($attrValue);
-            
+
         }
     }
     return undef;
@@ -848,7 +824,7 @@ sub Tronferno_Initialize($) {
     $hash->{UndefFn}  = 'Tronferno::X_Undef';
     $hash->{AttrFn}   = 'Tronferno::X_Attr';
     #$hash->{RenameFn} = "Tronferno::X_Rename";
-    
+
     $hash->{AttrList} = 'IODev repeats:0,1,2,3,4,5 pctInverse:1,0';
     $hash->{Match}    = '^TFMCU#.+';
 }
