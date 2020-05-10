@@ -540,12 +540,12 @@ sub mod_forEachMatchingDevice($$) {
 
 sub mod_getMatchingDevices($) {
     my ($args) = @_;
-    my $result = [];
+    my @result;
     mod_forEachMatchingDevice($args, sub ($) {
         my ($hash) = @_;
-        $$result[$#{$result}+1] = $hash;
+        push(@result, $hash);
                               });
-    return $result;
+    return \@result;
 }
 
 sub mod_dispatch_auto($$$$) {
