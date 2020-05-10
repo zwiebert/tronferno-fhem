@@ -390,6 +390,7 @@ sub parse_handle_json($$) {
             $all->{auto}{$key} = $all->{$key};
         }
     }
+    delete $all->{shpref} if exists $all->{shpref} && !scalar(%{$all->{shpref}});
 
     delete $all->{from};
     return scalar(%$all) ? JSON::to_json($all) : '';
@@ -425,9 +426,11 @@ sub X_Read($$)
 
         main::Log3 ($name, 4, "TronfernoMCU ($name) - received line: <$line>");
 
-        if ($line =~ /^([U]:position:\s*.+);$/) {
+
+        if ($line =~ /^([U]:position:\s*(.+));$/) {
+            next if $2 eq 'start' || $2 eq 'end';
             my $msg =  "TFMCU#$1";
-            main::Dispatch($hash, $msg);
+            #main::Dispatch($hash, $msg);
 
         } elsif ($line =~ /^A:position: g=([1-7]) m=([0-7]) p=(\d+);$/) { # XXX: transitional code
             my $msg =  'TFMCU#JSON:{"pct":{"'. $1 . $2 . "\":$3}}";

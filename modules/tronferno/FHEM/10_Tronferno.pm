@@ -50,8 +50,9 @@ sub defaultInputMakeReading($$$$$$);
 sub inputMakeReading($$$$$$);
 sub get_commandlist();
 sub mod_dispatch_auto($$$$);
-sub mod_dispatch_pct($$$$);
+sub mod_dispatch_pct($$$$$);
 sub mod_dispatch_pct_obj($$);
+sub mod_dispatch_position_obj($$);
 sub mod_dispatch_shs($$$$);
 sub mod_dispatch_shs_auto($$);
 sub mod_dispatch_shs_obj($$);
@@ -85,6 +86,7 @@ use constant MODNAME => 'Tronferno';
 my $dbll = 6;
 
 use constant {
+    FDT_ALL                 => 'all',
     FDT_SUN                 => 'sun',
     FDT_PLAIN               => 'plain',
     FDT_CENTRAL             => 'central',
@@ -137,14 +139,14 @@ sub X_Define($$) {
                 unless (0 <= $m && $m <= 7);
         } elsif ($key eq 'iodev') {
             $iodev = $value;
-        } elsif ($key eq 'scan' || ($key eq 'input' && $value eq 'all')) {
+        } elsif ($key eq 'scan' || ($key eq 'input' && $value eq FDT_ALL)) {
             $is_iDev  = 1;
             $scan = 1;
             setDefaultInputDevice($hash);
             $hash->{helper}{inputKey}     = DEF_INPUT_DEVICE;
-            $fdt = 'all';
+            $fdt = FDT_ALL;
             $type = 'scan';
-        } elsif ($key eq 'input' && $value ne 'all') {
+        } elsif ($key eq 'input' && $value ne FDT_ALL) {
             $is_iDev  = 1;
             $type = 'in';
             $fdt = $value;
@@ -156,10 +158,10 @@ sub X_Define($$) {
     if ($is_iDev) {
     	my $value = $fdt;
         $fdt = getFDTypeByA($ad) unless $fdt;
-        return "$name: invalid input type: $value in define. Choose one of: sun, plain, central, all" unless (defined($fdt) && ("$fdt" eq FDT_SUN || "$fdt" eq FDT_PLAIN || "$fdt" eq FDT_CENTRAL || "$fdt" eq 'all'));
+        return "$name: invalid input type: $value in define. Choose one of: sun, plain, central, all" unless (defined($fdt) && ("$fdt" eq FDT_SUN || "$fdt" eq FDT_PLAIN || "$fdt" eq FDT_CENTRAL || "$fdt" eq FDT_ALL));
         $hash->{helper}{ferInputType} = $fdt;
     }
-    $hash->{helper}{ferid_a}  = $ad;
+    $hash->{helper}{ferid_a}  = hex($ad);
     $hash->{helper}{ferid_g}  = $g;
     $hash->{helper}{ferid_m}  = $m;
 
@@ -214,7 +216,7 @@ sub setDefaultInputDevice($) {
 sub io_getCode($$$$$) {
     my ($io_hash, $ad, $g, $m, $type) = @_;
     $ad =  sprintf('%6x', $ad) if $ad;
-    "$io_hash->{NAME}:$ad:$g:$m:$type";
+    return $type eq 'scan' ?  "all:in" : "$io_hash->{NAME}:$ad:$g:$m:$type";
 }
 sub getFDTypeByA($) {
     my ($a) = @_;
@@ -231,6 +233,7 @@ sub pctTrans($$) {
 }
 sub pctReadingsUpdate($$) {
     my ($hash, $pct) = @_;
+    main::Log3($hash, $dbll, "Tronferno pctReadingsUpdate(@_)");
     main::readingsSingleUpdate($hash, 'state', pctTrans($hash, $pct), 1);
 }
 
@@ -590,18 +593,29 @@ sub mod_dispatch_pct_obj($$) {
     while (my ($key, $value) = each(%$pct)) {
         my $g = substr($key, 0, 1);
         my $m = substr($key, 1, 1);
-        my $tmp = mod_dispatch_pct($io_hash, $g, $m, $value);
+        my $tmp = mod_dispatch_pct($io_hash, 0, $g, $m, $value);
         $hash = $tmp if $tmp;
     }
     return $hash;
 }
 
-sub mod_dispatch_pct($$$$) {
-    my ($io_hash, $g, $m, $p) = @_;
+sub mod_dispatch_pct($$$$$) {
+    my ($io_hash, $ad, $g, $m, $p) = @_;
 
-    my $hash = mod_getHash_by_Code(io_getCode($io_hash, 0, $g, $m, 'out'));
+    my $hash = mod_getHash_by_Code(io_getCode($io_hash, $ad, $g, $m, 'out'));
     pctReadingsUpdate($hash, $p) if $hash;
+
     return $hash;
+}
+
+sub mod_dispatch_position_obj($$) {
+    my ($io_hash, $pos) = @_;
+    my $hash = undef;
+    my $ad = $pos->{a} // 0;
+    my $g = $pos->{g} // 0;
+    my $m = $pos->{m} // 0;
+    my $p = $pos->{p} // 0;
+    return mod_dispatch_pct($io_hash, $ad, $g, $m, $p);
 }
 
 sub mod_parse_position($$) {
@@ -640,13 +654,13 @@ sub mod_parse_position($$) {
             my $gm = hex($$mm[$g]);
             for my $m (0 .. 7) {
                 if ($gm & (1 << $m)) {
-                    my $hash = mod_dispatch_pct($io_hash, $g, $m, $p);
+                    my $hash = mod_dispatch_pct($io_hash, 0, $g, $m, $p);
                     $result = $hash->{NAME} if $hash;
                 }
             }
         }
     } else {
-        my $hash = mod_dispatch_pct($io_hash, $g, $m, $p);
+        my $hash = mod_dispatch_pct($io_hash, 0, $g, $m, $p);
         $result = $hash->{NAME} if $hash;
     }
 
@@ -661,6 +675,11 @@ sub inputMakeReading($$$$$$) {
     my $inputType = $hash->{helper}{ferInputType};
     my $do_trigger = 1;
     my $state = undef;
+
+    if ($inputType eq FDT_ALL) {
+    	return defaultInputMakeReading($hash, $fdt, $ad, $g, $m, $c);
+    }
+
 
     if ($inputType eq FDT_SUN) {
         $state = $c eq 'sun-down' ? 'on'
@@ -702,6 +721,7 @@ sub defaultInputMakeReading($$$$$$) {
 sub mod_dispatch_input_obj($$) {
     my ($io_hash, $obj) = @_;
     my $name = $io_hash->{NAME};
+    my $result = 'UNDEFINED Tronferno_Scan Tronferno scan';
 
     my $ad = hex($obj->{a} // 0);
     my $g = $obj->{g} // 0;
@@ -710,13 +730,23 @@ sub mod_dispatch_input_obj($$) {
     my $c = $obj->{c} // '';
 
     main::Log3($io_hash, 0, "ad=$ad");
-    my $hash = mod_getHash_by_Code(io_getCode($io_hash, $ad, $g, $m, 'in'));
-    return do { inputMakeReading($hash, $fdt, $ad, $g, $m, $c); $hash->{NAME} } if $hash;
 
-    $hash = mod_getHash_by_Code(io_getCode($io_hash, 0, 0, 0, 'scan'));
-    return do { defaultInputMakeReading($hash, $fdt, $ad, $g, $m, $c); $hash->{NAME} } if $hash;
+    my @hashes;
+    my $hash;
 
-    return 'UNDEFINED Tronferno_Scan Tronferno scan';
+    $hash = mod_getHash_by_Code(io_getCode($io_hash, $ad, $g, $m, 'in'));
+    push(@hashes, $hash) if $hash;
+    if (!$hash) { # XXX: use attr to configure it default input gets already matched input?
+        $hash = mod_getHash_by_Code(io_getCode($io_hash, 0, 0, 0, 'scan'));
+        push(@hashes, $hash) if $hash;
+    }
+
+    for $hash (@hashes) {
+    	inputMakeReading($hash, $fdt, $ad, $g, $m, $c);
+    	$result = $hash->{NAME}
+    }
+
+    return $result;
 }
 
 sub in_process_auto($$$$) {
@@ -758,6 +788,7 @@ sub mod_parse_json($$) {
     my $obj  = JSON::from_json($json);
     my $from = $obj->{from};
 
+    my $res_position = mod_dispatch_position_obj($io_hash, $obj->{position}) if exists $obj->{position};
     my $res_pct = mod_dispatch_pct_obj($io_hash, $obj->{pct}) if exists $obj->{pct};
     my $res_shs = mod_dispatch_shs_obj($io_hash, $obj->{shs}) if exists $obj->{shs};
     my $res_reload = mod_reload_mcu_data($io_hash) if exists $obj->{reload};
@@ -766,7 +797,7 @@ sub mod_parse_json($$) {
 
     return mod_dispatch_input_obj($io_hash, $obj->{RC}) if exists $obj->{RC};
 
-    my $hash = $res_pct // $res_shs // $res_reload // $res_auto;
+    my $hash = $res_pct // $res_shs // $res_reload // $res_auto // $res_position;
     return $hash ? $hash->{NAME} : undef;
 }
 
