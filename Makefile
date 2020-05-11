@@ -19,7 +19,7 @@
 .PHONY: controls verify push not_dirty
 controls:
 	./build.sh
-verify: ./build.sh 00_TronfernoMCU.compile 10_Tronferno.compile 10_Fernotron.compile
+verify: controls 00_TronfernoMCU.compile 10_Tronferno.compile 10_Fernotron.compile
 not_dirty:
 	git update-index --refresh && git diff-index --quiet HEAD --
 push: verify not_dirty

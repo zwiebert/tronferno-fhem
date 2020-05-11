@@ -396,6 +396,10 @@ sub parse_handle_json($$) {
     return scalar(%$all) ? JSON::to_json($all) : '';
 }
 
+sub parse_msg_to_json($) {
+    my ($msg) = @_;
+
+}
 # called when data was received
 sub X_Read($$)
 {
