@@ -14,6 +14,7 @@
 ## Related Hardware-Project: https://github.com/zwiebert/tronferno-mcu
 ################################################################################
 
+package Tronferno;
 use strict;
 use warnings;
 use 5.14.0;
@@ -43,13 +44,17 @@ sub X_Get($$$@);
 sub X_Parse($$);
 sub X_Set($$@);
 sub X_Undef($$);
-sub build_agmObj($$);
-sub build_pctReqObj($$);
-sub build_shsReqObj($$);
 sub defaultInputMakeReading($$$$$$);
+sub deleteHash($);
+sub mod_fdType_from_ferId($);
+sub mod_commands_of_set();
 sub inputMakeReading($$$$$$);
-sub get_commandlist();
+sub io_getCode($$$$$);
+sub io_getDefaultInputDevice($);
+sub io_getHash($$$$$);
+sub mod_deleteHash_by_devName($);
 sub mod_dispatch_auto($$$$);
+sub mod_dispatch_input_obj($$);
 sub mod_dispatch_pct($$$$$);
 sub mod_dispatch_pct_obj($$);
 sub mod_dispatch_position_obj($$);
@@ -57,30 +62,24 @@ sub mod_dispatch_shs($$$$);
 sub mod_dispatch_shs_auto($$);
 sub mod_dispatch_shs_obj($$);
 sub mod_forEachMatchingDevice($$);
+sub mod_getAllHashes();
+sub mod_getHash_by_Code($);
+sub mod_getHash_by_devName($);
 sub mod_getMatchingDevices($);
-sub mod_dispatch_input_obj($$);
 sub mod_parse_json($$);
 sub mod_parse_timer($$);
 sub pctReadingsUpdate($$);
-sub pctTrans($$);
+sub pctTransform($$);
+sub req_build_agmObj($$);
 sub req_build_cmd($$$);
-sub req_build_position($);
-sub req_build_timer($$);
-sub req_position($);
-sub req_reload_mcu_data($);
-sub transmit($$);
-sub transmit_obj($$);
-
-sub mod_getAllHashes();
-sub mod_getHash_by_devName($);
-sub mod_getHash_by_Code($);
+sub req_build_pctMsg($);
+sub req_build_pctObj($$);
+sub req_build_shsObj($$);
+sub req_build_timerMsg($$);
+sub req_tx_mcuData($);
 sub setHash($);
-sub deleteHash($);
-sub mod_deleteHash_by_devName($);
-sub io_getDefaultInputDevice($);
-sub io_getCode($$$$$);
-sub io_getHash($$$$$);
-sub getFDTypeByA($);
+sub req_tx_msg($$);
+sub req_tx_obj($$);
 
 use constant MODNAME => 'Tronferno';
 my $dbll = 0;
@@ -162,7 +161,7 @@ sub X_Define($$) {
 
     if ($is_iDev) {
     	my $value = $fdt;
-        $fdt = getFDTypeByA($ad) unless $fdt;
+        $fdt = mod_fdType_from_ferId($ad) unless $fdt;
         return "$name: invalid input type: $value in define. Choose one of: sun, plain, central, all" unless (defined($fdt) && ("$fdt" eq FDT_SUN || "$fdt" eq FDT_PLAIN || "$fdt" eq FDT_CENTRAL || "$fdt" eq FDT_ALL));
         $hash->{helper}{ferInputType} = $fdt;
     }
@@ -176,7 +175,7 @@ sub X_Define($$) {
     $hash->{CODE} = io_getCode($hash->{IODev}, $ad, $g, $m, $type);
 
     setHash($hash);
-    req_reload_mcu_data($hash);
+    req_tx_mcuData($hash);
 
     return undef;
 }
@@ -232,7 +231,7 @@ sub io_getHash($$$$$) {
     return $hash;
 
 }
-sub getFDTypeByA($) {
+sub mod_fdType_from_ferId($) {
     my ($a) = @_;
     my $msb = substr($a, 0, 2);
     my $fdt = $msb2fdt->{"$msb"};
@@ -240,7 +239,7 @@ sub getFDTypeByA($) {
 }
 
 
-sub pctTrans($$) {
+sub pctTransform($$) {
     my ($hash, $pct) = @_;
     return $pct if 0 == main::AttrVal($hash->{NAME}, 'pctInverse', 0);
     return 100 - $pct;
@@ -248,7 +247,7 @@ sub pctTrans($$) {
 sub pctReadingsUpdate($$) {
     my ($hash, $pct) = @_;
     $debug and main::Log3($hash, $dbll, "Tronferno pctReadingsUpdate(@_)");
-    main::readingsSingleUpdate($hash, 'state', pctTrans($hash, $pct), 1);
+    main::readingsSingleUpdate($hash, 'state', pctTransform($hash, $pct), 1);
 }
 
 sub X_Undef($$) {
@@ -259,7 +258,7 @@ sub X_Undef($$) {
     return undef;
 }
 
-sub transmit($$) {
+sub req_tx_msg($$) {
     my ($hash, $req) = @_;
     my $io   = $hash->{IODev};
     my $name = $hash->{NAME};
@@ -276,7 +275,7 @@ sub req_build_cmd_obj($$$) {
     my $name = $hash->{NAME};
     my $msg = {};
 
-    build_agmObj($hash, $msg);
+    req_build_agmObj($hash, $msg);
     $msg->{a} = '?' if $cmd eq 'pair';
     $msg->{r} = int(main::AttrVal($name, 'repeats', '1'));
     if ($c =~ /^[0-9]+$/) {
@@ -299,11 +298,11 @@ sub req_build_cmd($$$) {
     return $json . ';';
 }
 
-sub req_build_timer($$) {
+sub req_build_timerMsg($$) {
     my ($hash, $opts) = @_;
     my $name = $hash->{NAME};
 
-    build_agmObj($hash, $opts);
+    req_build_agmObj($hash, $opts);
 
     $opts->{mid} = 82; #XXX
 
@@ -328,54 +327,47 @@ my $map_pair_cmds = {
     xxx_unpair => 'unpair',
 };
 
-sub req_build_position($) {
+sub req_build_pctMsg($) {
     my ($hash) = @_;
     return req_build_cmd($hash, 'send', '?');
 }
 
-sub req_position($) {
-    my ($hash) = @_;
-    my $req = req_build_position($hash);
-    my $res = transmit($hash, $req);
-    return $res;
-}
-
-sub build_agmObj($$) {
+sub req_build_agmObj($$) {
     my ($hash, $out) = @_;
     $out->{a} = $hash->{helper}{ferid_a} if $hash->{helper}{ferid_a};
     $out->{g} = $hash->{helper}{ferid_g} if $hash->{helper}{ferid_g};
     $out->{m} = $hash->{helper}{ferid_m} if $hash->{helper}{ferid_m};
     return $out;
 }
-sub build_shsReqObj($$) {
+sub req_build_shsObj($$) {
     my ($hash, $out) = @_;
     my $shs = {};
     $out->{shpref} = $shs;
-    build_agmObj($hash, $shs);
+    req_build_agmObj($hash, $shs);
     $shs->{tag} = '?';
     return $out;
 }
-sub build_pctReqObj($$) {
+sub req_build_pctObj($$) {
     my ($hash, $out) = @_;
     my $cmd = {};
     $out->{cmd} = $cmd;
-    build_agmObj($hash, $cmd);
+    req_build_agmObj($hash, $cmd);
     $cmd->{p} = '?';
     return $out;
 }
-sub transmit_obj($$) {
+sub req_tx_obj($$) {
     my ($hash, $out) = @_;
     my $json = JSON::to_json($out);
-    transmit($hash, $json . ';');
+    req_tx_msg($hash, $json . ';');
 }
 
-sub req_reload_mcu_data($) {
+sub req_tx_mcuData($) {
     my ($hash) = @_;
-    transmit_obj($hash, build_pctReqObj($hash, {}));  # have PCT request separate to allow X_Fingerprint() to work
-    transmit_obj($hash, build_shsReqObj($hash, {}));
+    req_tx_obj($hash, req_build_pctObj($hash, {}));  # have PCT request separate to allow X_Fingerprint() to work
+    req_tx_obj($hash, req_build_shsObj($hash, {}));
 }
 
-sub get_commandlist() { return keys %$map_send_cmds, keys %$map_pair_cmds; }
+sub mod_commands_of_set() { return keys %$map_send_cmds, keys %$map_pair_cmds; }
 
 sub X_Set($$@) {
     my ($hash, $name, $cmd, $a1) = @_;
@@ -423,7 +415,7 @@ sub X_Set($$@) {
     #handle output devices here
     if ($cmd eq '?') {
         my $res = "unknown argument $cmd choose one of ";
-        foreach my $key (get_commandlist()) {
+        foreach my $key (mod_commands_of_set()) {
             $res .= " $key:noArg";
         }
         return
@@ -438,15 +430,15 @@ sub X_Set($$@) {
             . ' weekly';
     } elsif (exists $map_send_cmds->{$cmd}) {
         my $req = req_build_cmd($hash, 'send', $map_send_cmds->{$cmd});
-        my $res = transmit($hash, $req);
+        my $res = req_tx_msg($hash, $req);
         return $res if ($res);
     } elsif (exists $map_pair_cmds->{$cmd}) {
         my $req = req_build_cmd($hash, 'pair', $map_pair_cmds->{$cmd});
-        my $res = transmit($hash, $req);
+        my $res = req_tx_msg($hash, $req);
         return $res if ($res);
     } elsif ($cmd eq 'position' || $cmd eq 'pct') {
         return "\"set $name $cmd\" needs one argument" unless (defined($a1));
-        my $percent = pctTrans($hash, $a1);
+        my $percent = pctTransform($hash, $a1);
         my $c = $percent;
 
         #use some special percent number as commands (for alexa)
@@ -456,35 +448,35 @@ sub X_Set($$@) {
             $c = 'stop';
         }
         my $req = req_build_cmd($hash, 'send', $c);
-        my $res = transmit($hash, $req);
+        my $res = req_tx_msg($hash, $req);
     } elsif ($cmd eq 'manual') {
-        return transmit($hash,
-			req_build_timer($hash, $is_on ? {f=>'kMi'} : {f=>'kmi'}));
+        return req_tx_msg($hash,
+			req_build_timerMsg($hash, $is_on ? {f=>'kMi'} : {f=>'kmi'}));
     } elsif ($cmd eq 'sun-auto') {
-        return transmit($hash,
-			req_build_timer($hash, $is_on ? {f=>'kSi'} :  {f=>'ksi'}));
+        return req_tx_msg($hash,
+			req_build_timerMsg($hash, $is_on ? {f=>'kSi'} :  {f=>'ksi'}));
     } elsif ($cmd eq 'random') {
-        return transmit($hash,
-			req_build_timer($hash, $is_on ? {f=>'kRi'} :  {f=>'kri'}));
+        return req_tx_msg($hash,
+			req_build_timerMsg($hash, $is_on ? {f=>'kRi'} :  {f=>'kri'}));
     } elsif ($cmd eq 'astro') {
         my $msg = {};
         $msg->{f} = $is_off ? 'kai' : 'kAi';
         $msg->{astro} = ($is_on  ? 0  : int($a1)) unless $is_off;
-        return transmit($hash, req_build_timer($hash, $msg));
+        return req_tx_msg($hash, req_build_timerMsg($hash, $msg));
     } elsif ($cmd eq 'daily') {
         my $msg = {};
         $msg->{daily} = $is_off ? '--' : $a1; #TODO: check validity of of $a1
         $msg->{f} = $is_off ? 'kdi' : 'kDi';
-        return transmit($hash, req_build_timer($hash, $msg));
+        return req_tx_msg($hash, req_build_timerMsg($hash, $msg));
     } elsif ($cmd eq 'weekly') {
         my $msg = {};
         $msg->{weekly} = $is_off ? '--++++++' : $a1; #TODO: check validity of of $a1
         $msg->{f} = $is_off ? 'kwi' : 'kWi';
-        return transmit($hash, req_build_timer($hash, $msg));
+        return req_tx_msg($hash, req_build_timerMsg($hash, $msg));
     } else {
         return
             "unknown argument $cmd choose one of "
-            . join(' ', get_commandlist())
+            . join(' ', mod_commands_of_set())
             . ' position manual sun-auto random astro daily weekly';
     }
 
@@ -510,16 +502,13 @@ sub X_Get($$$@) {
     if ($opt eq '?') {
         return $u . 'timer:noArg';
     } elsif ($opt eq 'timer') {
-        return transmit($hash, req_build_timer($hash, {f=>'ukI'}));
+        return req_tx_msg($hash, req_build_timerMsg($hash, {f=>'ukI'}));
     } else {
         return $u . 'timer';
     }
 
 
     return undef;
-}
-
-sub mod_transmit_json() {
 }
 
 sub mod_dispatch_forEachHash_callSub($$) {
@@ -690,20 +679,19 @@ sub mod_dispatch_input_obj($$) {
     my $ad = mod_normalize_ad($obj->{a});
     my $g = $obj->{g} // 0;
     my $m = $obj->{m} // 0;
-    my $fdt = $obj->{type} // getFDTypeByA($ad);
+    my $fdt = $obj->{type} // mod_fdType_from_ferId($ad);
     my $c = $obj->{c} // '';
 
     my @hashes;
-    my $hash;
 
-    $hash = io_getHash($io_hash, $ad, $g, $m, 'in');
+    my $hash = io_getHash($io_hash, $ad, $g, $m, 'in');
     push(@hashes, $hash) if $hash;
     if (!$hash) { # XXX: use attr to configure it default input gets already matched input?
         $hash = io_getHash($io_hash, 0, 0, 0, 'scan');
         push(@hashes, $hash) if $hash;
     }
 
-    for $hash (@hashes) {
+    for my $hash (@hashes) {
     	inputMakeReading($hash, $fdt, $ad, $g, $m, $c);
     	$result = $hash->{NAME}
     }
@@ -740,7 +728,7 @@ sub mod_reload_mcu_data($) {
     my $result = undef;
     mod_forEachMatchingDevice({ IODev => $io_hash }, sub ($) {
         my ($hash) = @_;
-        req_reload_mcu_data($hash);
+        req_tx_mcuData($hash);
         $result = $hash;
                               });
     return $result;

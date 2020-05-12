@@ -9,12 +9,12 @@
 ## Related Hardware-Project: https://github.com/zwiebert/tronferno-mcu
 ################################################################################
 
+package TronfernoMCU;
 use strict;
 use warnings;
 use 5.14.0;
 
 package main;
-
 sub DevIo_CloseDev($@);
 sub DevIo_IsOpen($);
 sub DevIo_OpenDev($$$;$);
