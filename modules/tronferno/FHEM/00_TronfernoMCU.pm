@@ -385,7 +385,7 @@ sub parse_handle_json($$) {
     ### XXX: Transitional code
     ### FIX wrong top level placement of autoGM objects ###
     for my $key (%$all) {
-        if (rindex($key,'auto',0) == 0) {
+        if (rindex($key,'auto',0) == 0 && $key ne 'auto') {
             $all->{auto} = {} unless exists $all->{auto};
             $all->{auto}{$key} = $all->{$key};
         }
