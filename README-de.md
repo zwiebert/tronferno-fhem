@@ -62,7 +62,7 @@ Installation ist unten beschrieben. Die weitere Nutzung in [deutscher TronfernoM
 ### 3. MQTT statt eigenes FHEM Modul.
 
 * steuern der  ESP32-Hardware [Tronferno-MCU](https://github.com/zwiebert/tronferno-mcu) über MQTT
-* das Kommandozeilen-Interfacde von tronferno-mcu wird über MQTT angesprochen
+* das Kommandozeilen-Interface von tronferno-mcu wird über MQTT angesprochen
 
 Nach Konfiguration der Verbindungsdaten zum FHEM MQTT2_SERVER kann ein Rolladen-Gerät in FHEM z.B. folgendermaßen angelegt werden:
 
@@ -81,3 +81,6 @@ Hierbei sind:
   * stop:noArg - der anzulegende Set-Befehlt (noArg heißt, es wird dafür kein Texteingabefeld in FHEMWEB erzeugt).
   * tfmcu/cli  - ist der MQTT Topic an den CLI Befehle gesendet werden können
   * send g=2 m=3 c=down  - das CLI Kommando zum Runterfahren des Rolladens 3 der Gruppe 2
+
+Mehr Infos:
+  * [tronferno-mcu MQTT client](https://github.com/zwiebert/tronferno-mcu/blob/master/docs/mqtt.md)

@@ -10,7 +10,7 @@ Using Fernotron devices with FHEM
 ### General
 
 
-This project contains two different FHEM modules for the purpose of controlling and utilizing physical Fernotron devices via radio frequency. Fernotron devices are shutters, plugs and  controllers, sensors for input. 
+This project contains two different FHEM modules for the purpose of controlling and utilizing physical Fernotron devices via radio frequency. Fernotron devices are shutters, plugs and  controllers, sensors for input.
 
 
 ### 1. FHEM module Fernotron
@@ -19,7 +19,7 @@ This project contains two different FHEM modules for the purpose of controlling 
  * makes Fernotron sensors and switches available in FHEM.
  * requires SIGNALduino as underlying IODev and RF transceiver hardware.
  * Read [module help text](doc/sduino_fernotron.pod).
- 
+
 #### Installation and Update
 
  The module and commandref are installed and updated by FHEM's update command:
@@ -78,4 +78,6 @@ Explanation:
   * stop:noArg - the name of the generated Set command (noArg gets rid of the useles textinput field on FHEMWEB)
   * tfmcu/cli  - the MQTT Topic to where the CLI command will be sent
   * send g=2 m=3 c=down  - the CLI command to close the shutter number 3 of group 2
-  
+
+See also:
+  * [tronferno-mcu MQTT client](https://github.com/zwiebert/tronferno-mcu/blob/master/docs/mqtt.md)
