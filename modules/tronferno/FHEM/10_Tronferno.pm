@@ -735,7 +735,8 @@ sub mod_reload_mcu_data($) {
 }
 sub mod_parse_json($$) {
     my ($io_hash, $json) = @_;
-    my $obj  = JSON::from_json($json);
+    my $obj  = eval { JSON::from_json($json) };
+    return undef unless $obj; # XXX: log error message
     my $from = $obj->{from};
 
     my $res_position = mod_dispatch_position_obj($io_hash, $obj->{position}) if exists $obj->{position};

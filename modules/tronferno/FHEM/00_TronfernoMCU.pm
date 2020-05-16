@@ -412,7 +412,8 @@ sub parse_handle_mcu($$) {
 
 sub parse_handle_json($$) {
     my ($hash, $json) = @_;
-    my $all = JSON::from_json($json);
+    my $all  = eval { JSON::from_json($json) };
+    return undef unless $all; # XXX: log error message
 
     do { my $key = 'config'; parse_handle_config($hash, $all->{$key}); delete($all->{$key}); } if exists $all->{config};
     do { my $key = 'mcu'; parse_handle_mcu($hash, $all->{$key}); delete($all->{$key}); } if exists $all->{mcu};
