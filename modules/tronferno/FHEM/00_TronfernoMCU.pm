@@ -79,12 +79,6 @@ sub run_system_cmd($$$$$$);
 sub sys_cmd_updateReading($$);
 sub sys_cmd_get_success($);
 sub sys_cmd_rm_log_internals($);
-sub wdcon_cure_lag($);
-sub wdcon_get_next_msgid($);
-sub wdcon_test_check_reply_line($$);
-sub wdcon_test_init($);
-sub wdcon_test_timer_cb($);
-sub wdcon_test_transmit($);
 
 sub tka_send_cmd($);
 sub tka_timer_cb($);
@@ -144,98 +138,6 @@ while(my($k, $v) = each %$mco) {
     } else {
         $usage .= " $vp";
     }
-}
-
-## connection watchdog ##
-sub wdcon_cure_lag($) {
-    my ($hash) = @_;
-    my $wdcon = $hash->{helper}{wdcon};
-    #TODO: do restart with lagging USB
-    main::Log3 ($hash->{NAME}, 1, "MCU connection lag. Try to restart MCU");
-    devio_write_line($hash, "config restart=1;");
-    devio_write_line($hash, "config restart=1;");
-    devio_write_line($hash, "config restart=1;");
-    $wdcon->{state} = 'lag_cured';
-}
-sub wdcon_get_next_msgid($) {
-    my ($hash) = @_;
-    my $wdcon = $hash->{helper}{wdcon};
-    ++$wdcon->{msgid};
-    $wdcon->{msgid} %= 256;
-    return $wdcon->{msgid};
-}
-sub wdcon_test_transmit($) {
-    my ($hash) = @_;
-    my $wdcon = $hash->{helper}{wdcon};
-
-    my $tod = main::gettimeofday();
-    $wdcon->{tod} = $tod;
-    my $msgid = wdcon_get_next_msgid($hash);
-    $wdcon->{expected} = 'warning@'.$msgid.':unknown-option: unknown';
-    devio_write_line($hash, "cmd unknown=0 mid=$msgid;");
-    $wdcon->{state} = 'sent';
-}
-sub wdcon_test_check_reply_line($$) {
-    my ($hash, $line) = @_;
-    my $wdcon = $hash->{helper}{wdcon};
-    my $expected =  $wdcon->{expected};
-    if ($expected) {
-        if ($expected eq $line) {
-            $wdcon->{state} = 'received';
-            $wdcon->{expected} = '';
-            $wdcon->{fail_count} = 0;
-        }
-    }
-}
-sub wdcon_test_states($) {
-    my ($hash) = @_;
-    my $wdcon = $hash->{helper}{wdcon};
-    my $state = $wdcon->{state};
-
-    if ($state eq 'none') {
-        wdcon_test_transmit($hash);
-    } elsif ($state eq 'sent') {
-        if (++$wdcon->{fail_count} > $wdcon->{max_fail_count}) {
-            wdcon_cure_lag($hash);
-        } else {
-            wdcon_test_transmit($hash);
-        }
-    } elsif ($state eq 'received') {
-        $wdcon->{state} = 'none';
-        return 'done';
-    } elsif ($state eq 'lag_cured') {
-        return 'done';
-    } elsif ($state eq 'xxxx') {
-        devio_close_device($hash);
-        $wdcon->{state} = 'reconnect';
-        return 'reconnect';
-    } elsif ($state eq 'reconnect') {
-        devio_open_device($hash);
-        return '???';
-    } elsif ($state eq 'xxx') {
-        return 'xxx';
-    }
-    return '';
-}
-sub wdcon_test_timer_cb($) {
-    my ($wdcon) = @_;
-    my $hash = $wdcon->{hash};
-    main::Log3 ($hash->{NAME}, $dbll, "tronferno-mcu wdcon_test_timer_cb($hash)");
-    my $res = wdcon_test_states($hash);
-    my $iv = $res eq 'done' ? $wdcon->{interval} :  $wdcon->{short_interval};
-
-    return unless main::ReadingsVal($hash->{NAME}, 'mcu.connection', '') eq 'usb';
-
-    main::InternalTimer( main::gettimeofday() + $iv, 'TronfernoMCU::wdcon_test_timer_cb', $wdcon);
-
-    $wdcon->{fail_count} = 0 if $res eq 'done';
-}
-sub wdcon_test_init($) {
-    my ($hash) = @_;
-    my $interval = 60;
-    main::RemoveInternalTimer( $hash->{helper}{wdcon}) if exists  $hash->{helper}{wdcon};
-    $hash->{helper}{wdcon} = { hash => $hash, interval => $interval, short_interval => 3, fail_count => 0, time_for_reply => 3, max_fail_count => 3, msgid => 0, state => 'none' };
-    wdcon_test_timer_cb($hash->{helper}{wdcon});
 }
 
 ## tcp keep-alive ##
@@ -320,7 +222,6 @@ sub devio_openDev_init_cb($)
     #devio_at_connect($hash);
     main::InternalTimer(main::gettimeofday() + 5, 'TronfernoMCU::devio_at_connect', $hash);
     devio_updateReading_connection($hash, $conn_type);
-    #main::InternalTimer(main::gettimeofday() + 30, 'TronfernoMCU::wdcon_test_init', $hash) if $conn_type eq 'usb'; #obsolete
     main::InternalTimer(main::gettimeofday() + 30, 'TronfernoMCU::tka_timer_init', $hash) if $conn_type eq 'tcp';
     return undef;
 }
@@ -461,8 +362,6 @@ sub X_Read($$)
         }
 
         $line =~ tr/\r\n//d;
-
-        wdcon_test_check_reply_line($hash, $line);
 
         main::Log3 ($name, 4, "TronfernoMCU ($name) - received line: <$line>");
 
