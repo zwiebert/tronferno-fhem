@@ -23,13 +23,14 @@ sub DevIo_SimpleWrite($$$;$);
 sub Dispatch($$;$$);
 sub HttpUtils_NonblockingGet($);
 sub InternalTimer($$$;$);
-sub RemoveInternalTimer($);
+sub RemoveInternalTimer($;$);
 sub Log3($$$);
 sub asyncOutput($$);
 sub gettimeofday();
 sub ReadingsVal($$$);
 sub readingsSingleUpdate($$$$);
 sub readingsSingleUpdate($$$$);
+sub Debug;
 
 sub TronfernoMCU_Initialize($);
 
@@ -83,6 +84,9 @@ sub sys_cmd_rm_log_internals($);
 sub tka_send_cmd($);
 sub tka_timer_cb($);
 sub tka_timer_init($);
+
+sub creq_timer_cb($);
+sub creq_init($);
 
 sub parse_handle_json($$);
 
@@ -244,6 +248,12 @@ sub devio_write_line($$) {
     main::DevIo_SimpleWrite($hash, $line, 2);
 }
 
+sub creq_init($) {
+	my ($hash) = @_;
+	$hash->{helper}{commonRequests} = { cmds => []};
+	my $len = scalar (@{$hash->{helper}{commonRequests}{cmds}});
+}
+
 ### Note: using defmod, X_Define can be called multiple times without any call to X_Undef
 sub X_Define($$)
 {
@@ -268,6 +278,8 @@ sub X_Define($$)
     devio_close_device($hash);
     $hash->{DeviceName} = $dev;
     devio_open_device($hash);
+
+    creq_init($hash);
 
     return undef;
 }
@@ -744,9 +756,27 @@ sub X_Set($$@) {
     return undef;
 }
 
-sub X_Write ($$)
-{
+sub creq_timer_cb($) {
+	my ( $hash) = @_;
+	my $cmds = $hash->{helper}{commonRequests}{cmds};
+	my $len = scalar(@$cmds);
+	if ($len == 1) {
+	    devio_write_line($hash, $$cmds[0]);
+	} elsif ($len > 1) {
+		devio_write_line($hash, '{"cmd":{"p":"?"}};');
+	}
+	creq_init($hash);
+}
+
+sub X_Write ($$) {
     my ( $hash, $addr, $msg) = @_;
+    if ($msg =~ /"p":"\?"/) {
+    	my $cmds = $hash->{helper}{commonRequests}{cmds};
+    	push(@$cmds, $msg);
+    	my $len = scalar(@$cmds);
+    	main::InternalTimer(main::gettimeofday() + 1, 'TronfernoMCU::creq_timer_cb', $hash) if ($len == 1);
+    	return undef;
+    }
     devio_write_line($hash, $msg);
     return undef;
 }
