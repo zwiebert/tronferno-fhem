@@ -23,6 +23,7 @@ sub DevIo_SimpleWrite($$$;$);
 sub Dispatch($$;$$);
 sub HttpUtils_NonblockingGet($);
 sub InternalTimer($$$;$);
+sub RemoveInternalTimer($);
 sub Log3($$$);
 sub asyncOutput($$);
 sub gettimeofday();
@@ -81,11 +82,17 @@ sub sys_cmd_rm_log_internals($);
 sub wdcon_cure_lag($);
 sub wdcon_get_next_msgid($);
 sub wdcon_test_check_reply_line($$);
-sub wdcon_test_init($$);
+sub wdcon_test_init($);
 sub wdcon_test_timer_cb($);
 sub wdcon_test_transmit($);
 
+sub tka_send_cmd($);
+sub tka_timer_cb($);
+sub tka_timer_init($);
+
 sub parse_handle_json($$);
+
+my $dbll = 6;
 
 my $mcu_port = 7777;
 my $mcu_baud = 115200;
@@ -211,26 +218,53 @@ sub wdcon_test_states($) {
     return '';
 }
 sub wdcon_test_timer_cb($) {
-    my ($hash) = @_;
-    my $wdcon = $hash->{helper}{wdcon};
+    my ($wdcon) = @_;
+    my $hash = $wdcon->{hash};
+    main::Log3 ($hash->{NAME}, $dbll, "tronferno-mcu wdcon_test_timer_cb($hash)");
     my $res = wdcon_test_states($hash);
     my $iv = $res eq 'done' ? $wdcon->{interval} :  $wdcon->{short_interval};
 
-    return unless main::ReadingsVal($hash, 'mcu.connection', '') eq 'usb';
+    return unless main::ReadingsVal($hash->{NAME}, 'mcu.connection', '') eq 'usb';
 
-    main::InternalTimer( main::gettimeofday() + $iv, 'TronfernoMCU::wdcon_test_timer_cb', $hash);
+    main::InternalTimer( main::gettimeofday() + $iv, 'TronfernoMCU::wdcon_test_timer_cb', $wdcon);
 
     $wdcon->{fail_count} = 0 if $res eq 'done';
 }
-sub wdcon_test_init($$) {
-    my ($hash, $interval) = @_;
-    $hash->{helper}{wdcon} = { interval => $interval, short_interval => 3, fail_count => 0, time_for_reply => 3, max_fail_count => 3, msgid => 0, state => 'none' };
-    wdcon_test_timer_cb($hash);
+sub wdcon_test_init($) {
+    my ($hash) = @_;
+    my $interval = 60;
+    main::RemoveInternalTimer( $hash->{helper}{wdcon}) if exists  $hash->{helper}{wdcon};
+    $hash->{helper}{wdcon} = { hash => $hash, interval => $interval, short_interval => 3, fail_count => 0, time_for_reply => 3, max_fail_count => 3, msgid => 0, state => 'none' };
+    wdcon_test_timer_cb($hash->{helper}{wdcon});
+}
+
+## tcp keep-alive ##
+sub tka_send_cmd($) {
+	my ($hash) = @_;
+	main::Log3 ($hash->{NAME}, $dbll, "tronferno-mcu tka_send_cmd($hash)");
+	my $cmd = $hash->{helper}{tka}{cmd};
+	devio_write_line($hash, "$cmd;");
+}
+sub tka_timer_cb($) {
+    my ($tka_hash) = @_;
+    my $hash = $tka_hash->{hash};
+    main::Log3 ($hash->{NAME}, $dbll, "tronferno-mcu tka_timer_cb($hash)");
+    return unless main::ReadingsVal($hash->{NAME}, 'mcu.connection', '') eq 'tcp';
+    tka_send_cmd($hash);
+    main::InternalTimer( main::gettimeofday() + $tka_hash->{interval}, 'TronfernoMCU::tka_timer_cb', $tka_hash);	
+}
+sub tka_timer_init($) {
+	my ($hash) = @_;
+	my $interval = 60;
+	main::RemoveInternalTimer($hash->{helper}{tka}) if exists $hash->{helper}{tka};
+	$hash->{helper}{tka} = { hash => $hash, interval => $interval, cmd => 'keepalive' } unless exists $hash->{helper}{tka};
+    tka_timer_cb($hash->{helper}{tka});
 }
 
 ## DevIO ##
 sub devio_open_device($;$) {
     my ($hash, $reopen) = @_;
+    main::Log3 ($hash->{NAME}, $dbll, "tronferno-mcu devio_open_device(@_)");
     my $dn = $hash->{DeviceName} // 'undef';
     $reopen = $reopen // 0;
 
@@ -282,11 +316,12 @@ sub devio_openDev_init_cb($)
 {
     my ($hash) = @_;
     my $conn_type = $hash->{helper}{connection_type};
-    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_openDev_init_cb()");
+    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_openDev_init_cb(@_)");
     #devio_at_connect($hash);
     main::InternalTimer(main::gettimeofday() + 5, 'TronfernoMCU::devio_at_connect', $hash);
     devio_updateReading_connection($hash, $conn_type);
-    main::InternalTimer(main::gettimeofday() + 30, 'TronfernoMCU::wdcon_test_init', $hash) if $conn_type eq 'usb';
+    #main::InternalTimer(main::gettimeofday() + 30, 'TronfernoMCU::wdcon_test_init', $hash) if $conn_type eq 'usb'; #obsolete
+    main::InternalTimer(main::gettimeofday() + 30, 'TronfernoMCU::tka_timer_init', $hash) if $conn_type eq 'tcp';
     return undef;
 }
 
@@ -294,7 +329,7 @@ sub devio_openDev_cb($)
 {
     my ($hash, $error) = @_;
     my $name = $hash->{NAME};
-    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_openDev_cb()");
+    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_openDev_cb(@_)");
     main::Log3 ($name, 5, "TronfernoMCU ($name) - error while connecting: $error") if ($error);
     devio_updateReading_connection($hash, "error: $error") if ($error);
     return undef;
