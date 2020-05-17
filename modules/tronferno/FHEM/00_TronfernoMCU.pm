@@ -62,7 +62,7 @@ sub devio_openDev_init_cb($);
 sub devio_open_device($;$);
 sub devio_reopen_device($);
 sub devio_write_line($$);
-sub devio_updateReading_connection($$);
+sub devio_updateReading_connection($$;$);
 sub file_read_last_line($);
 sub file_slurp($$);
 sub fw_erase_flash($$);
@@ -157,7 +157,7 @@ sub tka_timer_cb($) {
     main::Log3 ($hash->{NAME}, $dbll, "tronferno-mcu tka_timer_cb($hash)");
     return unless main::ReadingsVal($hash->{NAME}, 'mcu.connection', '') eq 'tcp';
     tka_send_cmd($hash);
-    main::InternalTimer( main::gettimeofday() + $tka_hash->{interval}, 'TronfernoMCU::tka_timer_cb', $tka_hash);	
+    main::InternalTimer( main::gettimeofday() + $tka_hash->{interval}, 'TronfernoMCU::tka_timer_cb', $tka_hash);
 }
 sub tka_timer_init($) {
 	my ($hash) = @_;
@@ -170,21 +170,23 @@ sub tka_timer_init($) {
 ## DevIO ##
 sub devio_open_device($;$) {
     my ($hash, $reopen) = @_;
-    main::Log3 ($hash->{NAME}, $dbll, "tronferno-mcu devio_open_device(@_)");
-    my $dn = $hash->{DeviceName} // 'undef';
     $reopen = $reopen // 0;
 
+    main::Log3 ($hash->{NAME}, $dbll, "tronferno-mcu devio_open_device(@_)");
+    my $dn = $hash->{DeviceName} // 'undef';
+
     $hash->{helper}{reconnect_counter} = 0 unless $reopen;
+
     # open connection with custom init and error callback function (non-blocking connection establishment)
     main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_open_device() for ($dn) (reopen=$reopen)");
-    devio_updateReading_connection($hash, $reopen ? 'reopening' : 'opening');
+    devio_updateReading_connection($hash, $reopen ? 'reopening' : 'opening', $reopen); # XXX: no reading trigger because it would cause calling X_Ready without end (but why?)
     return main::DevIo_OpenDev($hash, $reopen, "TronfernoMCU::devio_openDev_init_cb", "TronfernoMCU::devio_openDev_cb");
 }
 sub devio_reopen_device($) {
     my ($hash) = @_;
     my $counter =  $hash->{helper}{reconnect_counter} // 0;
     $hash->{helper}{reconnect_counter} = $counter + 1;
-    devio_open_device($hash, 1);
+    return devio_open_device($hash, 1);
 }
 
 sub devio_close_device($) {
@@ -204,10 +206,10 @@ sub devio_get_serial_device_name($) {
     return $dev;
 }
 
-sub devio_updateReading_connection($$) {
-    my ($hash, $state) = @_;
+sub devio_updateReading_connection($$;$) {
+    my ($hash, $state, $no_trigger) = @_;
     my $rec_ct = $hash->{helper}{reconnect_counter} // 0;
-    my $do_trigger = $state ne 'reconnecting' || !($rec_ct % 10);
+    my $do_trigger = $no_trigger ? 0 : 1;
     main::readingsSingleUpdate($hash, 'mcu.connection', $state, $do_trigger);
 }
 
@@ -300,9 +302,19 @@ sub X_Undef($$)
 sub X_Ready($)
 {
     my ($hash) = @_;
-    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu X_Ready()");
-    return devio_reopen_device($hash);
+    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu X_Ready(@_)");
+
+    return devio_reopen_device($hash) if ( $hash->{STATE} eq "disconnected" );
+
+    # This is relevant for Windows/USB only
+    if(defined($hash->{USBDev})) {
+        my $po = $hash->{USBDev};
+        my ( $BlockingFlags, $InBytes, $OutBytes, $ErrorFlags ) = $po->status;
+        return ( $InBytes > 0 );
+    }
 }
+
+
 
 sub parse_handle_config($$) {
     my ($hash, $config) = @_;
@@ -403,7 +415,7 @@ sub X_Read($$)
             main::Dispatch($hash, $msg);
 
         } elsif ($line =~ /^tf: info: start: tronferno-mcu$/) {
-            devio_at_connect($hash);
+        	main::InternalTimer(main::gettimeofday() + 6, 'TronfernoMCU::devio_at_connect', $hash);
         } elsif ($line =~ /^tf:.* ipaddr:\s*([0-9.]*);$/) {
             main::readingsSingleUpdate($hash, 'mcu.ip4-address', $1, 1);
         }
