@@ -146,10 +146,10 @@ while(my($k, $v) = each %$mco) {
 
 ## tcp keep-alive ##
 sub tka_send_cmd($) {
-	my ($hash) = @_;
-	main::Log3 ($hash->{NAME}, $dbll, "tronferno-mcu tka_send_cmd($hash)");
-	my $cmd = $hash->{helper}{tka}{cmd};
-	devio_write_line($hash, "$cmd;");
+    my ($hash) = @_;
+    main::Log3 ($hash->{NAME}, $dbll, "tronferno-mcu tka_send_cmd($hash)");
+    my $cmd = $hash->{helper}{tka}{cmd};
+    devio_write_line($hash, "$cmd;");
 }
 sub tka_timer_cb($) {
     my ($tka_hash) = @_;
@@ -160,10 +160,10 @@ sub tka_timer_cb($) {
     main::InternalTimer( main::gettimeofday() + $tka_hash->{interval}, 'TronfernoMCU::tka_timer_cb', $tka_hash);
 }
 sub tka_timer_init($) {
-	my ($hash) = @_;
-	my $interval = 60;
-	main::RemoveInternalTimer($hash->{helper}{tka}) if exists $hash->{helper}{tka};
-	$hash->{helper}{tka} = { hash => $hash, interval => $interval, cmd => 'keepalive' } unless exists $hash->{helper}{tka};
+    my ($hash) = @_;
+    my $interval = 60;
+    main::RemoveInternalTimer($hash->{helper}{tka}) if exists $hash->{helper}{tka};
+    $hash->{helper}{tka} = { hash => $hash, interval => $interval, cmd => 'keepalive' } unless exists $hash->{helper}{tka};
     tka_timer_cb($hash->{helper}{tka});
 }
 
@@ -251,9 +251,9 @@ sub devio_write_line($$) {
 }
 
 sub creq_init($) {
-	my ($hash) = @_;
-	$hash->{helper}{commonRequests} = { cmds => []};
-	my $len = scalar (@{$hash->{helper}{commonRequests}{cmds}});
+    my ($hash) = @_;
+    $hash->{helper}{commonRequests} = { cmds => []};
+    my $len = scalar (@{$hash->{helper}{commonRequests}{cmds}});
 }
 
 ### Note: using defmod, X_Define can be called multiple times without any call to X_Undef
@@ -415,7 +415,7 @@ sub X_Read($$)
             main::Dispatch($hash, $msg);
 
         } elsif ($line =~ /^tf: info: start: tronferno-mcu$/) {
-        	main::InternalTimer(main::gettimeofday() + 6, 'TronfernoMCU::devio_at_connect', $hash);
+            main::InternalTimer(main::gettimeofday() + 6, 'TronfernoMCU::devio_at_connect', $hash);
         } elsif ($line =~ /^tf:.* ipaddr:\s*([0-9.]*);$/) {
             main::readingsSingleUpdate($hash, 'mcu.ip4-address', $1, 1);
         }
@@ -769,15 +769,15 @@ sub X_Set($$@) {
 }
 
 sub creq_timer_cb($) {
-	my ( $hash) = @_;
-	my $cmds = $hash->{helper}{commonRequests}{cmds};
-	my $len = scalar(@$cmds);
-	if ($len == 1) {
-	    devio_write_line($hash, $$cmds[0]);
-	} elsif ($len > 1) {
-		devio_write_line($hash, '{"cmd":{"p":"?"}};');
-	}
-	creq_init($hash);
+    my ( $hash) = @_;
+    my $cmds = $hash->{helper}{commonRequests}{cmds};
+    my $len = scalar(@$cmds);
+    if ($len == 1) {
+        devio_write_line($hash, $$cmds[0]);
+    } elsif ($len > 1) {
+        devio_write_line($hash, '{"cmd":{"p":"?"}};');
+    }
+    creq_init($hash);
 }
 
 sub X_Write ($$) {
