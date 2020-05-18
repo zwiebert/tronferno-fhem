@@ -502,7 +502,7 @@ sub fw_get_next_file_cb($$$) {
     if (!$err && open (my $fh, '>', $fwg->{dst_file})) {
         # save file
         binmode($fh);
-        print($fh, $data);
+        print $fh ($data);
         close ($fh);
         fw_get_next_file($hash);
     } else {
