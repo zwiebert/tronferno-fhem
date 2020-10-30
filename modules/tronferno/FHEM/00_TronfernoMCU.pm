@@ -113,6 +113,7 @@ my $mco = {
     MCFG_MQTT_PASSWORD => 'mqtt-password',
     MCFG_MQTT_USER => 'mqtt-user',
     MCFG_MQTT_URL => 'mqtt-url',
+    MCFG_MQTT_ID => 'mqtt-id',
     MCFG_MQTT_ENABLE => 'mqtt-enable',
     MCFG_HTTP_PASSWORD => 'http-password',
     MCFG_HTTP_USER => 'http-user',
@@ -939,7 +940,12 @@ sub TronfernoMCU_Initialize($) {
 
   <a name="mcc.mqtt-url"></a>
   <li>mcc.mqtt-url - URL of MQTT server to connect<br>
-    <code>set tfmcu mcc.mqtt-url "mqtt://192.168.1.42:7777"</code>
+    <code>set tfmcu mcc.mqtt-url "mqtt://192.168.1.42:1883"</code>
+    </li>
+
+    <a name="mcc.mqtt-id"></a>
+  <li>mcc.mqtt-id -  MQTT client ID<br>
+    <code>set tfmcu mcc.mqtt-id myRollo</code>
     </li>
 
   <a name="mcc.mqtt-user"></a>
@@ -1114,7 +1120,12 @@ sub TronfernoMCU_Initialize($) {
 
   <a name="mcc.mqtt-url"></a>
   <li>mcc.mqtt-url - URL des MQTT Brokers/Servers<br>
-    <code>set tfmcu mcc.mqtt-url "mqtt://192.168.1.42:7777"</code>
+    <code>set tfmcu mcc.mqtt-url "mqtt://192.168.1.42:1883"</code>
+    </li>
+
+    <a name="mcc.mqtt-id"></a>
+  <li>mcc.mqtt-id -  MQTT client ID<br>
+    <code>set tfmcu mcc.mqtt-id myRollo</code>
     </li>
 
   <a name="mcc.mqtt-user"></a>

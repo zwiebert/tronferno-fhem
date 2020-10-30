@@ -2,6 +2,8 @@
 # Add changes at the top of the list. Keep it in ASCII, and 80-char wide.
 # Do not insert empty lines here, update check depends on it.
 ################################################################################
+- 2020-10-30
+   -added   00_TronfernoMCU: Add MCU config option mcc.mqtt-id
 - 2020-05-02
    -added   00_TronfernoMCU: new config option mcc.network
    -added   10_Tronferno: new attribute pctInverse
