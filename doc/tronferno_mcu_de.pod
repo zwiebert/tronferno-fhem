@@ -130,7 +130,6 @@
 
   <a name="mcc.http-enable"></a>
   <li>mcc.http-enable - aktiviert den Webserver des MCs (Browseroberfläche)<br>
-    <small>(Nur ESP32)</small><br>
     <code>set tfmcu mcc.http-enable 1</code><br>
     <code>set tfmcu mcc.http-enable 0</code><br>
 
@@ -169,31 +168,6 @@
          Dateien werden kopiert nach /tmp/TronfernoMCU</li>
     </ul>
   </li>
-
-  <a name="mcu-firmware.esp8266"></a>
-  <li>mcu-firmware.esp8266<br>
-  Download der letzten MC firmware von GitHub(tronferno-mcu-bin) und Flashen
-    <ul>
-     <li>download<br>
-         Download Firmware und Flash-Programm.<br>
-         Dateien werden kopiert nach /tmp/TronfernoMCU<br>
-         Status ist sichtbar im Reading fw_get (run,done,error,timeout).</li>
-     <li>write-flash<br>
-         Flasht die Firmware über den USB Port definiert in diesem Gerät.<br>
-         Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
-         MCU: ESP8266/4MB/WLAN angeschlossen über USB.</li>
-     <li>upgrade<br>
-        Kombiniert download und flashen in einem Schritt.
-         </li>
-     <li>xxx.erase-flash<br>
-          Optional: Löschen des FLASH-ROM. Alles gespeicherten Daten auf dem MC gehen verloren!</br>
-         Benötigt: python, pyserial; <code>apt install python  python-serial</code></li>
-     <li>download-beta-version<br>
-         Download der letzten beta-firmware und Flash Programm.<br>
-         Dateien werden kopiert nach /tmp/TronfernoMCU</li>
-    </ul>
-  </li>
-
 
 </ul>
 

@@ -20,6 +20,7 @@ use warnings;
 use 5.14.0;
 
 package main;
+use vars qw(%defs);
 sub AssignIoPort($;$);
 sub AttrVal($$$);
 sub IOWrite($@);

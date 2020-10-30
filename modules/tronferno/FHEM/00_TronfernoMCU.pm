@@ -461,25 +461,25 @@ my $firmware;
         $fwe->{erase_flash_cmd} = 'python tools/esptool.py --port %s --chip esp32 erase_flash';
     }
 
-    {
-        my $fwe8 = {};
-        $fw->{'mcu-firmware.esp8266'} = $fwe8;
-
-
-        $fwe8->{args} = ':upgrade,download,write-flash,xxx.erase-flash,upgrade-beta-version,download-beta-version';
-        # FIXME: file list should better be fetched from server
-        $fwe8->{files} = ['firmware/esp8266/blank.bin',
-                          'firmware/esp8266/eagle.flash.bin',
-                          'firmware/esp8266/eagle.irom0text.bin',
-                          'firmware/esp8266/esp_init_data_default_v08.bin',
-                          'tools/esptool.py',
-                          'flash_esp8266.sh'];
-        $fwe8->{tgtdir} = '/tmp/TronfernoMCU/';
-        $fwe8->{uri} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/master/';
-        $fwe8->{uri_beta} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/beta/';
-        $fwe8->{write_flash_cmd} = '/bin/sh flash_esp8266.sh %s';
-        $fwe8->{erase_flash_cmd} = 'python tools/esptool.py --port %s --chip esp8266 erase_flash';
-    }
+#    {
+#        my $fwe8 = {};
+#        $fw->{'mcu-firmware.esp8266'} = $fwe8;
+#
+#
+#        $fwe8->{args} = ':upgrade,download,write-flash,xxx.erase-flash,upgrade-beta-version,download-beta-version';
+#        # FIXME: file list should better be fetched from server
+#        $fwe8->{files} = ['firmware/esp8266/blank.bin',
+#                          'firmware/esp8266/eagle.flash.bin',
+#                          'firmware/esp8266/eagle.irom0text.bin',
+#                          'firmware/esp8266/esp_init_data_default_v08.bin',
+#                          'tools/esptool.py',
+#                          'flash_esp8266.sh'];
+#        $fwe8->{tgtdir} = '/tmp/TronfernoMCU/';
+#        $fwe8->{uri} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/master/';
+#        $fwe8->{uri_beta} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/beta/';
+#        $fwe8->{write_flash_cmd} = '/bin/sh flash_esp8266.sh %s';
+#        $fwe8->{erase_flash_cmd} = 'python tools/esptool.py --port %s --chip esp8266 erase_flash';
+#    }
 }
 
 # append to X_Set() usage text
@@ -794,7 +794,6 @@ sub X_Write ($$) {
 }
 
 
-
 package main;
 
 sub TronfernoMCU_Initialize($) {
@@ -953,9 +952,9 @@ sub TronfernoMCU_Initialize($) {
     <code>set tfmcu mcc.mqtt-password myPassword</code>
     </li>
 
+
   <a name="mcc.http-enable"></a>
   <li>mcc.http-enable - enables/disables builtin webserver<br>
-    <small>(ESP32 only)</small><br>
     <code>set tfmcu mcc.http-enable 1</code><br>
     <code>set tfmcu mcc.http-enable 0</code><br>
     </li>
@@ -981,7 +980,7 @@ sub TronfernoMCU_Initialize($) {
      <li>write-flash<br>
          Writes downloaded firmware to serial port used in definition of this device.<br>
          Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Expected MCU: Plain ESP32 with 4MB flash. Edit the flash_esp32.sh command for different hardware.</li>
+         Expected MCU: ESP32 with 4MB flash. Edit the flash_esp32.sh command for different hardware.</li>
      <li>upgrade<br>
         Combines download and write-flash for convinience.
          </li>
@@ -995,30 +994,6 @@ sub TronfernoMCU_Initialize($) {
          Status is shown in reading fw_get (run,done,error,timeout).</li>
     </ul>
   </li>
-
-  <a name="mcu-firmware.esp8266"></a>
-  <li>mcu-firmware.esp8266<br>
-   Fetch and write latest MCU firmware from tronferno-mcu-bin github repository.
-    <ul>
-     <li>download<br>
-         Downloads firmware and flash-tool from github.<br>
-         Files can be found at /tmp/TronfernoMCU<br>
-         Status is shown in reading fw_get (run,done,error,timeout).</li>
-     <li>write-flash<br>
-         Writes downloaded firmware to serial port used in definition of this device.<br>
-         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Expected MCU: Plain ESP8266 with 4MB flash. Edit the flash_esp32.sh command for different hardware.</li>
-     <li>upgrade<br>
-        Combines download and write-flash for convinience.
-     <li>xxx.erase-flash<br>
-          Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
-         Required Tools: python, pyserial; <code>apt install python  python-serial</code></li>
-     <li>download-beta-version<br>
-         Downloads beta-firmware and flash-tool from github.<br>
-         Files can be found at /tmp/TronfernoMCU</li>
-    </ul>
-  </li>
-
 
 </ul>
 
@@ -1154,7 +1129,6 @@ sub TronfernoMCU_Initialize($) {
 
   <a name="mcc.http-enable"></a>
   <li>mcc.http-enable - aktiviert den Webserver des MCs (Browseroberfläche)<br>
-    <small>(Nur ESP32)</small><br>
     <code>set tfmcu mcc.http-enable 1</code><br>
     <code>set tfmcu mcc.http-enable 0</code><br>
 
@@ -1193,31 +1167,6 @@ sub TronfernoMCU_Initialize($) {
          Dateien werden kopiert nach /tmp/TronfernoMCU</li>
     </ul>
   </li>
-
-  <a name="mcu-firmware.esp8266"></a>
-  <li>mcu-firmware.esp8266<br>
-  Download der letzten MC firmware von GitHub(tronferno-mcu-bin) und Flashen
-    <ul>
-     <li>download<br>
-         Download Firmware und Flash-Programm.<br>
-         Dateien werden kopiert nach /tmp/TronfernoMCU<br>
-         Status ist sichtbar im Reading fw_get (run,done,error,timeout).</li>
-     <li>write-flash<br>
-         Flasht die Firmware über den USB Port definiert in diesem Gerät.<br>
-         Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
-         MCU: ESP8266/4MB/WLAN angeschlossen über USB.</li>
-     <li>upgrade<br>
-        Kombiniert download und flashen in einem Schritt.
-         </li>
-     <li>xxx.erase-flash<br>
-          Optional: Löschen des FLASH-ROM. Alles gespeicherten Daten auf dem MC gehen verloren!</br>
-         Benötigt: python, pyserial; <code>apt install python  python-serial</code></li>
-     <li>download-beta-version<br>
-         Download der letzten beta-firmware und Flash Programm.<br>
-         Dateien werden kopiert nach /tmp/TronfernoMCU</li>
-    </ul>
-  </li>
-
 
 </ul>
 
