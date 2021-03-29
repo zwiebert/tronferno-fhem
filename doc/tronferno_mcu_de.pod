@@ -150,8 +150,8 @@
     <code>set tfmcu mcc-http-password myPassword</code>
     </li>
 
-  <a name="mcu-firmware.esp32"></a>
-  <li>mcu-firmware.esp32<br>
+  <a name="mcu-firmware-esp32"></a>
+  <li>mcu-firmware-esp32<br>
    Download der letzten MC firmware von GitHub(tronferno-mcu-bin) und Flashen
     <ul>
      <li>download<br>

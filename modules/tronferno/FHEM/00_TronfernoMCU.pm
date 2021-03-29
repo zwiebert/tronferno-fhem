@@ -445,7 +445,7 @@ my $firmware;
 
     {
         my $fwe = {};
-        $fw->{'mcu-firmware.esp32'} = $fwe;
+        $fw->{'mcu-firmware-esp32'} = $fwe;
 
         $fwe->{args} = ':upgrade,download,write-flash,xxx.erase-flash,upgrade-beta-version,download-beta-version';
         # FIXME: file list should better be fetched from server
@@ -464,7 +464,7 @@ my $firmware;
 
 #    {
 #        my $fwe8 = {};
-#        $fw->{'mcu-firmware.esp8266'} = $fwe8;
+#        $fw->{'mcu-firmware-esp8266'} = $fwe8;
 #
 #
 #        $fwe8->{args} = ':upgrade,download,write-flash,xxx.erase-flash,upgrade-beta-version,download-beta-version';
@@ -754,8 +754,8 @@ sub X_Set($$@) {
         } elsif ($a1 eq 'xxx.erase-flash') {
             fw_erase_flash($hash, $firmware->{$cmd});
         }
-    } elsif($cmd eq 'mcu-firmware.esp8266') {
-    } elsif($cmd eq 'mcu-firmware.atmega328') {
+    } elsif($cmd eq 'mcu-firmware-esp8266') {
+    } elsif($cmd eq 'mcu-firmware-atmega328') {
     } elsif($cmd eq "statusRequest") {
         #devio_write_line($hash, "get_status\r\n");
     } elsif($cmd eq "on") {
@@ -974,8 +974,8 @@ sub TronfernoMCU_Initialize($) {
     <code>set tfmcu mcc-http-password myPassword</code>
     </li>
 
-  <a name="mcu-firmware.esp32"></a>
-  <li>mcu-firmware.esp32<br>
+  <a name="mcu-firmware-esp32"></a>
+  <li>mcu-firmware-esp32<br>
 
    Fetch and write latest MCU firmware from tronferno-mcu-bin github repository.
     <ul>
@@ -1154,8 +1154,8 @@ sub TronfernoMCU_Initialize($) {
     <code>set tfmcu mcc-http-password myPassword</code>
     </li>
 
-  <a name="mcu-firmware.esp32"></a>
-  <li>mcu-firmware.esp32<br>
+  <a name="mcu-firmware-esp32"></a>
+  <li>mcu-firmware-esp32<br>
    Download der letzten MC firmware von GitHub(tronferno-mcu-bin) und Flashen
     <ul>
      <li>download<br>

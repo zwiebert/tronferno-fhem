@@ -152,8 +152,8 @@
     <code>set tfmcu mcc-http-password myPassword</code>
     </li>
 
-  <a name="mcu-firmware.esp32"></a>
-  <li>mcu-firmware.esp32<br>
+  <a name="mcu-firmware-esp32"></a>
+  <li>mcu-firmware-esp32<br>
 
    Fetch and write latest MCU firmware from tronferno-mcu-bin github repository.
     <ul>
