@@ -28,15 +28,15 @@ sub Log3($$$);
 sub asyncOutput($$);
 sub gettimeofday();
 sub ReadingsVal($$$);
-sub readingsSingleUpdate($$$$);
-sub readingsSingleUpdate($$$$);
-sub Debug;
+sub readingsSingleUpdate($$$$;$);
+sub Debug($);
+
 
 sub TronfernoMCU_Initialize($);
 
 package JSON;
-sub to_json($);
-sub from_json($);
+sub to_json($@);
+sub from_json($@);
 
 package TronfernoMCU;
 
@@ -237,7 +237,7 @@ sub devio_openDev_cb($)
 {
     my ($hash, $error) = @_;
     my $name = $hash->{NAME};
-    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_openDev_cb(@_)");
+    main::Log3 ($hash->{NAME}, 5, "tronferno-mcu devio_openDev_cb()");
     main::Log3 ($name, 5, "TronfernoMCU ($name) - error while connecting: $error") if ($error);
     devio_updateReading_connection($hash, "error: $error") if ($error);
     return undef;
@@ -832,7 +832,7 @@ sub TronfernoMCU_Initialize($) {
  <li>Is able to download, flash (if connected to USB) and configure the MCU firmware</i>
 </ul>
 
-
+<a name="TronfernoMCUdefine"></a>
 <h4>Define</h4>
 
 <p>
@@ -864,10 +864,9 @@ sub TronfernoMCU_Initialize($) {
    <li>mcu.firmware.erase - status of erassing entire Flash-ROM: run,done,error,timeout</li>
 </ul>
 
-<a name="TronfernoMCUset"></a>
+<a name=TronfernoMCUset></a>
 <h4>Set</h4>
 <ul>
-
   <a name="mcc.all"></a>
   <li>mcc.all<br>
     Get all configuration data from MCU<br>

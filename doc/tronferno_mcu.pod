@@ -10,7 +10,7 @@
  <li>Is able to download, flash (if connected to USB) and configure the MCU firmware</i>
 </ul>
 
-
+<a name="TronfernoMCUdefine"></a>
 <h4>Define</h4>
 
 <p>
@@ -42,10 +42,9 @@
    <li>mcu.firmware.erase - status of erassing entire Flash-ROM: run,done,error,timeout</li>
 </ul>
 
-<a name="TronfernoMCUset"></a>
+<a name=TronfernoMCUset></a>
 <h4>Set</h4>
 <ul>
-
   <a name="mcc.all"></a>
   <li>mcc.all<br>
     Get all configuration data from MCU<br>

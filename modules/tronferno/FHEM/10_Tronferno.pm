@@ -29,14 +29,14 @@ sub ReadingsVal($$$);
 sub readingsBeginUpdate($);
 sub readingsBulkUpdateIfChanged($$$@);
 sub readingsEndUpdate($$);
-sub readingsSingleUpdate($$$$);
+sub readingsSingleUpdate($$$$;$);
 
 sub Tronferno_Initialize($);
 
 require JSON;
 package JSON;
-sub to_json($);
-sub from_json($);
+sub to_json($@);
+sub from_json($@);
 
 package Tronferno;
 sub X_Attr(@);
@@ -144,14 +144,14 @@ sub X_Define($$) {
                 unless (0 <= $m && $m <= 7);
         } elsif ($key eq 'iodev') {
             $iodev = $value;
-        } elsif ($key eq 'scan' || ($key eq 'input' && $value eq FDT_ALL)) {
+        } elsif ($key eq 'scan' || ($key eq 'input' && $fdt eq FDT_ALL)) {
             $is_iDev  = 1;
             $scan = 1;
             setDefaultInputDevice($hash);
             $hash->{helper}{inputKey}     = DEF_INPUT_DEVICE;
             $fdt = FDT_ALL;
             $type = 'scan';
-        } elsif ($key eq 'input' && $value ne FDT_ALL) {
+        } elsif ($key eq 'input' && $fdt ne FDT_ALL) {
             $is_iDev  = 1;
             $type = 'in';
             $fdt = $value;
@@ -831,7 +831,7 @@ sub Tronferno_Initialize($) {
 
 <i>Tronferno</i> is a logic FHEM module to control Fernotron shutters via radio frequency. To do this, it utilizes the <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a> micro controller firmware.is a logic FHEM module to control shutters and power plugs and receive commands from transmitters and sensors using Fernotron protocol. This requires the pyhsical TronfernoMCU module and the  <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a>  MCU firmware.
 
-
+<a name="Tronfernodefine"></a>
 <h4>Define</h4>
 
 <p>

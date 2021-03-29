@@ -33,7 +33,7 @@ sub AttrVal($$$);
 sub IOWrite($@);
 sub Log3($$$);
 sub ReadingsVal($$$);
-sub readingsSingleUpdate($$$$);
+sub readingsSingleUpdate($$$$;$);
 
 sub Fernotron_Initialize($);
 
