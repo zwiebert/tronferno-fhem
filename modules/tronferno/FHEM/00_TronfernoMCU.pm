@@ -98,7 +98,7 @@ my $FW_WRT_ID = 'mcu.firmware.write';
 my $FW_ERA_ID = 'mcu.firmware.erase';
 my $FW_GET_ID = 'mcu.firmware.fetch';
 
-my $mcfg_prefix = 'mcc.';
+my $mcfg_prefix = 'mcc-';
 my $mco = {
     MCFG_CU => 'cu',
     MCFG_RTC => 'rtc',
@@ -867,46 +867,46 @@ sub TronfernoMCU_Initialize($) {
 <a name=TronfernoMCUset></a>
 <h4>Set</h4>
 <ul>
-  <a name="mcc.all"></a>
-  <li>mcc.all<br>
+  <a name="mcc-all"></a>
+  <li>mcc-all<br>
     Get all configuration data from MCU<br>
-    <code>set tfmcu mcc.all ?</code><br></li>
+    <code>set tfmcu mcc-all ?</code><br></li>
 
-  <a name="mcc.baud"></a>
-  <li>mcc.baud<br>
+  <a name="mcc-baud"></a>
+  <li>mcc-baud<br>
     Baud rate of MCU's serial interface</li>
 
-  <a name="mcc.cu"></a>
-  <li>mcc.cu<br>
+  <a name="mcc-cu"></a>
+  <li>mcc-cu<br>
    Central-Unit ID used by the MCU (six digit hex number)</li>
 
 
-  <a name="mcc.latitude"></a>
-  <li>mcc.latitude<br>
+  <a name="mcc-latitude"></a>
+  <li>mcc-latitude<br>
    geographical coordinates are used to calculate civil dusk for astro-timer (decimal degree, e.g. 52.5)</li>
 
-  <a name="mcc.longitude"></a>
-  <li>mcc.longitude<br>
+  <a name="mcc-longitude"></a>
+  <li>mcc-longitude<br>
    geographical coordinates are used to calculate civil dusk for astro-timer (decimal degree, e.g. 13.4)</li>
 
-  <a name="mcc.restart"></a>
-  <li>mcc.restart<br>
+  <a name="mcc-restart"></a>
+  <li>mcc-restart<br>
     Retart the MCU.</li>
 
-  <a name="mcc.rtc"></a>
-  <li>mcc.rtc<br>
+  <a name="mcc-rtc"></a>
+  <li>mcc-rtc<br>
     Set MCU's internal real time clock by ISO date/time string (e.g. 1999-12-31T23:59:00). If possible, the MCU will use NTP instead.</li>
 
-  <a name="mcc.tz"></a>
-  <li>mcc.tz<br>
+  <a name="mcc-tz"></a>
+  <li>mcc-tz<br>
     Time-zone in POSIX (TZ) format</li>
 
-  <a name="mcc.verbose"></a>
-  <li>mcc.verbose<br>
+  <a name="mcc-verbose"></a>
+  <li>mcc-verbose<br>
     Verbosity level of MCU's diagnose output (0 .. 5)</li>
 
-  <a name="mcc.network"></a>
-  <li>mcc.network<br>
+  <a name="mcc-network"></a>
+  <li>mcc-network<br>
     Network to connect: none, ap, wlan, lan<br>
 <ul>
      <li>none: no networking</li>
@@ -917,61 +917,61 @@ sub TronfernoMCU_Initialize($) {
      <small>(MCU will be restarted after setting this option)</small><br>
 </li>
 
-  <a name="mcc.wlan-password"></a>
-  <li>mcc.wlan-passord<br>
+  <a name="mcc-wlan-password"></a>
+  <li>mcc-wlan-passord<br>
     Password used by MCU to connect to WLAN/WiFi<br>
     <small>(MCU will be restarted after setting this option)</small><br></li>
 
-  <a name="mcc.wlan-ssid"></a>
-  <li>mcc.wlan-ssid<br>
+  <a name="mcc-wlan-ssid"></a>
+  <li>mcc-wlan-ssid<br>
     WLAN/WiFi SSID to connect to<br>
     <small>(MCU will be restarted after setting this option)</small><br></li>
 
-  <a name="mcc.mqtt-enable"></a>
-  <li>mcc.mqtt-enable - enables/disables builtin MQTT client<br>
-    <code>set tfmcu mcc.mqtt-enable 1</code><br>
-    <code>set tfmcu mcc.mqtt-enable 0</code><br>
+  <a name="mcc-mqtt-enable"></a>
+  <li>mcc-mqtt-enable - enables/disables builtin MQTT client<br>
+    <code>set tfmcu mcc-mqtt-enable 1</code><br>
+    <code>set tfmcu mcc-mqtt-enable 0</code><br>
 <br>
     <code>attr MQTT2_tronferno42 setList cli tfmcu/cli $EVENT</code><br>
     <code>set MQTT2_tronferno42 cli send g=4 m=2 c=down</code><br>
 <br>
     </li>
 
-  <a name="mcc.mqtt-url"></a>
-  <li>mcc.mqtt-url - URL of MQTT server to connect<br>
-    <code>set tfmcu mcc.mqtt-url "mqtt://192.168.1.42:1883"</code>
+  <a name="mcc-mqtt-url"></a>
+  <li>mcc-mqtt-url - URL of MQTT server to connect<br>
+    <code>set tfmcu mcc-mqtt-url "mqtt://192.168.1.42:1883"</code>
     </li>
 
-    <a name="mcc.mqtt-id"></a>
-  <li>mcc.mqtt-id -  MQTT client ID<br>
-    <code>set tfmcu mcc.mqtt-id myRollo</code>
+    <a name="mcc-mqtt-id"></a>
+  <li>mcc-mqtt-id -  MQTT client ID<br>
+    <code>set tfmcu mcc-mqtt-id myRollo</code>
     </li>
 
-  <a name="mcc.mqtt-user"></a>
-  <li>mcc.mqtt-user - User name for MQTT server connection<br>
-    <code>set tfmcu mcc.mqtt-user myUserName</code>
+  <a name="mcc-mqtt-user"></a>
+  <li>mcc-mqtt-user - User name for MQTT server connection<br>
+    <code>set tfmcu mcc-mqtt-user myUserName</code>
     </li>
 
-  <a name="mcc.mqtt-password"></a>
-  <li>mcc.mqtt-password - Password for MQTT server connection<br>
-    <code>set tfmcu mcc.mqtt-password myPassword</code>
+  <a name="mcc-mqtt-password"></a>
+  <li>mcc-mqtt-password - Password for MQTT server connection<br>
+    <code>set tfmcu mcc-mqtt-password myPassword</code>
     </li>
 
 
-  <a name="mcc.http-enable"></a>
-  <li>mcc.http-enable - enables/disables builtin webserver<br>
-    <code>set tfmcu mcc.http-enable 1</code><br>
-    <code>set tfmcu mcc.http-enable 0</code><br>
+  <a name="mcc-http-enable"></a>
+  <li>mcc-http-enable - enables/disables builtin webserver<br>
+    <code>set tfmcu mcc-http-enable 1</code><br>
+    <code>set tfmcu mcc-http-enable 0</code><br>
     </li>
 
-  <a name="mcc.http-user"></a>
-  <li>mcc.http-user - set optional webserver login user name<br>
-    <code>set tfmcu mcc.http-user myUserName</code>
+  <a name="mcc-http-user"></a>
+  <li>mcc-http-user - set optional webserver login user name<br>
+    <code>set tfmcu mcc-http-user myUserName</code>
     </li>
 
-  <a name="mcc.http-password"></a>
-  <li>mcc.http-password - set optional webserver login password<br>
-    <code>set tfmcu mcc.http-password myPassword</code>
+  <a name="mcc-http-password"></a>
+  <li>mcc-http-password - set optional webserver login password<br>
+    <code>set tfmcu mcc-http-password myPassword</code>
     </li>
 
   <a name="mcu-firmware.esp32"></a>
@@ -1052,41 +1052,41 @@ sub TronfernoMCU_Initialize($) {
 <h4>Set</h4>
 <ul>
 
-  <a name="mcc.all"></a>
-  <li>mcc.all<br>
+  <a name="mcc-all"></a>
+  <li>mcc-all<br>
     Lese die komplette Konfiguration aus dem Miktrocontroller aus<br>
-    <code>set tfmcu mcc.all ?</code><br></li>
+    <code>set tfmcu mcc-all ?</code><br></li>
 
-  <a name="mcc.cu"></a>
-  <li>mcc.cu<br>
+  <a name="mcc-cu"></a>
+  <li>mcc-cu<br>
    Programmierzentralen-ID (sechsstellige Hex Nummer im Batteriefach der 2411 Zentrale)</li>
 
-  <a name="mcc.latitude"></a>
-  <li>mcc.latitude<br>
+  <a name="mcc-latitude"></a>
+  <li>mcc-latitude<br>
    Breitengrad zum Berechnen der Dämmerung (Dezimal-Grad. z.B. 52.5)</li>
 
-  <a name="mcc.longitude"></a>
-  <li>mcc.longitude<br>
+  <a name="mcc-longitude"></a>
+  <li>mcc-longitude<br>
    Längengrad zum Berechnen der Dämmerung (Dezimal-Grad. z.B. 13.4)</li>
 
-  <a name="mcc.restart"></a>
-  <li>mcc.restart<br>
+  <a name="mcc-restart"></a>
+  <li>mcc-restart<br>
     Neustart des Controllers.</li>
 
-  <a name="mcc.rtc"></a>
-  <li>mcc.rtc<br>
+  <a name="mcc-rtc"></a>
+  <li>mcc-rtc<br>
     Setzen der Uhrzeit des Controllers mittels ISO Datum/Zeit (z.B. 2018-12-31T23:59:00), falls kein NTP möglich ist.</li>
 
-  <a name="mcc.tz"></a>
-  <li>mcc.tz<br>
+  <a name="mcc-tz"></a>
+  <li>mcc-tz<br>
     Zeit-Zone im POSIX (TZ) Format</li>
 
-  <a name="mcc.verbose"></a>
-  <li>mcc.verbose<br>
+  <a name="mcc-verbose"></a>
+  <li>mcc-verbose<br>
     Umfang der Diagnose Ausgaben des Controllers (0 .. 5)</li>
 
-  <a name="mcc.network"></a>
-  <li>mcc.network<br>
+  <a name="mcc-network"></a>
+  <li>mcc-network<br>
     Netzwerk zum Verbinden des Controllers: none, ap, wlan, lan<br>
     <ul>
       <li>none: Kein Netzwerk</li>
@@ -1096,62 +1096,62 @@ sub TronfernoMCU_Initialize($) {
     </ul>
     <small>(MC wird neugestartet nach setzen dieser Option)</small></li>
 
-  <a name="mcc.wlan-password"></a>
-  <li>mcc.wlan-password<br>
+  <a name="mcc-wlan-password"></a>
+  <li>mcc-wlan-password<br>
     Passwort zum Verbinden mit bestehendem WLAN Netz<br>
     <small>(MC wird neugestartet nach setzen dieser Option)</small></li>
 
 
-  <a name="mcc.wlan-ssid"></a>
-  <li>mcc.wlan-ssid<br>
+  <a name="mcc-wlan-ssid"></a>
+  <li>mcc-wlan-ssid<br>
     SSID es bestehenden WLAN Netzes<br>
     <small>(MC wird neugestartet nach setzen dieser Option)</small></li>
 
 
-  <a name="mcc.mqtt-enable"></a>
-  <li>mcc.mqtt-enable - aktiviere MQTT Klient des MCs<br>
-    <code>set tfmcu mcc.mqtt-enable 1</code><br>
-    <code>set tfmcu mcc.mqtt-enable 0</code><br>
+  <a name="mcc-mqtt-enable"></a>
+  <li>mcc-mqtt-enable - aktiviere MQTT Klient des MCs<br>
+    <code>set tfmcu mcc-mqtt-enable 1</code><br>
+    <code>set tfmcu mcc-mqtt-enable 0</code><br>
 <br>
     <code>attr MQTT2_tronferno42 setList cli tfmcu/cli $EVENT</code><br>
     <code>set MQTT2_tronferno42 cli send g=4 m=2 c=down</code><br>
     </li>
 
-  <a name="mcc.mqtt-url"></a>
-  <li>mcc.mqtt-url - URL des MQTT Brokers/Servers<br>
-    <code>set tfmcu mcc.mqtt-url "mqtt://192.168.1.42:1883"</code>
+  <a name="mcc-mqtt-url"></a>
+  <li>mcc-mqtt-url - URL des MQTT Brokers/Servers<br>
+    <code>set tfmcu mcc-mqtt-url "mqtt://192.168.1.42:1883"</code>
     </li>
 
-    <a name="mcc.mqtt-id"></a>
-  <li>mcc.mqtt-id -  MQTT client ID<br>
-    <code>set tfmcu mcc.mqtt-id myRollo</code>
+    <a name="mcc-mqtt-id"></a>
+  <li>mcc-mqtt-id -  MQTT client ID<br>
+    <code>set tfmcu mcc-mqtt-id myRollo</code>
     </li>
 
-  <a name="mcc.mqtt-user"></a>
-  <li>mcc.mqtt-user - Username für Login beim MQTT Server/Broker<br>
-    <code>set tfmcu mcc.mqtt-user myUserName</code>
+  <a name="mcc-mqtt-user"></a>
+  <li>mcc-mqtt-user - Username für Login beim MQTT Server/Broker<br>
+    <code>set tfmcu mcc-mqtt-user myUserName</code>
     </li>
 
-  <a name="mcc.mqtt-password"></a>
-  <li>mcc.mqtt-password - Passwort für Login beim MQTT Server/Broker<br>
-    <code>set tfmcu mcc.mqtt-password myPassword</code>
+  <a name="mcc-mqtt-password"></a>
+  <li>mcc-mqtt-password - Passwort für Login beim MQTT Server/Broker<br>
+    <code>set tfmcu mcc-mqtt-password myPassword</code>
     </li>
 
-  <a name="mcc.http-enable"></a>
-  <li>mcc.http-enable - aktiviert den Webserver des MCs (Browseroberfläche)<br>
-    <code>set tfmcu mcc.http-enable 1</code><br>
-    <code>set tfmcu mcc.http-enable 0</code><br>
+  <a name="mcc-http-enable"></a>
+  <li>mcc-http-enable - aktiviert den Webserver des MCs (Browseroberfläche)<br>
+    <code>set tfmcu mcc-http-enable 1</code><br>
+    <code>set tfmcu mcc-http-enable 0</code><br>
 
     </li>
 
-  <a name="mcc.http-user"></a>
-  <li>mcc.http-user - Optionaler Webserver Benutzername zur Authentifizierung<br>
-    <code>set tfmcu mcc.http-user myUserName</code>
+  <a name="mcc-http-user"></a>
+  <li>mcc-http-user - Optionaler Webserver Benutzername zur Authentifizierung<br>
+    <code>set tfmcu mcc-http-user myUserName</code>
     </li>
 
-  <a name="mcc.http-password"></a>
-  <li>mcc.http-password -  Optionales Webserver Benutzerpasswort zur Authentifizierung<br>
-    <code>set tfmcu mcc.http-password myPassword</code>
+  <a name="mcc-http-password"></a>
+  <li>mcc-http-password -  Optionales Webserver Benutzerpasswort zur Authentifizierung<br>
+    <code>set tfmcu mcc-http-password myPassword</code>
     </li>
 
   <a name="mcu-firmware.esp32"></a>
