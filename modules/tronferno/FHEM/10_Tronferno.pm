@@ -348,6 +348,14 @@ sub req_build_shsObj($$) {
     $shs->{tag} = '?';
     return $out;
 }
+sub req_build_autoObj($$) {
+    my ($hash, $out) = @_;
+    my $auto = {};
+    $out->{auto} = $auto;
+    req_build_agmObj($hash, $auto);
+    $auto->{f} = 'ukI';
+    return $out;
+}
 sub req_build_pctObj($$) {
     my ($hash, $out) = @_;
     my $cmd = {};
@@ -364,8 +372,13 @@ sub req_tx_obj($$) {
 
 sub req_tx_mcuData($) {
     my ($hash) = @_;
+
     req_tx_obj($hash, req_build_pctObj($hash, {}));  # have PCT request separate to allow X_Fingerprint() to work
-    req_tx_obj($hash, req_build_shsObj($hash, {}));
+
+    my $obj = {};
+    req_build_shsObj($hash, $obj);
+    req_build_autoObj($hash, $obj);
+    req_tx_obj($hash, $obj);
 }
 
 sub mod_commands_of_set() { return keys %$map_send_cmds, keys %$map_pair_cmds; }

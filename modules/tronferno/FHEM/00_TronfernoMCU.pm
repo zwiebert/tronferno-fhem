@@ -34,6 +34,7 @@ sub Debug($);
 
 sub TronfernoMCU_Initialize($);
 
+require JSON;
 package JSON;
 sub to_json($@);
 sub from_json($@);
@@ -277,7 +278,6 @@ sub X_Define($$)
         $dev .= ":$mcu_port" if(index($dev, ':') < 0);
     }
 
-
     devio_close_device($hash);
     $hash->{DeviceName} = $dev;
     devio_open_device($hash);
@@ -386,15 +386,15 @@ sub X_Read($$)
             last;
         }
 
-        $line =~ tr/\r\n//d;
+         $line =~ tr/\r\n//d;
 
-        main::Log3 ($name, 4, "TronfernoMCU ($name) - received line: <$line>");
+         main::Log3 ($name, 4, "TronfernoMCU ($name) - received line: <$line>");
 
-
-        if ($line =~ /^([U]:position:\s*(.+));$/) {
-            next if $2 eq 'start' || $2 eq 'end';
-            my $msg =  "TFMCU#$1";
-            #main::Dispatch($hash, $msg);
+        if ($line =~ /^\{.*\}$/) {
+            my $json = parse_handle_json($hash, $&);
+            next unless ($json);
+            my $msg =  "TFMCU#JSON:$json";
+            main::Dispatch($hash, $msg);
 
         } elsif ($line =~ /^A:position: g=([1-7]) m=([0-7]) p=(\d+);$/) { # XXX: transitional code
             my $msg =  'TFMCU#JSON:{"pct":{"'. $1 . $2 . "\":$3}}";
@@ -409,16 +409,12 @@ sub X_Read($$)
             $msg .= ',"m":'.$6 if defined $6;
             $msg .=  '}}';
             main::Dispatch($hash, $msg);
-        } elsif ($line =~ /^(\{.*\})$/) {
-            my $json = parse_handle_json($hash, $1);
-            next unless ($json);
-            my $msg =  "TFMCU#JSON:$json";
-            main::Dispatch($hash, $msg);
-
         } elsif ($line =~ /^tf: info: start: tronferno-mcu$/) {
             main::InternalTimer(main::gettimeofday() + 6, 'TronfernoMCU::devio_at_connect', $hash);
         } elsif ($line =~ /^tf:.* ipaddr:\s*([0-9.]*);$/) {
             main::readingsSingleUpdate($hash, 'mcu.ip4-address', $1, 1);
+        } else {
+        	#main::Debug("no match for <$line>");
         }
     }
 
