@@ -1,0 +1,16 @@
+name: Verify controls_xxx.txt
+
+on: [push]
+
+jobs:
+  build:
+  
+    runs-on: ubuntu-latest
+     
+    steps:
+      - uses: actions/checkout@v1
+       
+      #Run perl5 script to verify file sizies in controls_xxx.txt files      
+      - name: verify controls_xxx.txt files
+        run: |
+          perl test/controls.pl
