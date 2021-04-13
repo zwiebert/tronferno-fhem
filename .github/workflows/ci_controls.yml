@@ -1,4 +1,4 @@
-name: Verify controls_xxx.txt
+name: Compile and Verify
 
 on: [push]
 
@@ -14,3 +14,17 @@ jobs:
       - name: verify controls_xxx.txt files
         run: |
           perl test/controls.pl
+          
+      #Compile
+      - name: compile 00_TronfernoMCU.pm
+        run:
+          make 00_TronfernoMCU.compile  
+      #Compile
+      - name: compile 10_Tronferno.pm
+        run:
+          make 10_Tronferno.compile
+      #Compile
+      - name: compile 10_Fernotron.pm
+        run:
+          make 10_Fernotron.compile
+          
