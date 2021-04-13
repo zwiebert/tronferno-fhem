@@ -390,8 +390,8 @@ sub X_Read($$)
 
          main::Log3 ($name, 4, "TronfernoMCU ($name) - received line: <$line>");
 
-        if ($line =~ /^\{.*\}$/) {
-            my $json = parse_handle_json($hash, $&);
+        if ($line =~ /^(\{.*\})$/) {
+            my $json = parse_handle_json($hash, $1);
             next unless ($json);
             my $msg =  "TFMCU#JSON:$json";
             main::Dispatch($hash, $msg);

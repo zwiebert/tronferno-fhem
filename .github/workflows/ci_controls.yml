@@ -10,6 +10,9 @@ jobs:
     steps:
       - uses: actions/checkout@v1
        
+      - name: install perl lint
+        run: sudo apt install libb-lint-perl
+        
       #Run perl5 script to verify file sizies in controls_xxx.txt files      
       - name: verify controls_xxx.txt files
         run: |
