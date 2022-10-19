@@ -160,10 +160,10 @@
   <li>random - Schalte Zufalls-Timer des Empfänger ein oder aus</li>
 
 <a name=rtc-sync></a>
-<li>rtc-sync - Sende Datum und Zeit zu Fernotron Empfänger</li>
+<li>rtc-sync - Sende Datum und Zeit zu Fernotron Empfänger oder Gruppe</li>
 
 <a name=daily></a>
-<li>daily - Programmiere Tages-Timer des Empfängers<br>
+<li>daily - Programmiere Tages-Timer des Fernotron Empfängers<br>
    Format: HHMMHHMM für auf/zu Timer. Benutze  '-' statt HHMM zum deaktivieren des auf oder zu Timers.<br>
    <ul>
     <li><code>set &lt;name&gt; daily off</code> deaktiviert Tagestimer</li>
@@ -173,7 +173,7 @@
 </li>
 
 <a name=weekly></a>
-<li>weekly - Programmiere Wochentimer des Empfängers<br>
+<li>weekly - Programmiere Wochentimer des Fernotron Empfängers<br>
    Format: Wie Tagestimer (HHMMHHMM) aber 7 mal hintereinander. Von Montag bis Sonntag. Ein '+' kopiert den Timer vom Vortag.<br>
    <ul>
      <li><code>set &lt;name&gt; weekly off</code> deaktiviert Wochentimer</li>

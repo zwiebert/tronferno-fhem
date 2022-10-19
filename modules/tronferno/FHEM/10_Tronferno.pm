@@ -98,6 +98,7 @@ use constant {
     ATTR_AUTOCREATE_OUT     => 'out',
     ATTR_AUTOCREATE_DEFAULT => 'default',
 };
+
 my $msb2fdt =
 { '10' => FDT_PLAIN, '20' => FDT_SUN, '80' => FDT_CENTRAL, '90' => FDT_RECV };
 
@@ -724,10 +725,11 @@ sub in_process_auto($$$$) {
 
     $timer->{daily} = 'off' unless $timer->{daily};
     $timer->{weekly} = 'off' unless $timer->{weekly};
-    $timer->{astro} = 'off' unless $timer->{astro};
+
 
     if ($timer->{f}) {
         my $flags = $timer->{f};
+        $timer->{astro} = 'off' unless  index($flags, 'A') >= 0;
         $timer->{'sun-auto'} = index($flags, 'S') >= 0 ? 'on' : 'off';
         $timer->{'random'}   = index($flags, 'R') >= 0 ? 'on' : 'off';
         $timer->{'manual'}   = index($flags, 'M') >= 0 ? 'on' : 'off';
@@ -899,7 +901,7 @@ sub Tronferno_Initialize($) {
   <li>Scan IDs of physical Fernotron controllers you own and copy their IDs in our FHEM output devices.  Use default Input device Fernotron_Scan to scan the ID first. Then use the ID to define your device. Here we have scanned the ID of our 2411 central resulting to 801234. Now define devices by using it
   </li>
 
-  <li>Define Fernotron devices using invented IDs (like 100001, 100002, ...). Then pair these devices by sending a STOP command from it while the physical Fernotron receiver/motor is in pairing-mode (aka set-mode).
+  <li>Define Fernotron transmitter using invented IDs (like 100001, 100002, ...). Then pair these devices by sending a STOP command from it while the physical Fernotron receiver/motor is in pairing-mode (aka set-mode).
   </li>
 
 <li> Receiver IDs to send directly to without pairing: RF controlled shutters may have a 5 digit code printed on or on a small cable sticker.
@@ -979,7 +981,7 @@ sub Tronferno_Initialize($) {
   <li>pct - set position in percent. 0 is down/closed. 100 is up/open.  (for alexa: 1% is stop, 2% is sun-down)</li>
 
   <a name=sun-auto></a>
-  <li>sun-auto - switch on/off sun-sensor commands of a Fernotron device. (if off, it ignores command sun-down)</li>
+  <li>sun-auto - switch on/off sun-sensor commands of a Fernotron receiver. (if off, it ignores command sun-down)</li>
 
    <a name=manual></a>
   <li>manual - switch on/off automatic shutter movement<br>
@@ -996,10 +998,10 @@ sub Tronferno_Initialize($) {
 <li>random - switch on/off the random timer of a Fernotron device</li>
 
 <a name=rtc-sync></a>
-<li>rtc-sync - send date and time to Fernotron receiver</li>
+<li>rtc-sync - send date and time to Fernotron receiver or group</li>
 
 <a name=daily></a>
-<li>daily - switch off or set the daily timer of a Fernotron device<br>
+<li>daily - switch off or set the daily timer of a Fernotron receiver<br>
    Format: HHMMHHMM for up/down timers. Use '-' instead HHMM to disable the up or down timer.<br>
    <ul>
     <li><code>set &lt;name&gt; daily off</code> disables daily-timer</li>
@@ -1009,7 +1011,7 @@ sub Tronferno_Initialize($) {
 </li>
 
 <a name=weekly></a>
-<li>weekly - switch off or set the weekly timer of a Fernotron device<br>
+<li>weekly - switch off or set the weekly timer of a Fernotron receiver<br>
    Format: like daily (HHMMHHMM) but seven times. Starts at Monday. A '+' can be used to copy the previous day.<br>
    <ul>
      <li><code>set &lt;name&gt; weeky off</code> disables weekly-timer</li>
@@ -1019,7 +1021,7 @@ sub Tronferno_Initialize($) {
 </li>
 
 <a name=astro></a>
-<li>astro - switch on/off or set the astro (civil dusk) timer of a Fernotron device<br>
+<li>astro - switch on/off or set the astro (civil dusk) timer of a Fernotron receiver<br>
     The shutter goes down at civil dusk or some minutes before or after if you provide a -/+ minute offset.<br>
     <ul>
       <li><code>set &lt;name&gt; astro off</code> disables astro-timer</li>
@@ -1217,10 +1219,10 @@ sub Tronferno_Initialize($) {
   <li>random - Schalte Zufalls-Timer des Empfänger ein oder aus</li>
 
 <a name=rtc-sync></a>
-<li>rtc-sync - Sende Datum und Zeit zu Fernotron Empfänger</li>
+<li>rtc-sync - Sende Datum und Zeit zu Fernotron Empfänger oder Gruppe</li>
 
 <a name=daily></a>
-<li>daily - Programmiere Tages-Timer des Empfängers<br>
+<li>daily - Programmiere Tages-Timer des Fernotron Empfängers<br>
    Format: HHMMHHMM für auf/zu Timer. Benutze  '-' statt HHMM zum deaktivieren des auf oder zu Timers.<br>
    <ul>
     <li><code>set &lt;name&gt; daily off</code> deaktiviert Tagestimer</li>
@@ -1230,7 +1232,7 @@ sub Tronferno_Initialize($) {
 </li>
 
 <a name=weekly></a>
-<li>weekly - Programmiere Wochentimer des Empfängers<br>
+<li>weekly - Programmiere Wochentimer des Fernotron Empfängers<br>
    Format: Wie Tagestimer (HHMMHHMM) aber 7 mal hintereinander. Von Montag bis Sonntag. Ein '+' kopiert den Timer vom Vortag.<br>
    <ul>
      <li><code>set &lt;name&gt; weekly off</code> deaktiviert Wochentimer</li>
