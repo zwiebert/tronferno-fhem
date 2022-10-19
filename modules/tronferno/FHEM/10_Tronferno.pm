@@ -440,6 +440,7 @@ sub X_Set($$@) {
             . ' sun-auto:on,off'
             . ' random:on,off'
             . ' astro:on,off,-60,-50,-30,-20,-10,+10,+20,+30,+40,+50,+60'
+            . ' rtc-sync:noArg'
             . ' daily'
             . ' weekly';
     } elsif (exists $map_send_cmds->{$cmd}) {
@@ -477,6 +478,9 @@ sub X_Set($$@) {
         $msg->{f} = $is_off ? 'kai' : 'kAi';
         $msg->{astro} = ($is_on  ? 0  : int($a1)) unless $is_off;
         return req_tx_msg($hash, req_build_timerMsg($hash, $msg));
+    } elsif ($cmd eq 'rtc-sync') {
+        return req_tx_msg($hash,
+            req_build_timerMsg($hash, {'rtc-only'=>1} ));
     } elsif ($cmd eq 'daily') {
         my $msg = {};
         $msg->{daily} = $is_off ? '--' : $a1; #TODO: check validity of of $a1
@@ -491,7 +495,7 @@ sub X_Set($$@) {
         return
             "unknown argument $cmd choose one of "
             . join(' ', mod_commands_of_set())
-            . ' position manual sun-auto random astro daily weekly';
+            . ' position manual sun-auto random astro rtc-sync daily weekly';
     }
 
     return undef;
@@ -991,6 +995,9 @@ sub Tronferno_Initialize($) {
 <a name=random></a>
 <li>random - switch on/off the random timer of a Fernotron device</li>
 
+<a name=rtc-sync></a>
+<li>rtc-sync - send date and time to Fernotron receiver</li>
+
 <a name=daily></a>
 <li>daily - switch off or set the daily timer of a Fernotron device<br>
    Format: HHMMHHMM for up/down timers. Use '-' instead HHMM to disable the up or down timer.<br>
@@ -1208,6 +1215,9 @@ sub Tronferno_Initialize($) {
 
   <a name=random></a>
   <li>random - Schalte Zufalls-Timer des Empfänger ein oder aus</li>
+
+<a name=rtc-sync></a>
+<li>rtc-sync - Sende Datum und Zeit zu Fernotron Empfänger</li>
 
 <a name=daily></a>
 <li>daily - Programmiere Tages-Timer des Empfängers<br>

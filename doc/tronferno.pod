@@ -153,6 +153,9 @@
 <a name=random></a>
 <li>random - switch on/off the random timer of a Fernotron device</li>
 
+<a name=rtc-sync></a>
+<li>rtc-sync - send date and time to Fernotron receiver</li>
+
 <a name=daily></a>
 <li>daily - switch off or set the daily timer of a Fernotron device<br>
    Format: HHMMHHMM for up/down timers. Use '-' instead HHMM to disable the up or down timer.<br>

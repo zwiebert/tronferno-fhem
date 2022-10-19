@@ -159,6 +159,9 @@
   <a name=random></a>
   <li>random - Schalte Zufalls-Timer des Empfänger ein oder aus</li>
 
+<a name=rtc-sync></a>
+<li>rtc-sync - Sende Datum und Zeit zu Fernotron Empfänger</li>
+
 <a name=daily></a>
 <li>daily - Programmiere Tages-Timer des Empfängers<br>
    Format: HHMMHHMM für auf/zu Timer. Benutze  '-' statt HHMM zum deaktivieren des auf oder zu Timers.<br>
