@@ -147,11 +147,11 @@
    <li><code>set &lt;name&gt; manual off</code></li>
   </ul>
 
-    <p><small>Note: This is a kludge. It reprograms the Fernotron device with empty timers and disables sun-auto. When 'manual' is switched off again, the timer data, which was stored inside the MCU will be reprogrammed.  Not sure why this is done this way by the original central 2411. There are Fernotron receivers with a button for manual-mode, but the RF controlled motors seems to have no manual flag?</small>
+    <p><small>Note: This is a kludge. It reprograms the Fernotron receiver with empty timers and disables sun-auto. When 'manual' is switched off again, the timer data, which was stored inside the MCU will be reprogrammed.  Not sure why this is done this way by the original central 2411. There are Fernotron receivers with a button for manual-mode, but the RF controlled motors seems to have no manual flag?</small>
 </li>
 
 <a name=random></a>
-<li>random - switch on/off the random timer of a Fernotron device</li>
+<li>random - delays daily and weekly timers (except dusk) randomly between 0 and 30 minutes.</li>
 
 <a name=rtc-sync></a>
 <li>rtc-sync - send date and time to Fernotron receiver or group</li>
@@ -170,7 +170,7 @@
 <li>weekly - switch off or set the weekly timer of a Fernotron receiver<br>
    Format: like daily (HHMMHHMM) but seven times. Starts at Monday. A '+' can be used to copy the previous day.<br>
    <ul>
-     <li><code>set &lt;name&gt; weeky off</code> disables weekly-timer</li>
+     <li><code>set &lt;name&gt; weekly off</code> disables weekly-timer</li>
      <li><code>set &lt;name&gt; weekly "0700-++++0900-+"</code>  up by weekly-timer at Mon-Fri=0700, Sat-Sun=0900</li>
      <li><code>set &lt;name&gt; weekly "0600-0530-+++1130-0800-"</code> up at Mon=0600, Tue-Fri=0530, Sat=1130, Sun=0800</li>
    </ul>

@@ -400,23 +400,18 @@ sub parse_handle_json($$) {
 		parse_handle_config($hash, $all->{$key});
 		delete($all->{$key});
 	} if exists $all->{config};
+
 	do {
 		my $key = 'mcu';
 		parse_handle_mcu($hash, $all->{$key});
 		delete($all->{$key});
 	} if exists $all->{mcu};
 
-	### XXX: Transitional code
-	### FIX wrong top level placement of autoGM objects ###
-	for my $key (%$all) {
-		if (rindex($key, 'auto', 0) == 0 && $key ne 'auto') {
-			$all->{auto} = {} unless exists $all->{auto};
-			$all->{auto}{$key} = $all->{$key};
-		}
-	}
 	delete $all->{shpref}
 	  if exists $all->{shpref} && !scalar(%{ $all->{shpref} });
 
+  delete $all->{log}; # drop any log messages
+  delete $all->{sc};  # drop any sc message
 	delete $all->{from};
 	return scalar(%$all) ? JSON::to_json($all) : '';
 }
@@ -458,24 +453,6 @@ sub X_Read($$) {
 			my $json = parse_handle_json($hash, $1);
 			next unless ($json);
 			my $msg = "TFMCU#JSON:$json";
-			main::Dispatch($hash, $msg);
-
-		} elsif ($line =~ /^A:position: g=([1-7]) m=([0-7]) p=(\d+);$/)
-		{    # XXX: transitional code
-			my $msg = 'TFMCU#JSON:{"pct":{"' . $1 . $2 . "\":$3}}";
-			main::Dispatch($hash, $msg);
-
-		} elsif ($line =~
-/^RC:type=(\w+) a=([0-9a-fA-F]{6})( g=([0-7]))?( m=([0-7]))? c=(\w+);$/
-		  )
-		{
-			my $msg = 'TFMCU#JSON:{"RC":{';
-			$msg .= '"type":"' . $1 . '"';
-			$msg .= ',"a":"' . $2 . '"';
-			$msg .= ',"c":"' . $7 . '"';
-			$msg .= ',"g":' . $4 if defined $4;
-			$msg .= ',"m":' . $6 if defined $6;
-			$msg .= '}}';
 			main::Dispatch($hash, $msg);
 		} elsif ($line =~ /^tf: info: start: tronferno-mcu$/) {
 			main::InternalTimer(main::gettimeofday() + 6,
@@ -628,7 +605,7 @@ sub fw_get_next_file($) {
 
 	# create destination directory
 	my $dst_dir = $base_dir . File::Basename::dirname($file); # compose dir path
-	File::Path::make_path($dst_dir, { mode => 0755 });        # create dir
+	File::Path::make_path($dst_dir, { mode => oct(755) });    # create dir
 
 	$fwg->{dst_file} = "$base_dir$file";
 	$param->{url}    = $fwg->{uri} . $file;

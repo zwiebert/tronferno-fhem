@@ -157,7 +157,7 @@
 </li>
 
   <a name=random></a>
-  <li>random - Schalte Zufalls-Timer des Empfänger ein oder aus</li>
+  <li>random - Verzögert Tages- und Wochen-Schaltzeiten (außer Dämmerung) um Zufallswert von 0 bis 30 Minuten</li>
 
 <a name=rtc-sync></a>
 <li>rtc-sync - Sende Datum und Zeit zu Fernotron Empfänger oder Gruppe</li>

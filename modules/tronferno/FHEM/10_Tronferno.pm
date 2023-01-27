@@ -248,8 +248,9 @@ sub pctTransform($$) {
 }
 sub pctReadingsUpdate($$) {
     my ($hash, $pct) = @_;
-    $debug and main::Log3($hash, $dbll, "Tronferno pctReadingsUpdate(@_)");
+    $debug and main::Log3($hash, $dbll, "Tronferno pctReadingsUpdate(@_) hash->NAME=" . $hash->{NAME});
     main::readingsSingleUpdate($hash, 'state', pctTransform($hash, $pct), 1);
+    #main::readingsSingleUpdate($hash, 'pct', pctTransform($hash, $pct), 1);
 }
 
 sub X_Undef($$) {
@@ -484,12 +485,12 @@ sub X_Set($$@) {
             req_build_timerMsg($hash, {'rtc-only'=>1} ));
     } elsif ($cmd eq 'daily') {
         my $msg = {};
-        $msg->{daily} = $is_off ? '--' : $a1; #TODO: check validity of of $a1
+        $msg->{daily} = $is_off ? '' : $a1; #TODO: check validity of of $a1
         $msg->{f} = $is_off ? 'kdi' : 'kDi';
         return req_tx_msg($hash, req_build_timerMsg($hash, $msg));
     } elsif ($cmd eq 'weekly') {
         my $msg = {};
-        $msg->{weekly} = $is_off ? '--++++++' : $a1; #TODO: check validity of of $a1
+        $msg->{weekly} = $is_off ? '' : $a1; #TODO: check validity of of $a1
         $msg->{f} = $is_off ? 'kwi' : 'kWi';
         return req_tx_msg($hash, req_build_timerMsg($hash, $msg));
     } else {
@@ -759,14 +760,14 @@ sub mod_parse_json($$) {
     return undef unless $obj; # XXX: log error message
     my $from = $obj->{from};
 
-    my $res_position = mod_dispatch_position_obj($io_hash, $obj->{position}) if exists $obj->{position};
-    my $res_pct = mod_dispatch_pct_obj($io_hash, $obj->{pct}) if exists $obj->{pct};
-    my $res_shs = mod_dispatch_shs_obj($io_hash, $obj->{shs}) if exists $obj->{shs};
-    my $res_reload = mod_reload_mcu_data($io_hash) if exists $obj->{reload};
-    my $res_auto = mod_dispatch_auto_obj($io_hash, $obj->{auto}) if exists $obj->{auto};
+    my $res_position = exists $obj->{position} ? mod_dispatch_position_obj($io_hash, $obj->{position}) : undef;
+    my $res_pct = exists $obj->{pct} ? mod_dispatch_pct_obj($io_hash, $obj->{pct}) : undef;
+    my $res_shs = exists $obj->{shs} ? mod_dispatch_shs_obj($io_hash, $obj->{shs}) : undef;
+    my $res_reload = exists $obj->{reload} ? mod_reload_mcu_data($io_hash) : undef;
+    my $res_auto = exists $obj->{auto} ? mod_dispatch_auto_obj($io_hash, $obj->{auto}) : undef;
 
 
-    return mod_dispatch_input_obj($io_hash, $obj->{RC}) if exists $obj->{RC};
+    return mod_dispatch_input_obj($io_hash, $obj->{rc}) if exists $obj->{rc};
 
     my $hash = $res_pct // $res_shs // $res_reload // $res_auto // $res_position;
     return $hash ? $hash->{NAME} : undef;
@@ -991,11 +992,11 @@ sub Tronferno_Initialize($) {
    <li><code>set &lt;name&gt; manual off</code></li>
   </ul>
 
-    <p><small>Note: This is a kludge. It reprograms the Fernotron device with empty timers and disables sun-auto. When 'manual' is switched off again, the timer data, which was stored inside the MCU will be reprogrammed.  Not sure why this is done this way by the original central 2411. There are Fernotron receivers with a button for manual-mode, but the RF controlled motors seems to have no manual flag?</small>
+    <p><small>Note: This is a kludge. It reprograms the Fernotron receiver with empty timers and disables sun-auto. When 'manual' is switched off again, the timer data, which was stored inside the MCU will be reprogrammed.  Not sure why this is done this way by the original central 2411. There are Fernotron receivers with a button for manual-mode, but the RF controlled motors seems to have no manual flag?</small>
 </li>
 
 <a name=random></a>
-<li>random - switch on/off the random timer of a Fernotron device</li>
+<li>random - delays daily and weekly timers (except dusk) randomly between 0 and 30 minutes.</li>
 
 <a name=rtc-sync></a>
 <li>rtc-sync - send date and time to Fernotron receiver or group</li>
@@ -1014,7 +1015,7 @@ sub Tronferno_Initialize($) {
 <li>weekly - switch off or set the weekly timer of a Fernotron receiver<br>
    Format: like daily (HHMMHHMM) but seven times. Starts at Monday. A '+' can be used to copy the previous day.<br>
    <ul>
-     <li><code>set &lt;name&gt; weeky off</code> disables weekly-timer</li>
+     <li><code>set &lt;name&gt; weekly off</code> disables weekly-timer</li>
      <li><code>set &lt;name&gt; weekly "0700-++++0900-+"</code>  up by weekly-timer at Mon-Fri=0700, Sat-Sun=0900</li>
      <li><code>set &lt;name&gt; weekly "0600-0530-+++1130-0800-"</code> up at Mon=0600, Tue-Fri=0530, Sat=1130, Sun=0800</li>
    </ul>
@@ -1216,7 +1217,7 @@ sub Tronferno_Initialize($) {
 </li>
 
   <a name=random></a>
-  <li>random - Schalte Zufalls-Timer des Empfänger ein oder aus</li>
+  <li>random - Verzögert Tages- und Wochen-Schaltzeiten (außer Dämmerung) um Zufallswert von 0 bis 30 Minuten</li>
 
 <a name=rtc-sync></a>
 <li>rtc-sync - Sende Datum und Zeit zu Fernotron Empfänger oder Gruppe</li>
