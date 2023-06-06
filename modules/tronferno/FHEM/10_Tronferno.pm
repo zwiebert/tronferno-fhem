@@ -250,7 +250,7 @@ sub pctReadingsUpdate($$) {
     my ($hash, $pct) = @_;
     $debug and main::Log3($hash, $dbll, "Tronferno pctReadingsUpdate(@_) hash->NAME=" . $hash->{NAME});
     main::readingsSingleUpdate($hash, 'state', pctTransform($hash, $pct), 1);
-    #main::readingsSingleUpdate($hash, 'pct', pctTransform($hash, $pct), 1);
+    main::readingsSingleUpdate($hash, 'pct', pctTransform($hash, $pct), 1);
 }
 
 sub X_Undef($$) {
@@ -436,7 +436,7 @@ sub X_Set($$@) {
         }
         return
             $res
-            . ' position:slider,0,5,100'
+            . ' state:slider,0,5,100'
             . ' pct:slider,0,5,100'
             . ' manual:on,off'
             . ' sun-auto:on,off'
