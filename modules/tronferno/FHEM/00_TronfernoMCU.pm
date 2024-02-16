@@ -1013,10 +1013,6 @@ sub TronfernoMCU_Initialize($) {
 		This needs python and pip on server and copies/installs files into /tmp/TronferoMCU/<br>
 		Readings: mcu.firmware.fetch, mcu.firmware.write: run,done,error,timeout.</li>
      <li>upgrade-beta-version<br>
-	    Upgrade auf letzte Beta Version</li>
-        Status is shown in reading fw_get (run,done,error,timeout).</li>
-         </li>
-     <li>upgrade-beta-version<br>
 	     Upgrade firmware to latest beta version<br>
     </li>
     </ul>
