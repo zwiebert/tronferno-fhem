@@ -2,6 +2,8 @@
 # Add changes at the top of the list. Keep it in ASCII, and 80-char wide.
 # Do not insert empty lines here, update check depends on it.
 ################################################################################
+  2023-06-07
+   -add    10_Tronferno:  Add pct reading (again).
   2023-01-27
    -remove  00_TronfernoMCU: no longer support older (non-JSON) message formats for: input, pct, ...
    -change  10_Tronferno: send empty strings to disable weekly and daily

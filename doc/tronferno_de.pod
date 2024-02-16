@@ -136,7 +136,7 @@
   <li>sun-inst - Speichere aktuelle Position als neue Sonnenposition</li>
 
   <a name=position></a>
-  <li>position - Bewege den Rollladen zur angegebenen Position in Prozent. (100% ist offen. Sprachsteuerung: 1% ist stop, 2% ist sun-down)</li>
+  <li>position - Veraltet: Bitte stattdessen 'pct' verwenden</li>
 
   <a name=pct></a>
   <li>pct - Bewege den Rollladen zur angegebenen Position in Prozent. (100% ist offen. Sprachsteuerung: 1% ist stop, 2% ist sun-down)</li>

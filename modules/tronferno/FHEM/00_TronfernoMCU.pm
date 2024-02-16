@@ -704,7 +704,7 @@ sub cb_async_system_cmd($) {
 	my ($hash)     = @_;
 	my $start_time = $hash->{helper}{sys_cmd}{start_time};
 	my $id         = $hash->{helper}{sys_cmd}{id};
-	my $timeout    = 45;                                     #FIXME: literal
+	my $timeout    = 70;                                     #FIXME: literal
 	my $cl         = $hash->{helper}{sys_cmd}{cl};
 	my $logstr     = "";
 

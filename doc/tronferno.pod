@@ -131,7 +131,7 @@
   <li>sun-inst - set the current position as sun position</li>
 
   <a name=position></a>
-  <li>position - set position in percent. 0 is down/closed. 100 is up/open.  (for alexa: 1% is stop, 2% is sun-down)</li>
+  <li>position - DEPRECATED: Use 'pct' instead</li>
 
   <a name=pct></a>
   <li>pct - set position in percent. 0 is down/closed. 100 is up/open.  (for alexa: 1% is stop, 2% is sun-down)</li>

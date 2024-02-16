@@ -436,8 +436,8 @@ sub X_Set($$@) {
         }
         return
             $res
-            . ' state:slider,0,5,100'
             . ' pct:slider,0,5,100'
+            . ' position:slider,0,5,100'
             . ' manual:on,off'
             . ' sun-auto:on,off'
             . ' random:on,off'
@@ -976,7 +976,7 @@ sub Tronferno_Initialize($) {
   <li>sun-inst - set the current position as sun position</li>
 
   <a name=position></a>
-  <li>position - set position in percent. 0 is down/closed. 100 is up/open.  (for alexa: 1% is stop, 2% is sun-down)</li>
+  <li>position - DEPRECATED: Use 'pct' instead</li>
 
   <a name=pct></a>
   <li>pct - set position in percent. 0 is down/closed. 100 is up/open.  (for alexa: 1% is stop, 2% is sun-down)</li>
@@ -1196,7 +1196,7 @@ sub Tronferno_Initialize($) {
   <li>sun-inst - Speichere aktuelle Position als neue Sonnenposition</li>
 
   <a name=position></a>
-  <li>position - Bewege den Rollladen zur angegebenen Position in Prozent. (100% ist offen. Sprachsteuerung: 1% ist stop, 2% ist sun-down)</li>
+  <li>position - Veraltet: Bitte stattdessen 'pct' verwenden</li>
 
   <a name=pct></a>
   <li>pct - Bewege den Rollladen zur angegebenen Position in Prozent. (100% ist offen. Sprachsteuerung: 1% ist stop, 2% ist sun-down)</li>
