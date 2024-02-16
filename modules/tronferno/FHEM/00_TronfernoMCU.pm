@@ -508,7 +508,7 @@ my $firmware;
 		$fw->{'mcu-firmware-esp32'} = $fwe;
 
 		$fwe->{args} =
-':upgrade,download,write-flash,upgrade-beta-version,download-beta-version';
+':upgrade,upgrade-beta-version';
 
 		# FIXME: file list should better be fetched from server
 		$fwe->{files} = [
@@ -775,17 +775,11 @@ sub X_Set($$@) {
 		mcu_config($hash, $mcof->{$cmd}, $a1) if defined($a1);
 	} elsif ($firmware->{$cmd}) {
 		sys_cmd_rm_log_internals($hash);
-		if ($a1 eq 'download') {
-			fw_get($hash, $firmware->{$cmd});
-		} elsif ($a1 eq 'download-beta-version') {
-			fw_get($hash, $firmware->{$cmd}, $firmware->{$cmd}{uri_beta});
-		} elsif ($a1 eq 'upgrade') {
+		if ($a1 eq 'upgrade') {
 			fw_get_and_write_flash($hash, $firmware->{$cmd}, 1);
 		} elsif ($a1 eq 'upgrade-beta-version') {
 			fw_get_and_write_flash($hash, $firmware->{$cmd}, 1,
 				$firmware->{$cmd}{uri_beta});
-		} elsif ($a1 eq 'write-flash') {
-			fw_write_flash($hash, $firmware->{$cmd});
 		}
 	} elsif ($cmd eq 'mcu-firmware-esp8266') {
 	} elsif ($cmd eq 'mcu-firmware-atmega328') {
@@ -1014,20 +1008,17 @@ sub TronfernoMCU_Initialize($) {
 
    Fetch and write latest MCU firmware from tronferno-mcu-bin github repository.
     <ul>
-     <li>download<br>
-         Downloads firmware and flash-tool from github.<br>
-         Files can be found at /tmp/TronfernoMCU</li>
-     <li>write-flash<br>
-         Writes downloaded firmware to serial port used in definition of this device.<br>
-         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Expected MCU: ESP32 with 4MB flash. Edit the flash_esp32.sh command for different hardware.</li>
      <li>upgrade<br>
-        Combines download and write-flash for convinience.
+        Upgrade firmware to latest stable version using USB<br>
+		This needs python and pip on server and copies/installs files into /tmp/TronferoMCU/<br>
+		Readings: mcu.firmware.fetch, mcu.firmware.write: run,done,error,timeout.</li>
+     <li>upgrade-beta-version<br>
+	    Upgrade auf letzte Beta Version</li>
+        Status is shown in reading fw_get (run,done,error,timeout).</li>
          </li>
-     <li>download-beta-version<br>
-         Downloads beta-firmware and flash-tool from github.<br>
-         Files can be found at /tmp/TronfernoMCU<br>
-         Status is shown in reading fw_get (run,done,error,timeout).</li>
+     <li>upgrade-beta-version<br>
+	     Upgrade firmware to latest beta version<br>
+    </li>
     </ul>
   </li>
 
@@ -1045,7 +1036,7 @@ sub TronfernoMCU_Initialize($) {
 <ul>
  <li>Implementiert das IODev benötigt von logischen Tronferno FHEM Geräten</li>
  <li>Benötigt MCU/RF-hardware/firmware: <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a></li>
- <li>Erlaubt download, flashen (über USB) und konfigurieren der MCU Firmware.</i>
+ <li>Erlaubt Firmware Upgrade (über USB) und konfigurieren der MCU Firmware.</i>
 </ul>
 
 <h4>Define</h4>
@@ -1188,19 +1179,12 @@ sub TronfernoMCU_Initialize($) {
   <li>mcu-firmware-esp32<br>
    Download der letzten MC firmware von GitHub(tronferno-mcu-bin) und Flashen
     <ul>
-     <li>download<br>
-         Download Firmware und Flash-Programm.<br>
-         Dateien werden kopiert nach /tmp/TronfernoMCU<br>
-         Status ist sichtbar im Reading fw_get (run,done,error,timeout).</li>
-     <li>write-flash<br>
-         Flasht die Firmware über den USB Port definiert in diesem Gerät.<br>
-         Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
-         MCU: ESP32/4MB/WLAN angeschlossen über USB.</li>
      <li>upgrade<br>
-        Kombiniert download und flashen in einem Schritt.</li>
-     <li>download-beta-version<br>
-         Download der letzten beta-firmware und Flash Programm.<br>
-         Dateien werden kopiert nach /tmp/TronfernoMCU</li>
+        Upgrade der Firmware auf die letzte stabile Version mittels USB<br>
+		Dies benötigt python und pip auf dem Servers und kopiert Dateien nach /tmp/TronfernoMCU<br>
+		Readings: mcu.firmware.fetch, mcu.firmware.write: run,done,error,timeout.</li>
+     <li>upgrade-beta-version<br>
+	    Upgrade auf letzte Beta Version</li>
     </ul>
   </li>
 

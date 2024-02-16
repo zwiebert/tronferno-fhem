@@ -3,7 +3,7 @@
 # Do not insert empty lines here, update check depends on it.
 ################################################################################
   2024-02-16
-   -remove  00_TronfernoMCU: option to erase flash has been removed
+   -remove  00_TronfernoMCU: some firmware options removed: flash, fetch, erase. Only upgrade remains
   2023-06-07
    -add    10_Tronferno:  Add pct reading (again).
   2023-01-27

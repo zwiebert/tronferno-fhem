@@ -10,7 +10,7 @@
 <ul>
  <li>Implementiert das IODev benötigt von logischen Tronferno FHEM Geräten</li>
  <li>Benötigt MCU/RF-hardware/firmware: <a href="https://github.com/zwiebert/tronferno-mcu">tronferno-mcu</a></li>
- <li>Erlaubt download, flashen (über USB) und konfigurieren der MCU Firmware.</i>
+ <li>Erlaubt Firmware Upgrade (über USB) und konfigurieren der MCU Firmware.</i>
 </ul>
 
 <h4>Define</h4>
@@ -153,19 +153,12 @@
   <li>mcu-firmware-esp32<br>
    Download der letzten MC firmware von GitHub(tronferno-mcu-bin) und Flashen
     <ul>
-     <li>download<br>
-         Download Firmware und Flash-Programm.<br>
-         Dateien werden kopiert nach /tmp/TronfernoMCU<br>
-         Status ist sichtbar im Reading fw_get (run,done,error,timeout).</li>
-     <li>write-flash<br>
-         Flasht die Firmware über den USB Port definiert in diesem Gerät.<br>
-         Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
-         MCU: ESP32/4MB/WLAN angeschlossen über USB.</li>
      <li>upgrade<br>
-        Kombiniert download und flashen in einem Schritt.</li>
-     <li>download-beta-version<br>
-         Download der letzten beta-firmware und Flash Programm.<br>
-         Dateien werden kopiert nach /tmp/TronfernoMCU</li>
+        Upgrade der Firmware auf die letzte stabile Version mittels USB<br>
+		Dies benötigt python und pip auf dem Servers und kopiert Dateien nach /tmp/TronfernoMCU<br>
+		Readings: mcu.firmware.fetch, mcu.firmware.write: run,done,error,timeout.</li>
+     <li>upgrade-beta-version<br>
+	    Upgrade auf letzte Beta Version</li>
     </ul>
   </li>
 

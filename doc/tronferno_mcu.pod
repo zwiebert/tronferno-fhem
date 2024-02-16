@@ -156,20 +156,17 @@
 
    Fetch and write latest MCU firmware from tronferno-mcu-bin github repository.
     <ul>
-     <li>download<br>
-         Downloads firmware and flash-tool from github.<br>
-         Files can be found at /tmp/TronfernoMCU</li>
-     <li>write-flash<br>
-         Writes downloaded firmware to serial port used in definition of this device.<br>
-         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Expected MCU: ESP32 with 4MB flash. Edit the flash_esp32.sh command for different hardware.</li>
      <li>upgrade<br>
-        Combines download and write-flash for convinience.
+        Upgrade firmware to latest stable version using USB<br>
+		This needs python and pip on server and copies/installs files into /tmp/TronferoMCU/<br>
+		Readings: mcu.firmware.fetch, mcu.firmware.write: run,done,error,timeout.</li>
+     <li>upgrade-beta-version<br>
+	    Upgrade auf letzte Beta Version</li>
+        Status is shown in reading fw_get (run,done,error,timeout).</li>
          </li>
-     <li>download-beta-version<br>
-         Downloads beta-firmware and flash-tool from github.<br>
-         Files can be found at /tmp/TronfernoMCU<br>
-         Status is shown in reading fw_get (run,done,error,timeout).</li>
+     <li>upgrade-beta-version<br>
+	     Upgrade firmware to latest beta version<br>
+    </li>
     </ul>
   </li>
 
