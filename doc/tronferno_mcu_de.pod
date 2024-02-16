@@ -41,7 +41,6 @@
    <li>mcu.connection - Status der Verbindung zu MC: closed, connecting, usb, tcp, reconnecting, error:MSG</li>
    <li>mcu.firmware.fetch - Status beim Download der Firmware: run,done,error,timeout</li>
    <li>mcu.firmware.write - Status beim Schreiben der Firmware: run,done,error,timeout</li>
-   <li>mcu.firmware.erase - Status beim Löschen des Flash-ROM: run,done,error,timeout</li>
 </ul>
 
 <a name="TronfernoMCUset"></a>
@@ -163,11 +162,7 @@
          Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
          MCU: ESP32/4MB/WLAN angeschlossen über USB.</li>
      <li>upgrade<br>
-        Kombiniert download und flashen in einem Schritt.
-         </li>
-     <li>xxx.erase-flash<br>
-          Optional: Löschen des FLASH-ROM. Alle gespeicherten Daten auf dem MC gehen verloren!</br>
-         Benötigt: python, pyserial; <code>apt install python  python-serial</code></li>
+        Kombiniert download und flashen in einem Schritt.</li>
      <li>download-beta-version<br>
          Download der letzten beta-firmware und Flash Programm.<br>
          Dateien werden kopiert nach /tmp/TronfernoMCU</li>

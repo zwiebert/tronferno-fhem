@@ -25,3 +25,6 @@ not_dirty:
 push: verify not_dirty
 	git push
 
+serve:
+	python -m http.server
+

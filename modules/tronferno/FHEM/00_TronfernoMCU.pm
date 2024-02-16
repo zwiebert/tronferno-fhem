@@ -66,7 +66,6 @@ sub devio_write_line($$);
 sub devio_updateReading_connection($$;$);
 sub file_read_last_line($);
 sub file_slurp($$);
-sub fw_erase_flash($$);
 sub fw_get($$;$);
 sub fw_get_and_write_flash($$;$$);
 sub fw_get_next_file($);
@@ -96,7 +95,6 @@ my $dbll = 6;
 my $mcu_port  = 7777;
 my $mcu_baud  = 115200;
 my $FW_WRT_ID = 'mcu.firmware.write';
-my $FW_ERA_ID = 'mcu.firmware.erase';
 my $FW_GET_ID = 'mcu.firmware.fetch';
 
 my $mcu_prefix  = 'mcu-';
@@ -510,7 +508,7 @@ my $firmware;
 		$fw->{'mcu-firmware-esp32'} = $fwe;
 
 		$fwe->{args} =
-':upgrade,download,write-flash,xxx.erase-flash,upgrade-beta-version,download-beta-version';
+':upgrade,download,write-flash,upgrade-beta-version,download-beta-version';
 
 		# FIXME: file list should better be fetched from server
 		$fwe->{files} = [
@@ -518,7 +516,6 @@ my $firmware;
 			'firmware/esp32/bootloader.bin',
 			'firmware/esp32/partitions.bin',
 			'firmware/esp32/ota_data_initial.bin',
-			'tools/esptool.py',
 			'flash_esp32.sh'
 		];
 		$fwe->{tgtdir} = '/tmp/TronfernoMCU/';
@@ -527,31 +524,8 @@ my $firmware;
 		$fwe->{uri_beta} =
 		  'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/beta/';
 		$fwe->{write_flash_cmd} = '/bin/sh flash_esp32.sh %s';
-		$fwe->{erase_flash_cmd} =
-		  'python tools/esptool.py --port %s --chip esp32 erase_flash';
 	}
-
-#    {
-#        my $fwe8 = {};
-#        $fw->{'mcu-firmware-esp8266'} = $fwe8;
-#
-#
-#        $fwe8->{args} = ':upgrade,download,write-flash,xxx.erase-flash,upgrade-beta-version,download-beta-version';
-#        # FIXME: file list should better be fetched from server
-#        $fwe8->{files} = ['firmware/esp8266/blank.bin',
-#                          'firmware/esp8266/eagle.flash.bin',
-#                          'firmware/esp8266/eagle.irom0text.bin',
-#                          'firmware/esp8266/esp_init_data_default_v08.bin',
-#                          'tools/esptool.py',
-#                          'flash_esp8266.sh'];
-#        $fwe8->{tgtdir} = '/tmp/TronfernoMCU/';
-#        $fwe8->{uri} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/master/';
-#        $fwe8->{uri_beta} = 'https://raw.githubusercontent.com/zwiebert/tronferno-mcu-bin/beta/';
-#        $fwe8->{write_flash_cmd} = '/bin/sh flash_esp8266.sh %s';
-#        $fwe8->{erase_flash_cmd} = 'python tools/esptool.py --port %s --chip esp8266 erase_flash';
-#    }
 }
-
 # append to X_Set() usage text
 while (my ($k, $v) = each %$firmware) {
 	$usage .= " $k" . $v->{args};
@@ -652,7 +626,6 @@ sub fw_get($$;$) {
 }
 
 my $write_flash_log = 'write_flash.txt';
-my $erase_flash_log = 'erase_flash.txt';
 my $tag_status      = 'status_';
 my $tag_succ        = $tag_status . '0';
 my $done_file       = 'done.txt';
@@ -691,7 +664,6 @@ sub sys_cmd_get_success($) {
 sub sys_cmd_rm_log_internals($) {
 	my ($hash) = @_;
 	delete($hash->{"$FW_WRT_ID.log"});
-	delete($hash->{"$FW_ERA_ID.log"});
 }
 
 sub sys_cmd_updateReading($$) {
@@ -704,7 +676,7 @@ sub cb_async_system_cmd($) {
 	my ($hash)     = @_;
 	my $start_time = $hash->{helper}{sys_cmd}{start_time};
 	my $id         = $hash->{helper}{sys_cmd}{id};
-	my $timeout    = 70;                                     #FIXME: literal
+	my $timeout    = 90;
 	my $cl         = $hash->{helper}{sys_cmd}{cl};
 	my $logstr     = "";
 
@@ -722,10 +694,6 @@ sub cb_async_system_cmd($) {
 			  if ($cl && $failed);
 		} elsif ($id eq $FW_WRT_ID) {
 			main::asyncOutput($cl, "write-flash command failed:\n\n" . $logstr)
-			  if ($cl && $failed);
-			devio_open_device($hash);
-		} elsif ($id eq $FW_ERA_ID) {
-			main::asyncOutput($cl, "erase-flash command failed:\n\n" . $logstr)
 			  if ($cl && $failed);
 			devio_open_device($hash);
 		}
@@ -791,18 +759,6 @@ sub fw_write_flash($$) {
 	return undef;
 }
 
-sub fw_erase_flash($$) {
-	my ($hash, $fw) = @_;
-	my $tgtdir  = $fw->{tgtdir};
-	my $log     = "$tgtdir$erase_flash_log";
-	my $ser_dev = devio_get_serial_device_name($hash);
-	return unless $ser_dev;
-	return unless $fw->{erase_flash_cmd};
-
-	my $sc = sprintf($fw->{erase_flash_cmd}, $ser_dev);
-	run_system_cmd($hash, $tgtdir, $log, $sc, $FW_ERA_ID, 1);
-}
-
 # called if set command is executed
 sub X_Set($$@) {
 	my ($hash, $name, $cmd, @args) = @_;
@@ -830,8 +786,6 @@ sub X_Set($$@) {
 				$firmware->{$cmd}{uri_beta});
 		} elsif ($a1 eq 'write-flash') {
 			fw_write_flash($hash, $firmware->{$cmd});
-		} elsif ($a1 eq 'xxx.erase-flash') {
-			fw_erase_flash($hash, $firmware->{$cmd});
 		}
 	} elsif ($cmd eq 'mcu-firmware-esp8266') {
 	} elsif ($cmd eq 'mcu-firmware-atmega328') {
@@ -943,7 +897,6 @@ sub TronfernoMCU_Initialize($) {
    <li>mcu.connection - State of connection to MCU: closed, connecting, usb, tcp, reconnecting, error:MSG</li>
    <li>mcu.firmware.fetch - status of downloading firmware: run,done,error,timeout</li>
    <li>mcu.firmware.write - status of writing firmware: run,done,error,timeout</li>
-   <li>mcu.firmware.erase - status of erassing entire Flash-ROM: run,done,error,timeout</li>
 </ul>
 
 <a name=TronfernoMCUset></a>
@@ -1071,10 +1024,6 @@ sub TronfernoMCU_Initialize($) {
      <li>upgrade<br>
         Combines download and write-flash for convinience.
          </li>
-     <li>xxx.erase-flash<br>
-          Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
-         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error in Internals.</li>
      <li>download-beta-version<br>
          Downloads beta-firmware and flash-tool from github.<br>
          Files can be found at /tmp/TronfernoMCU<br>
@@ -1127,7 +1076,6 @@ sub TronfernoMCU_Initialize($) {
    <li>mcu.connection - Status der Verbindung zu MC: closed, connecting, usb, tcp, reconnecting, error:MSG</li>
    <li>mcu.firmware.fetch - Status beim Download der Firmware: run,done,error,timeout</li>
    <li>mcu.firmware.write - Status beim Schreiben der Firmware: run,done,error,timeout</li>
-   <li>mcu.firmware.erase - Status beim Löschen des Flash-ROM: run,done,error,timeout</li>
 </ul>
 
 <a name="TronfernoMCUset"></a>
@@ -1249,11 +1197,7 @@ sub TronfernoMCU_Initialize($) {
          Benötigt: python, pyserial; <code>apt install python  python-serial</code><br>
          MCU: ESP32/4MB/WLAN angeschlossen über USB.</li>
      <li>upgrade<br>
-        Kombiniert download und flashen in einem Schritt.
-         </li>
-     <li>xxx.erase-flash<br>
-          Optional: Löschen des FLASH-ROM. Alle gespeicherten Daten auf dem MC gehen verloren!</br>
-         Benötigt: python, pyserial; <code>apt install python  python-serial</code></li>
+        Kombiniert download und flashen in einem Schritt.</li>
      <li>download-beta-version<br>
          Download der letzten beta-firmware und Flash Programm.<br>
          Dateien werden kopiert nach /tmp/TronfernoMCU</li>

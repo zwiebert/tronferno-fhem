@@ -39,7 +39,6 @@
    <li>mcu.connection - State of connection to MCU: closed, connecting, usb, tcp, reconnecting, error:MSG</li>
    <li>mcu.firmware.fetch - status of downloading firmware: run,done,error,timeout</li>
    <li>mcu.firmware.write - status of writing firmware: run,done,error,timeout</li>
-   <li>mcu.firmware.erase - status of erassing entire Flash-ROM: run,done,error,timeout</li>
 </ul>
 
 <a name=TronfernoMCUset></a>
@@ -167,10 +166,6 @@
      <li>upgrade<br>
         Combines download and write-flash for convinience.
          </li>
-     <li>xxx.erase-flash<br>
-          Optional Step before write-flash: Use downloaded tool to delete the MCU's flash memory content. All saved data in MCU will be lost.<br>
-         Required Tools: python, pyserial; <code>apt install python  python-serial</code><br>
-         Status is shown in reading fw_erase_flash (run,done,error,timeout). Shell output may be displayed at error in Internals.</li>
      <li>download-beta-version<br>
          Downloads beta-firmware and flash-tool from github.<br>
          Files can be found at /tmp/TronfernoMCU<br>
