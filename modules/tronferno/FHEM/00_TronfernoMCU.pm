@@ -14,38 +14,30 @@ use strict;
 use warnings;
 use 5.14.0;
 
-package main;
-sub DevIo_CloseDev($@);
-sub DevIo_IsOpen($);
-sub DevIo_OpenDev($$$;$);
-sub DevIo_SimpleRead($);
-sub DevIo_SimpleWrite($$$;$);
-sub Dispatch($$;$$);
-sub HttpUtils_NonblockingGet($);
-sub InternalTimer($$$;$);
-sub RemoveInternalTimer($;$);
-sub Log3($$$);
-sub asyncOutput($$);
-sub gettimeofday();
-sub ReadingsVal($$$);
-sub readingsSingleUpdate($$$$;$);
-sub Debug($);
-
-sub TronfernoMCU_Initialize($);
-
 require JSON;
-
-package JSON;
-sub to_json($@);
-sub from_json($@);
-
-package TronfernoMCU;
-
 require DevIo;
 require HttpUtils;
 require File::Path;
 require File::Basename;
 
+sub main::DevIo_CloseDev($@);
+sub main::DevIo_IsOpen($);
+sub main::DevIo_OpenDev($$$;$);
+sub main::DevIo_SimpleRead($);
+sub main::DevIo_SimpleWrite($$$;$);
+sub main::Dispatch($$;$$);
+sub main::HttpUtils_NonblockingGet($);
+sub main::InternalTimer($$$;$);
+sub main::RemoveInternalTimer($;$);
+sub main::Log3($$$);
+sub main::asyncOutput($$);
+sub main::gettimeofday();
+sub main::ReadingsVal($$$);
+sub main::readingsSingleUpdate($$$$;$);
+sub main::Debug($);
+sub main::TronfernoMCU_Initialize($);
+sub JSON::to_json($@);
+sub JSON::from_json($@);
 sub File::Path::make_path;
 
 sub X_Define($$);

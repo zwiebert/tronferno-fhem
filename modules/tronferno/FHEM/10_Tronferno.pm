@@ -14,31 +14,28 @@
 ## Related Hardware-Project: https://github.com/zwiebert/tronferno-mcu
 ################################################################################
 
+use vars qw(%defs);
+
 package Tronferno;
 use strict;
 use warnings;
 use 5.14.0;
 
-package main;
-use vars qw(%defs);
-sub AssignIoPort($;$);
-sub AttrVal($$$);
-sub IOWrite($@);
-sub Log3($$$);
-sub ReadingsVal($$$);
-sub readingsBeginUpdate($);
-sub readingsBulkUpdateIfChanged($$$@);
-sub readingsEndUpdate($$);
-sub readingsSingleUpdate($$$$;$);
-
-sub Tronferno_Initialize($);
-
 require JSON;
-package JSON;
-sub to_json($@);
-sub from_json($@);
 
-package Tronferno;
+sub main::AssignIoPort($;$);
+sub main::AttrVal($$$);
+sub main::IOWrite($@);
+sub main::Log3($$$);
+sub main::ReadingsVal($$$);
+sub main::readingsBeginUpdate($);
+sub main::readingsBulkUpdateIfChanged($$$@);
+sub main::readingsEndUpdate($$);
+sub main::readingsSingleUpdate($$$$;$);
+sub main::Tronferno_Initialize($);
+sub JSON::to_json($@);
+sub JSON::from_json($@);
+
 sub X_Attr(@);
 sub X_Define($$);
 sub X_Get($$$@);

@@ -27,16 +27,13 @@ use strict;
 use warnings;
 use 5.14.0;
 
-package main;
-sub AssignIoPort($;$);
-sub AttrVal($$$);
-sub IOWrite($@);
-sub Log3($$$);
-sub ReadingsVal($$$);
-sub readingsSingleUpdate($$$$;$);
-
-sub Fernotron_Initialize($);
-
+sub main::AssignIoPort($;$);
+sub main::AttrVal($$$);
+sub main::IOWrite($@);
+sub main::Log3($$$);
+sub main::ReadingsVal($$$);
+sub main::readingsSingleUpdate($$$$;$);
+sub main::Fernotron_Initialize($);
 
 package Fernotron::Protocol;
 sub FSB_GET_CMD($);
