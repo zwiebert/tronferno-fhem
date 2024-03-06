@@ -65,7 +65,6 @@ sub mod_getHash_by_Code($);
 sub mod_getHash_by_devName($);
 sub mod_getMatchingDevices($);
 sub mod_parse_json($$);
-sub mod_parse_timer($$);
 sub pctReadingsUpdate($$);
 sub pctTransform($$);
 sub req_build_agmObj($$);
@@ -775,8 +774,6 @@ sub X_Parse($$) {
     $debug and main::Log3($io_hash, $dbll, "Tronferno X_Parse($io_hash, $message)");
     my $name   = $io_hash->{NAME};
     my $result = undef;
-
-    return mod_parse_timer($io_hash, $1) if ($message =~ /^TFMCU#timer (.+)$/);
 
     return mod_parse_json($io_hash, $1) if ($message =~ /^TFMCU#JSON:(.+)$/);
 
