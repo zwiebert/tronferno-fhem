@@ -14,7 +14,7 @@
 	perl -cw -MO=Lint $< 2>&1 | grep -v 'Undefined subroutine'
  
 %.critic: %.pm
-	perlcritic --verbose 7 $<
+	perlcritic -3 --verbose 5 $<
 
 .PHONY: controls verify push not_dirty
 controls:

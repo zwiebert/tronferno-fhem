@@ -13,23 +13,6 @@
 ## Project: https://github.com/zwiebert/tronferno-fhem
 ## Related Hardware-Project: https://github.com/zwiebert/tronferno-mcu
 ################################################################################
-package main;
-use vars qw(%defs);
-
-sub main::AssignIoPort($;$);
-sub main::AttrVal($$$);
-sub main::IOWrite($@);
-sub main::Log3($$$);
-sub main::ReadingsVal($$$);
-sub main::readingsBeginUpdate($);
-sub main::readingsBulkUpdateIfChanged($$$@);
-sub main::readingsEndUpdate($$);
-sub main::readingsSingleUpdate($$$$;$);
-sub main::Tronferno_Initialize($);
-sub JSON::to_json($@);
-sub JSON::from_json($@);
-
-
 package Tronferno;
 use strict;
 use warnings;
@@ -37,9 +20,17 @@ use v5.20;
 use feature qw(signatures);
 no warnings qw(experimental::signatures);
 
-require JSON;
+use JSON;
+
+package main;
+use vars qw(%defs);
 
 
+use subs qw(AssignIoPort AttrVal IOWrite Log3 ReadingsVal 
+readingsBeginUpdate readingsBulkUpdateIfChanged 
+readingsEndUpdate readingsSingleUpdate Tronferno_Initialize);
+
+package Tronferno;
 
 use constant MODNAME => 'Tronferno';
 my $dbll = 0;
@@ -317,7 +308,7 @@ sub req_tx_mcuData($hash) {
 
 sub mod_commands_of_set() { return keys %$map_send_cmds, keys %$map_pair_cmds; }
 
-sub X_Set($hash, $name, $cmd, $a1) {
+sub X_Set($hash, $name, $cmd = undef, $a1 = "", @ign) {
     $debug and main::Log3($hash, $dbll, "Tronferno X_Set(@_)");
     my $is_on  = ($a1 // 0) eq 'on';
     my $is_off = ($a1 // 0) eq 'off';
@@ -434,7 +425,7 @@ sub X_Set($hash, $name, $cmd, $a1) {
     return undef;
 }
 
-sub X_Get($hash, $name, $opt, $a1, $a2, $a3) {
+sub X_Get($hash, $name, $opt = undef, $a1 = 0, $a2 = 0, $a3 = 0, @ign) {
     $debug and main::Log3($hash, $dbll, "Tronferno X_Get(@_)");
     my $result = undef;
 
@@ -689,15 +680,13 @@ sub X_Parse($io_hash, $message) {
     my $name   = $io_hash->{NAME};
     my $result = undef;
 
-    return mod_parse_timer($io_hash, $1) if ($message =~ /^TFMCU#timer (.+)$/);
-
     return mod_parse_json($io_hash, $1) if ($message =~ /^TFMCU#JSON:(.+)$/);
 
 
     return '';
 }
 
-sub X_Attr($cmd, $name, $attrName, $attrValue) {
+sub X_Attr($cmd, $name, $attrName, $attrValue, @ign) {
 
     # $cmd  - Vorgangsart - kann die Werte "del" (löschen) oder "set" (setzen) annehmen
     # $name - Gerätename

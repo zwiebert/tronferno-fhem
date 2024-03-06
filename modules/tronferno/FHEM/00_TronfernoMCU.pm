@@ -11,8 +11,24 @@
 #  \([$;@]+\)\s*\{\s*\n\s+my\s*(\(.+\))\s*=\s*@_;
 #  \1 {
 
+
+
+package TronfernoMCU;
+use strict;
+use warnings;
+use v5.20;
+use feature qw(signatures);
+no warnings qw(experimental::signatures);
+
 package main;
 
+require DevIo;
+require HttpUtils;
+use JSON;
+use File::Path;
+use File::Basename;
+
+=begin
 sub main::DevIo_CloseDev($@);
 sub main::DevIo_IsOpen($);
 sub main::DevIo_OpenDev($$$;$);
@@ -28,24 +44,18 @@ sub main::gettimeofday();
 sub main::ReadingsVal($$$);
 sub main::readingsSingleUpdate($$$$;$);
 sub main::Debug($);
-sub main::TronfernoMCU_Initialize($);
-sub JSON::to_json($@);
-sub JSON::from_json($@);
+=cut
+ 
+use subs qw(DevIo_CloseDev DevIo_IsOpen DevIo_OpenDev DevIo_SimpleRead DevIo_SimpleWrite
+Dispatch HttpUtils_NonblockingGet InternalTimer RemoveInternalTimer Log3
+asyncOutput gettimeofday ReadingsVal readingsSingleUpdate Debug);
+
+
 sub File::Path::make_path;
 
 package TronfernoMCU;
-use strict;
-use warnings;
-use v5.20;
-use feature qw(signatures);
-no warnings qw(experimental::signatures);
 
 
-require JSON;
-require DevIo;
-require HttpUtils;
-require File::Path;
-require File::Basename;
 
 
 
@@ -160,8 +170,7 @@ sub tka_timer_init($hash) {
 }
 
 ## DevIO ##
-sub devio_open_device($hash, $reopen) {
-	$reopen = $reopen // 0;
+sub devio_open_device($hash, $reopen = 0) {
 
 	main::Log3($hash->{NAME}, $dbll, "tronferno-mcu devio_open_device(@_)");
 	my $dn = $hash->{DeviceName} // 'undef';
@@ -204,7 +213,7 @@ sub devio_get_serial_device_name($hash) {
 	return $dev;
 }
 
-sub devio_updateReading_connection($hash, $state, $no_trigger) {
+sub devio_updateReading_connection($hash, $state, $no_trigger = 0) {
 	my $rec_ct     = $hash->{helper}{reconnect_counter} // 0;
 	my $do_trigger = $no_trigger ? 0 : 1;
 	main::readingsSingleUpdate($hash, 'mcu.connection', $state, $do_trigger);
@@ -358,7 +367,7 @@ sub parse_msg_to_json($msg) {
 }
 
 # called when data was received
-sub X_Read($hash, $data) {
+sub X_Read($hash, $data = undef) {
 	my $name = $hash->{NAME};
 
 	#main::Log3 ($hash->{NAME}, 5, "tronferno-mcu X_Read()");
@@ -518,7 +527,7 @@ sub fw_get_next_file($hash) {
 	main::HttpUtils_NonblockingGet($param);
 }
 
-sub fw_get_and_write_flash($hash, $fw, $write_flash, $uri) {
+sub fw_get_and_write_flash($hash, $fw, $write_flash = 0, $uri = "") {
 	$uri = $fw->{uri} unless $uri;
 	my $dst_base = $fw->{tgtdir};
 
@@ -550,7 +559,7 @@ sub fw_get_and_write_flash($hash, $fw, $write_flash, $uri) {
 	fw_get_next_file($hash);
 }
 
-sub fw_get($hash, $fw, $uri) {
+sub fw_get($hash, $fw, $uri = "") {
 	return fw_get_and_write_flash($hash, $fw, undef, $uri);
 }
 
@@ -682,8 +691,7 @@ sub fw_write_flash($hash, $fw) {
 }
 
 # called if set command is executed
-sub X_Set($hash, $name, $cmd, @args) {
-	my ($a1,   $a2,   $a3,  $a4)   = @args;
+sub X_Set($hash, $name, $cmd = undef, $a1 = "",   $a2 = "",   $a3 = "",  $a4 = "", @ign) {
 
 	return "\"set $name\" needs at least one argument" unless (defined($cmd));
 
