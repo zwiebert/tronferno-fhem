@@ -371,7 +371,7 @@ sub parse_handle_mcu($$) {
 	my ($hash, $mcu) = @_;
 	while (my ($key, $val) = each(%$mcu)) {
 		$hash->{"$mcu_prefix$key"} = $val;	
-		fetch_config_all($hash) if ($key == 'firmware'); # XXX
+		fetch_config_all($hash) if ($key eq 'firmware'); # XXX
 	}
 }
 
@@ -472,7 +472,7 @@ sub fetch_config_all($) {
 sub mcu_config($$$) {
 	my ($hash, $opt, $arg) = @_;
 
-	if ($opt == 'all' && $arg == '?') {
+	if ($opt eq 'all' && $arg eq '?') {
 		fetch_config_all($hash);
 		return;
 	}

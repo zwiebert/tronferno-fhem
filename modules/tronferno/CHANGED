@@ -2,6 +2,8 @@
 # Add changes at the top of the list. Keep it in ASCII, and 80-char wide.
 # Do not insert empty lines here, update check depends on it.
 ################################################################################
+  2024-04-12
+   -bugfix  00_TronfernoMCU: make set command work again for mcc- options 
   2024-02-16
    -remove  00_TronfernoMCU: some firmware options removed: flash, fetch, erase. Only upgrade remains
   2023-06-07
