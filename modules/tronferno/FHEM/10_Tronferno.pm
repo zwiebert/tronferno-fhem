@@ -308,7 +308,7 @@ sub req_tx_mcuData($hash) {
 
 sub mod_commands_of_set() { return keys %$map_send_cmds, keys %$map_pair_cmds; }
 
-sub X_Set($hash, $name, $cmd = undef, $a1 = "", @ign) {
+sub X_Set($hash, $name, $cmd = undef, $a1 = "", @) {
     $debug and main::Log3($hash, $dbll, "Tronferno X_Set(@_)");
     my $is_on  = ($a1 // 0) eq 'on';
     my $is_off = ($a1 // 0) eq 'off';
@@ -425,7 +425,7 @@ sub X_Set($hash, $name, $cmd = undef, $a1 = "", @ign) {
     return undef;
 }
 
-sub X_Get($hash, $name, $opt = undef, $a1 = 0, $a2 = 0, $a3 = 0, @ign) {
+sub X_Get($hash, $name, $opt = undef, $a1 = 0, $a2 = 0, $a3 = 0, @) {
     $debug and main::Log3($hash, $dbll, "Tronferno X_Get(@_)");
     my $result = undef;
 
@@ -686,7 +686,7 @@ sub X_Parse($io_hash, $message) {
     return '';
 }
 
-sub X_Attr($cmd, $name, $attrName, $attrValue, @ign) {
+sub X_Attr($cmd, $name, $attrName, $attrValue, @) {
 
     # $cmd  - Vorgangsart - kann die Werte "del" (löschen) oder "set" (setzen) annehmen
     # $name - Gerätename

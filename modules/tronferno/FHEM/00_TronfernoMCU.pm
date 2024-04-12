@@ -59,7 +59,7 @@ package TronfernoMCU;
 
 
 
-my $dbll = 6;
+my $dbll = 5;
 
 my $mcu_port  = 7777;
 my $mcu_baud  = 115200;
@@ -172,7 +172,7 @@ sub tka_timer_init($hash) {
 ## DevIO ##
 sub devio_open_device($hash, $reopen = 0) {
 
-	main::Log3($hash->{NAME}, $dbll, "tronferno-mcu devio_open_device(@_)");
+	main::Log3($hash->{NAME}, $dbll, "tronferno-mcu devio_open_device($hash, $reopen)");
 	my $dn = $hash->{DeviceName} // 'undef';
 
 	$hash->{helper}{reconnect_counter} = 0 unless $reopen;
@@ -263,6 +263,7 @@ sub creq_init($hash) {
 
 ### Note: using defmod, X_Define can be called multiple times without any call to X_Undef
 sub X_Define($hash, $def) {
+	main::Log3($hash->{NAME}, 5, "tronferno-mcu X_Define(@_)");
 	my @args = split("[ \t]+", $def);
 	my ($name, $mod_name, $dev) = @args;
 
@@ -293,7 +294,7 @@ sub X_Define($hash, $def) {
 # called when definition is undefined
 # (config reload, shutdown or delete of definition)
 sub X_Undef($hash, $name) {
-	main::Log3($hash->{NAME}, 5, "tronferno-mcu X_Undef()");
+	main::Log3($hash->{NAME}, 5, "tronferno-mcu X_Undef(@_)");
 
 	# close the connection
 	devio_close_device($hash);
@@ -328,7 +329,7 @@ sub parse_handle_config($hash, $config) {
 sub parse_handle_mcu($hash, $mcu) {
 	while (my ($key, $val) = each(%$mcu)) {
 		$hash->{"$mcu_prefix$key"} = $val;	
-		fetch_config_all($hash) if ($key == 'firmware'); # XXX
+		fetch_config_all($hash) if ($key eq 'firmware'); # XXX
 	}
 }
 
@@ -368,6 +369,7 @@ sub parse_msg_to_json($msg) {
 
 # called when data was received
 sub X_Read($hash, $data = undef) {
+	main::Log3($hash->{NAME}, $dbll, "tronferno-mcu X_Read($hash, $data)");
 	my $name = $hash->{NAME};
 
 	#main::Log3 ($hash->{NAME}, 5, "tronferno-mcu X_Read()");
@@ -414,7 +416,8 @@ sub X_Read($hash, $data = undef) {
 
 sub fetch_config_all($hash) {
 
-	if (firmware_version_compare($hash, [ 0, 11, 2, 30 ]) >= 0) {
+	if (firmware_version_compare($hash, [ 0, 11, 2, 30 ]) >= 0
+	&& firmware_version_compare($hash, [ 1, 12, 4, 4 ]) <= 0) {
 		devio_write_line($hash, $config_all_in_parts);
 	} else {
 		devio_write_line($hash, '{"config":{"all":"?"}};');
@@ -423,8 +426,8 @@ sub fetch_config_all($hash) {
 }
 
 sub mcu_config($hash, $opt, $arg) {
-
-	if ($opt == 'all' && $arg == '?') {
+	main::Log3($hash->{NAME}, $dbll, "troyynferno-mcu mcu_config($hash, $opt, $arg)");
+	if ($opt eq 'all' && $arg eq '?') {
 		fetch_config_all($hash);
 		return;
 	}
@@ -691,7 +694,8 @@ sub fw_write_flash($hash, $fw) {
 }
 
 # called if set command is executed
-sub X_Set($hash, $name, $cmd = undef, $a1 = "",   $a2 = "",   $a3 = "",  $a4 = "", @ign) {
+sub X_Set($hash, $name, $cmd = undef, $a1 = "",   $a2 = "",   $a3 = "",  $a4 = "", @) {
+	main::Log3($hash->{NAME}, $dbll, "tronferno-mcu X_Set($hash, $name, $cmd, $a1, $a2, $a3, $a4)");
 
 	return "\"set $name\" needs at least one argument" unless (defined($cmd));
 
@@ -740,6 +744,7 @@ sub creq_timer_cb($hash) {
 }
 
 sub X_Write ($hash, $addr, $msg) {
+	main::Log3($hash->{NAME}, $dbll, "tronferno-mcu X_Write($hash, $addr, $msg)");
 	if ($msg =~ /"p":"\?"/) {
 		my $cmds = $hash->{helper}{commonRequests}{cmds};
 		push(@$cmds, $msg);
