@@ -13,70 +13,23 @@
 ## Project: https://github.com/zwiebert/tronferno-fhem
 ## Related Hardware-Project: https://github.com/zwiebert/tronferno-mcu
 ################################################################################
-
-use vars qw(%defs);
-
 package Tronferno;
 use strict;
 use warnings;
-use 5.14.0;
+use v5.20;
+use feature qw(signatures);
+no warnings qw(experimental::signatures);
 
-require JSON;
+use JSON;
 
-sub main::AssignIoPort($;$);
-sub main::AttrVal($$$);
-sub main::IOWrite($@);
-sub main::Log3($$$);
-sub main::ReadingsVal($$$);
-sub main::readingsBeginUpdate($);
-sub main::readingsBulkUpdateIfChanged($$$@);
-sub main::readingsEndUpdate($$);
-sub main::readingsSingleUpdate($$$$;$);
-sub main::Tronferno_Initialize($);
-sub JSON::to_json($@);
-sub JSON::from_json($@);
+package main;
+use vars qw(%defs);
 
-sub X_Attr(@);
-sub X_Define($$);
-sub X_Get($$$@);
-sub X_Parse($$);
-sub X_Set($$@);
-sub X_Undef($$);
-sub defaultInputMakeReading($$$$$$);
-sub deleteHash($);
-sub mod_fdType_from_ferId($);
-sub mod_commands_of_set();
-sub inputMakeReading($$$$$$);
-sub io_getCode($$$$$);
-sub io_getDefaultInputDevice($);
-sub io_getHash($$$$$);
-sub mod_deleteHash_by_devName($);
-sub mod_dispatch_auto($$$$);
-sub mod_dispatch_input_obj($$);
-sub mod_dispatch_pct($$$$$);
-sub mod_dispatch_pct_obj($$);
-sub mod_dispatch_position_obj($$);
-sub mod_dispatch_shs($$$$);
-sub mod_dispatch_shs_auto($$);
-sub mod_dispatch_shs_obj($$);
-sub mod_forEachMatchingDevice($$);
-sub mod_getAllHashes();
-sub mod_getHash_by_Code($);
-sub mod_getHash_by_devName($);
-sub mod_getMatchingDevices($);
-sub mod_parse_json($$);
-sub pctReadingsUpdate($$);
-sub pctTransform($$);
-sub req_build_agmObj($$);
-sub req_build_cmd($$$);
-sub req_build_pctMsg($);
-sub req_build_pctObj($$);
-sub req_build_shsObj($$);
-sub req_build_timerMsg($$);
-sub req_tx_mcuData($);
-sub setHash($);
-sub req_tx_msg($$);
-sub req_tx_obj($$);
+use subs qw(AssignIoPort AttrVal IOWrite Log3 ReadingsVal 
+readingsBeginUpdate readingsBulkUpdateIfChanged 
+readingsEndUpdate readingsSingleUpdate Tronferno_Initialize);
+
+package Tronferno;
 
 use constant MODNAME => 'Tronferno';
 my $dbll = 0;
@@ -99,14 +52,12 @@ my $msb2fdt =
 { '10' => FDT_PLAIN, '20' => FDT_SUN, '80' => FDT_CENTRAL, '90' => FDT_RECV };
 
 
-sub mod_normalize_ad($) {
-    my ($ad) = @_;
+sub mod_normalize_ad($ad) {
     return '0' unless $ad;
     return $ad ? sprintf("%06x", hex($ad)) : '0';
 }
 
-sub X_Define($$) {
-    my ($hash, $def) = @_;
+sub X_Define($hash, $def) {
     my @args    = split("[ \t][ \t]*", $def);
     my $name    = $args[0] // '';
     my $address = $args[1] // '';
@@ -181,84 +132,69 @@ sub X_Define($$) {
 sub mod_getAllHashes() {
     return values(%{$main::modules{+MODNAME }{defptr}{all}});
 }
-sub mod_getHash_by_devName($) {
-    my ($devName) = @_;
+sub mod_getHash_by_devName($devName) {
     return $main::defs{$devName};
 }
-sub mod_getHash_by_Code($) {
-    my ($code) = @_;
+sub mod_getHash_by_Code($code) {
     return $main::modules{+MODNAME }{defptr}{all}{$code};
 }
-sub setHash($) {
-    my ($hash) = @_;
+sub setHash($hash) {
     my $key = $hash->{CODE};
     $main::modules{ +MODNAME }{defptr}{all} = {} unless exists $main::modules{ +MODNAME }{defptr}{all};
     $main::modules{ +MODNAME }{defptr}{all}->{$key} = $hash;
     $debug and main::Log3($hash, $dbll, "number of devices: " . scalar(%{$main::modules{+MODNAME }{defptr}{all}}));
 }
-sub deleteHash($) {
-    my ($hash) = @_;
+sub deleteHash($hash) {
     my $defptr = $main::modules{ +MODNAME }{defptr};
     my $key = $hash->{NAME};
     delete($defptr->{all}{$key});
 }
-sub mod_deleteHash_by_devName($) {
-    my ($devName) = @_;
+sub mod_deleteHash_by_devName($devName) {
     my $hash = mod_getHash_by_devName($devName);
     my $defptr = $main::modules{ +MODNAME }{defptr};
     delete($defptr->{all}{$devName});
 }
-sub io_getDefaultInputDevice($) {
-    my ($io_hash) = @_;
+sub io_getDefaultInputDevice($io_hash) {
     return $main::modules{ +MODNAME }{defptr}{ +DEF_INPUT_DEVICE };
 }
-sub setDefaultInputDevice($) {
-    my ($hash) = @_;
+sub setDefaultInputDevice($hash) {
     return $main::modules{ +MODNAME }{defptr}{ +DEF_INPUT_DEVICE };
 }
-sub io_getCode($$$$$) {
-    my ($io_hash, $ad, $g, $m, $type) = @_;
+sub io_getCode($io_hash, $ad, $g, $m, $type) {
     return $type eq 'scan' ?  "all:in" : "$io_hash->{NAME}:$ad:$g:$m:$type";
 }
-sub io_getHash($$$$$) {
-    my ($io_hash, $ad, $g, $m, $type) = @_;
-
+sub io_getHash($io_hash, $ad, $g, $m, $type) {
     my $hash = $main::modules{+MODNAME }{defptr}{all}{io_getCode($io_hash, $ad, $g, $m, $type)};
     return $hash if $hash;
     $hash =  $main::modules{+MODNAME }{defptr}{all}{io_getCode($io_hash, $io_hash->{'mcc.cu'}, $g, $m, $type)} if $type eq 'out' && !$ad && exists $io_hash->{'mcc.cu'};
     return $hash;
 
 }
-sub mod_fdType_from_ferId($) {
-    my ($a) = @_;
+sub mod_fdType_from_ferId($a) {
     my $msb = substr($a, 0, 2);
     my $fdt = $msb2fdt->{"$msb"};
     return $fdt;
 }
 
 
-sub pctTransform($$) {
-    my ($hash, $pct) = @_;
+sub pctTransform($hash, $pct) {
     return $pct if 0 == main::AttrVal($hash->{NAME}, 'pctInverse', 0);
     return 100 - $pct;
 }
-sub pctReadingsUpdate($$) {
-    my ($hash, $pct) = @_;
+sub pctReadingsUpdate($hash, $pct) {
     $debug and main::Log3($hash, $dbll, "Tronferno pctReadingsUpdate(@_) hash->NAME=" . $hash->{NAME});
     main::readingsSingleUpdate($hash, 'state', pctTransform($hash, $pct), 1);
     main::readingsSingleUpdate($hash, 'pct', pctTransform($hash, $pct), 1);
 }
 
-sub X_Undef($$) {
-    my ($hash, $name) = @_;
+sub X_Undef($hash, $name) {
     $debug and main::Log3($hash, $dbll, "Tronferno X_Undef(@_)");
 
     mod_deleteHash_by_devName($name);
     return undef;
 }
 
-sub req_tx_msg($$) {
-    my ($hash, $req) = @_;
+sub req_tx_msg($hash, $req) {
     my $io   = $hash->{IODev};
     my $name = $hash->{NAME};
 
@@ -269,8 +205,7 @@ sub req_tx_msg($$) {
     return undef;
 }
 
-sub req_build_cmd_obj($$$) {
-    my ($hash, $cmd, $c) = @_;
+sub req_build_cmd_obj($hash, $cmd, $c) {
     my $name = $hash->{NAME};
     my $msg = {};
 
@@ -287,8 +222,7 @@ sub req_build_cmd_obj($$$) {
     return $msg;
 }
 
-sub req_build_cmd($$$) {
-    my ($hash, $cmd, $c) = @_;
+sub req_build_cmd($hash, $cmd, $c) {
     my $name = $hash->{NAME};
 
     my $msg = req_build_cmd_obj($hash, $cmd, $c);
@@ -297,8 +231,7 @@ sub req_build_cmd($$$) {
     return $json . ';';
 }
 
-sub req_build_timerMsg($$) {
-    my ($hash, $opts) = @_;
+sub req_build_timerMsg($hash, $opts) {
     my $name = $hash->{NAME};
 
     req_build_agmObj($hash, $opts);
@@ -326,50 +259,43 @@ my $map_pair_cmds = {
     xxx_unpair => 'unpair',
 };
 
-sub req_build_pctMsg($) {
-    my ($hash) = @_;
+sub req_build_pctMsg($hash) {
     return req_build_cmd($hash, 'send', '?');
 }
 
-sub req_build_agmObj($$) {
-    my ($hash, $out) = @_;
+sub req_build_agmObj($hash, $out) {
     $out->{a} = $hash->{helper}{ferid_a} if $hash->{helper}{ferid_a};
     $out->{g} = $hash->{helper}{ferid_g} if $hash->{helper}{ferid_g};
     $out->{m} = $hash->{helper}{ferid_m} if $hash->{helper}{ferid_m};
     return $out;
 }
-sub req_build_shsObj($$) {
-    my ($hash, $out) = @_;
+sub req_build_shsObj($hash, $out) {
     my $shs = {};
     $out->{shpref} = $shs;
     req_build_agmObj($hash, $shs);
     $shs->{tag} = '?';
     return $out;
 }
-sub req_build_autoObj($$) {
-    my ($hash, $out) = @_;
+sub req_build_autoObj($hash, $out) {
     my $auto = {};
     $out->{auto} = $auto;
     req_build_agmObj($hash, $auto);
     $auto->{f} = 'ukI';
     return $out;
 }
-sub req_build_pctObj($$) {
-    my ($hash, $out) = @_;
+sub req_build_pctObj($hash, $out) {
     my $cmd = {};
     $out->{cmd} = $cmd;
     req_build_agmObj($hash, $cmd);
     $cmd->{p} = '?';
     return $out;
 }
-sub req_tx_obj($$) {
-    my ($hash, $out) = @_;
+sub req_tx_obj($hash, $out) {
     my $json = JSON::to_json($out);
     req_tx_msg($hash, $json . ';');
 }
 
-sub req_tx_mcuData($) {
-    my ($hash) = @_;
+sub req_tx_mcuData($hash) {
 
     req_tx_obj($hash, req_build_pctObj($hash, {}));  # have PCT request separate to allow X_Fingerprint() to work
 
@@ -381,8 +307,7 @@ sub req_tx_mcuData($) {
 
 sub mod_commands_of_set() { return keys %$map_send_cmds, keys %$map_pair_cmds; }
 
-sub X_Set($$@) {
-    my ($hash, $name, $cmd, $a1) = @_;
+sub X_Set($hash, $name, $cmd = undef, $a1 = "", @) {
     $debug and main::Log3($hash, $dbll, "Tronferno X_Set(@_)");
     my $is_on  = ($a1 // 0) eq 'on';
     my $is_off = ($a1 // 0) eq 'off';
@@ -499,8 +424,7 @@ sub X_Set($$@) {
     return undef;
 }
 
-sub X_Get($$$@) {
-    my ($hash, $name, $opt, $a1, $a2, $a3) = @_;
+sub X_Get($hash, $name, $opt = undef, $a1 = 0, $a2 = 0, $a3 = 0, @) {
     $debug and main::Log3($hash, $dbll, "Tronferno X_Get(@_)");
     my $result = undef;
 
@@ -527,22 +451,19 @@ sub X_Get($$$@) {
     return undef;
 }
 
-sub mod_dispatch_forEachHash_callSub($$) {
-    my ($hashes, $subRef) = @_;
+sub mod_dispatch_forEachHash_callSub($hashes, $subRef) {
     while (my ($key, $hash) = each(%$hashes)) {
         my @args = ($hash);
         $subRef->(@args);
     }
 }
 
-sub shsReadingsUpdate($$) {
-    my ($hash, $shsgm) = @_;
+sub shsReadingsUpdate($hash, $shsgm) {
     main::readingsSingleUpdate($hash, 'name', $shsgm->{'tag.NAME'}, 1)
         if exists($shsgm->{'tag.NAME'});
 }
 
-sub mod_forEachMatchingDevice($$) {
-    my ($args, $subRef) = @_;
+sub mod_forEachMatchingDevice($args, $subRef) {
 
     my @result = ();
     for my $hash (mod_getAllHashes()) {
@@ -559,26 +480,22 @@ sub mod_forEachMatchingDevice($$) {
     }
 }
 
-sub mod_getMatchingDevices($) {
-    my ($args) = @_;
+sub mod_getMatchingDevices($args) {
     my @result;
-    mod_forEachMatchingDevice($args, sub ($) {
-        my ($hash) = @_;
+    mod_forEachMatchingDevice($args, sub ($hash) {
         push(@result, $hash);
                               });
     return \@result;
 }
 
-sub mod_dispatch_auto($$$$) {
-    my ($io_hash, $g, $m, $autogm) = @_;
+sub mod_dispatch_auto($io_hash, $g, $m, $autogm) {
 
     my $hash = io_getHash($io_hash, 0, $g, $m, 'out');
     in_process_auto($hash, $g, $m, $autogm) if $hash;
     return $hash;
 }
 
-sub mod_dispatch_auto_obj($$) {
-    my ($io_hash, $auto) = @_;
+sub mod_dispatch_auto_obj($io_hash, $auto) {
     my $hash = undef;
     while (my ($key, $value) = each(%$auto)) {
         my $g = substr($key, 4, 1);
@@ -589,15 +506,13 @@ sub mod_dispatch_auto_obj($$) {
     return $hash;
 }
 
-sub mod_dispatch_shs($$$$) {
-    my ($io_hash, $g, $m, $shsgm) = @_;
+sub mod_dispatch_shs($io_hash, $g, $m, $shsgm) {
     my $hash = io_getHash($io_hash, 0, $g, $m, 'out');
     shsReadingsUpdate($hash, $shsgm) if $hash;
     return $hash;
 }
 
-sub mod_dispatch_shs_obj($$) {
-    my ($io_hash, $shs) = @_;
+sub mod_dispatch_shs_obj($io_hash, $shs) {
     my $hash = undef;
     while (my ($key, $value) = each(%$shs)) {
         my $g = substr($key, 3, 1);
@@ -608,8 +523,7 @@ sub mod_dispatch_shs_obj($$) {
     return $hash;
 }
 
-sub mod_dispatch_pct_obj($$) {
-    my ($io_hash, $pct) = @_;
+sub mod_dispatch_pct_obj($io_hash, $pct) {
     my $hash = undef;
     while (my ($key, $value) = each(%$pct)) {
         my $g = substr($key, 0, 1);
@@ -620,8 +534,7 @@ sub mod_dispatch_pct_obj($$) {
     return $hash;
 }
 
-sub mod_dispatch_pct($$$$$) {
-    my ($io_hash, $ad, $g, $m, $p) = @_;
+sub mod_dispatch_pct($io_hash, $ad, $g, $m, $p) {
 
     my $hash = io_getHash($io_hash, $ad, $g, $m, 'out');
     pctReadingsUpdate($hash, $p) if $hash;
@@ -629,8 +542,7 @@ sub mod_dispatch_pct($$$$$) {
     return $hash;
 }
 
-sub mod_dispatch_position_obj($$) {
-    my ($io_hash, $pos) = @_;
+sub mod_dispatch_position_obj($io_hash, $pos) {
     my $hash = undef;
     my $ad = $pos->{a} // 0;
     my $g = $pos->{g} // 0;
@@ -640,8 +552,7 @@ sub mod_dispatch_position_obj($$) {
 }
 
 # update Reading of default input device, if there was no matching input device
-sub inputMakeReading($$$$$$) {
-    my ($hash, $fdt, $ad, $g, $m, $c) = @_;
+sub inputMakeReading($hash, $fdt, $ad, $g, $m, $c) {
     my $inputType = $hash->{helper}{ferInputType};
     my $do_trigger = 1;
     my $state = undef;
@@ -666,8 +577,7 @@ sub inputMakeReading($$$$$$) {
     return 1;
 }
 # update Reading of default input device, if there was no matching input device
-sub defaultInputMakeReading($$$$$$) {
-    my ($hash, $fdt, $ad, $g, $m, $c) = @_;
+sub defaultInputMakeReading($hash, $fdt, $ad, $g, $m, $c) {
 
     my $kind = $fdt;
 
@@ -687,8 +597,7 @@ sub defaultInputMakeReading($$$$$$) {
     return 1;
 }
 
-sub mod_dispatch_input_obj($$) {
-    my ($io_hash, $obj) = @_;
+sub mod_dispatch_input_obj($io_hash, $obj) {
     my $name = $io_hash->{NAME};
     my $result = 'UNDEFINED Tronferno_Scan Tronferno scan';
 
@@ -715,8 +624,7 @@ sub mod_dispatch_input_obj($$) {
     return $result;
 }
 
-sub in_process_auto($$$$) {
-    my ($hash, $g, $m, $timer) = @_;
+sub in_process_auto($hash, $g, $m, $timer) {
     my $result       = undef;
     my $timer_string = '';
 
@@ -740,18 +648,15 @@ sub in_process_auto($$$$) {
     main::readingsEndUpdate($hash, 1);
 }
 
-sub mod_reload_mcu_data($) {
-    my ($io_hash) = @_;
+sub mod_reload_mcu_data($io_hash) {
     my $result = undef;
-    mod_forEachMatchingDevice({ IODev => $io_hash }, sub ($) {
-        my ($hash) = @_;
+    mod_forEachMatchingDevice({ IODev => $io_hash }, sub ($hash) {
         req_tx_mcuData($hash);
         $result = $hash;
                               });
     return $result;
 }
-sub mod_parse_json($$) {
-    my ($io_hash, $json) = @_;
+sub mod_parse_json($io_hash, $json) {
     my $obj  = eval { JSON::from_json($json) };
     return undef unless $obj; # XXX: log error message
     my $from = $obj->{from};
@@ -769,8 +674,7 @@ sub mod_parse_json($$) {
     return $hash ? $hash->{NAME} : undef;
 }
 
-sub X_Parse($$) {
-    my ($io_hash, $message) = @_;
+sub X_Parse($io_hash, $message) {
     $debug and main::Log3($io_hash, $dbll, "Tronferno X_Parse($io_hash, $message)");
     my $name   = $io_hash->{NAME};
     my $result = undef;
@@ -781,8 +685,7 @@ sub X_Parse($$) {
     return '';
 }
 
-sub X_Attr(@) {
-    my ($cmd, $name, $attrName, $attrValue) = @_;
+sub X_Attr($cmd, $name, $attrName, $attrValue, @) {
 
     # $cmd  - Vorgangsart - kann die Werte "del" (löschen) oder "set" (setzen) annehmen
     # $name - Gerätename
@@ -805,8 +708,7 @@ sub X_Attr(@) {
     return undef;
 }
 
-sub X_Fingerprint($$) {
-    my ( $io_name, $msg ) = @_;
+sub X_Fingerprint( $io_name, $msg ) {
     $debug and main::Log3(mod_getHash_by_devName($io_name), $dbll, "Tronferno X_Fingerprint(@_)");
     #return ($io_name, undef) if $msg eq 'TFMCU#JSON:{"reload":1}';
     return ('', 'xxx'.$msg); # CheckDuplicate will be called twice. If $msg is unchanged, ParseFn will never be called (XXX: is this a bug in fhem.pl?)

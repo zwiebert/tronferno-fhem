@@ -7,16 +7,6 @@
 ##  - to recveive commands from Fernotron controllers
 ##
 ## Fernotron is a legacy unidirectional 434MHz protocol for shutters and lights
-##
-################################################################################
-## *experimentelles* FHEM Modul für Fernotron Geräte
-##
-##  - Datei: /opt/fhem/FHEM/10_Fernotron.pm
-##  - braucht IODev SIGNALduino v3.3.3
-##  - zum Senden von Kommandos an Fernotron-Geräte
-##  - zum Empfangen von Kommandos von Fernotron-Sendern
-##
-##
 ################################################################################
 ## Author: Bert Winkelmann <tf.zwiebert@online.de>
 ## Project: https://github.com/zwiebert/tronferno-fhem
@@ -25,72 +15,12 @@
 package Fernotron::fhem;
 use strict;
 use warnings;
-use 5.14.0;
+use v5.20;
+use feature qw(signatures);
+no warnings qw(experimental::signatures);
 
-sub main::AssignIoPort($;$);
-sub main::AttrVal($$$);
-sub main::IOWrite($@);
-sub main::Log3($$$);
-sub main::ReadingsVal($$$);
-sub main::readingsSingleUpdate($$$$;$);
-sub main::Fernotron_Initialize($);
-
-package Fernotron::Protocol;
-sub FSB_GET_CMD($);
-sub FSB_GET_DEVID($);
-sub FSB_GET_GRP($);
-sub FSB_GET_MEMB($);
-sub FSB_GET_TGL($);
-sub FSB_MODEL_IS_CENTRAL($);
-sub FSB_MODEL_IS_INVALID($); # assumes that low nibble is zero in any device  (not sure if this is true)
-sub FSB_MODEL_IS_RECEIVER($);
-sub FSB_MODEL_IS_STANDARD($);
-sub FSB_MODEL_IS_SUNSENS($);
-sub FSB_PUT_CMD($$);
-sub FSB_PUT_GRP($$);
-sub FSB_PUT_MEMB($$);
-sub FSB_PUT_TGL($$);
-sub dbprint($);
-sub fer_bitMsg_split($);
-sub fer_bits_from_word($);
-sub fer_checkSum_from_msgBytes($$);
-sub fer_cmdName_from_cmdNumber($);
-sub fer_cmdNumbers();
-sub fer_consistency_of_fsb($);
-sub fer_dmsg_from_msgBytes(@);
-sub fer_get_word_parity ($$);
-sub fer_isValid_cmdName($);
-sub fer_msgBits_from_dmsg($);
-sub fer_msgBytes_from_args($);
-sub fer_msgBytes_from_dmsg($);
-sub fer_msgBytes_from_msgWords($);
-sub fer_msgWords_from_msgBits($);
-sub fer_outDmsg_from_byteMsg($$);
-sub fer_stringify_fsb($);
-sub fer_tglNibble_ctUp($$);
-sub fer_update_tglNibble($$);
-sub fer_word_from_wordBits($);
-sub fer_word_from_byte ($$);
-sub fsb_doToggle($);
-sub fsb_getByDevID($);
-sub get_last_error();
-sub is_bits_even($);
-
-package Fernotron::fhem;
-sub X_Attr(@);
-sub X_Define($$);
-sub X_Parse;
-sub X_Set($$@);
-sub X_Undef($$);
-sub defaultInputMakeReading($$);
-sub ff_autocreateName_by_fsb($$);
-sub ff_fdType_from_ferId($);
-sub ff_inputDevice_findBy_fsb($);
-sub inputMakeReading($$);
-sub makeInputKeyByFsb($);
-sub transmit($$$);
-
-
+package main;
+use subs qw(AssignIoPort AttrVal IOWrite Log3 ReadingsVal readingsSingleUpdate);
 
 package Fernotron::Protocol;
 ################################################################################
@@ -115,8 +45,7 @@ sub dbprint($) {
 ################################################################################
 ##
 ##  "t if VAL contains an even number of 1 bits"
-sub is_bits_even($) {
-    my ($val) = @_;
+sub is_bits_even($val) {
 
     $val ^= $val >> 4;
     $val ^= $val >> 2;
@@ -125,19 +54,16 @@ sub is_bits_even($) {
     return ($val == 0);
 }
 ##
-sub fer_get_word_parity ($$) {
-    my ($data_byte, $pos) = @_;
+sub fer_get_word_parity($data_byte, $pos) {
     my $is_even = is_bits_even($data_byte);
     return (($pos & 1)) ? ($is_even ? 3 : 1) : ($is_even ? 0 : 2);
 }
 ## create 10bit word from 8bit byte (pos: 0 or 1)
-sub fer_word_from_byte ($$) {
-    my ($data_byte, $pos) = @_;
+sub fer_word_from_byte($data_byte, $pos) {
     return ($data_byte | (fer_get_word_parity($data_byte, $pos) << 8));
 }
 ##
-sub fer_bits_from_word($) {
-    my ($w) = @_;
+sub fer_bits_from_word($w) {
     my $r = '';
     for (my $i = 0; $i < 10; ++$i) {
         $r .= (0 == (($w >> $i) & 1) ? '0' : '1');
@@ -148,8 +74,7 @@ sub fer_bits_from_word($) {
 ##
 ## turn databytes into bit string with two 10bit words for each byte and one stop bit before each word
 ##
-sub fer_dmsg_from_msgBytes(@) {
-	my (@msgBytes) = @_;
+sub fer_dmsg_from_msgBytes(@msgBytes) {
     my $res = "";
     foreach my $b (@msgBytes) {
         $res .= $d_float_string . fer_bits_from_word(fer_word_from_byte($b, 0)) . $d_float_string . fer_bits_from_word(fer_word_from_byte($b, 1));
@@ -163,8 +88,7 @@ sub fer_dmsg_from_msgBytes(@) {
 ##
 ##
 # calc checksum for @array,
-sub fer_checkSum_from_msgBytes($$) {
-    my ($cmd, $cs) = @_;
+sub fer_checkSum_from_msgBytes($cmd, $cs) {
     foreach my $b (@$cmd) {
         $cs += $b;
     }
@@ -172,8 +96,7 @@ sub fer_checkSum_from_msgBytes($$) {
 }
 
 # convert 5-byte message into SIGNALduino message like DMSG
-sub fer_outDmsg_from_byteMsg($$) {
-    my ($fsb, $repeats) = @_;
+sub fer_outDmsg_from_byteMsg($fsb, $repeats) {
     return sprintf($fmt_dmsg_string,
                    $d_pause_string,
                    fer_dmsg_from_msgBytes(@$fsb, fer_checkSum_from_msgBytes($fsb, 0)),
@@ -250,8 +173,7 @@ use constant {
 ###############################################
 ####
 ##
-sub fsb_getByDevID($) {
-    my ($devID) = @_;
+sub fsb_getByDevID($devID) {
     if (!exists($fsbs->{$devID})) {
         $fsbs->{$devID} = [ (($devID >> 16) & 0xff), (($devID >> 8) & 0xff), ($devID & 0xff), 0x00, 0x00 ];
     }
@@ -259,8 +181,7 @@ sub fsb_getByDevID($) {
     return $fsbs->{$devID};
 }
 
-sub fer_tglNibble_ctUp($$) {
-    my ($toggle_nibble, $step) = @_;
+sub fer_tglNibble_ctUp($toggle_nibble, $step) {
     my $result = 0xff & ($toggle_nibble + $step);
     if ($result < $toggle_nibble) {
         ++$result;
@@ -277,74 +198,60 @@ sub FSB_MODEL_IS_INVALID($) { # assumes that low nibble is zero in any device  (
 }
 
 
-sub FSB_MODEL_IS_CENTRAL($) {
-    my ($fsb) = @_;
+sub FSB_MODEL_IS_CENTRAL($fsb) {
     return ($$fsb[0] & $FDT_MASK) == 0x80;
 }
 
-sub FSB_MODEL_IS_RECEIVER($) {
-    my ($fsb) = @_;
+sub FSB_MODEL_IS_RECEIVER($fsb) {
     return ($$fsb[0] & $FDT_MASK) == 0x90;
 }
 
-sub FSB_MODEL_IS_SUNSENS($) {
-    my ($fsb) = @_;
+sub FSB_MODEL_IS_SUNSENS($fsb) {
     return ($$fsb[0] & $FDT_MASK) == 0x20;
 }
 
-sub FSB_MODEL_IS_STANDARD($) {
-    my ($fsb) = @_;
+sub FSB_MODEL_IS_STANDARD($fsb) {
     return ($$fsb[0] & $FDT_MASK) == 0x10;
 }
 
-sub FSB_GET_DEVID($) {
-    my ($fsb) = @_;
+sub FSB_GET_DEVID($fsb) {
     return $$fsb[fer_dat_ADDR_2] << 16 | $$fsb[fer_dat_ADDR_1] << 8 | $$fsb[fer_dat_ADDR_0];
 }
 
-sub FSB_GET_CMD($) {
-    my ($fsb) = @_;
+sub FSB_GET_CMD($fsb) {
     return ($$fsb[fer_dat_GRP_and_CMD] & 0x0f);
 }
 
-sub FSB_GET_MEMB($) {
-    my ($fsb) = @_;
+sub FSB_GET_MEMB($fsb) {
     return ($$fsb[fer_dat_TGL_and_MEMB] & 0x0f);
 }
 
-sub FSB_PUT_CMD($$) {
-    my ($fsb, $cmd) = @_;
+sub FSB_PUT_CMD($fsb, $cmd) {
     $$fsb[fer_dat_GRP_and_CMD] = ($$fsb[fer_dat_GRP_and_CMD] & 0xf0) | ($cmd & 0x0f);
 }
 
-sub FSB_PUT_MEMB($$) {
-    my ($fsb, $val) = @_;
+sub FSB_PUT_MEMB($fsb, $val) {
     $$fsb[fer_dat_TGL_and_MEMB] = ($$fsb[fer_dat_TGL_and_MEMB] & 0xf0) | ($val & 0x0f);
 }
 
-sub FSB_GET_TGL($) {
-    my ($fsb) = @_;
+sub FSB_GET_TGL($fsb) {
     return 0x0f & ($$fsb[fer_dat_TGL_and_MEMB] >> 4);
 }
 
-sub FSB_PUT_GRP($$) {
-    my ($fsb, $val) = @_;
+sub FSB_PUT_GRP($fsb, $val) {
     $$fsb[fer_dat_GRP_and_CMD] = (($val << 4) & 0xf0) | ($$fsb[fer_dat_GRP_and_CMD] & 0x0f);
 }
 
-sub FSB_GET_GRP($) {
-    my ($fsb) = @_;
+sub FSB_GET_GRP($fsb) {
     return 0x0f & ($$fsb[fer_dat_GRP_and_CMD] >> 4);
 }
 
-sub FSB_PUT_TGL($$) {
-    my ($fsb, $val) = @_;
+sub FSB_PUT_TGL($fsb, $val) {
     $$fsb[fer_dat_TGL_and_MEMB] = (($val << 4) & 0xf0) | ($$fsb[fer_dat_TGL_and_MEMB] & 0x0f);
 }
 ##
 ##
-sub fer_update_tglNibble($$) {
-    my ($fsb, $repeats) = @_;
+sub fer_update_tglNibble($fsb, $repeats) {
 
     my $step = 0;
 
@@ -367,8 +274,7 @@ sub fer_update_tglNibble($$) {
 
 my $tglct = {};
 
-sub fsb_doToggle($) {
-    my ($fsb) = @_;
+sub fsb_doToggle($fsb) {
 
     my $tgl = 0xf;
 
@@ -384,8 +290,7 @@ sub fsb_doToggle($) {
 }
 ##
 ##
-sub fer_stringify_fsb($) {
-    my ($fsb) = @_;
+sub fer_stringify_fsb($fsb) {
     return sprintf '0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x', @$fsb;
 
 }
@@ -399,8 +304,7 @@ sub fer_stringify_fsb($) {
 ##
 
 # checksum may be truncated by older SIGNALduino versions, so verify if ID and MEMB match
-sub fer_consistency_of_fsb($) {
-    my ($fsb) = @_;
+sub fer_consistency_of_fsb($fsb) {
     my $have_checksum = (scalar(@$fsb) == 6);
 
     return (($$fsb[0] + $$fsb[1] + $$fsb[2] + $$fsb[3] + $$fsb[4]) & 0xFF) eq $$fsb[5] if ($have_checksum);
@@ -416,8 +320,7 @@ sub fer_consistency_of_fsb($) {
 }
 
 # convert dmsg to array of 10bit strings. disregard trailing bits.
-sub fer_msgBits_from_dmsg($) {
-    my ($dmsg) = @_;
+sub fer_msgBits_from_dmsg($dmsg) {
     my @bitArr = split('F', $dmsg);
 
     # if dmsg starts with 'F', as it should, remove the empty string at index 0
@@ -439,8 +342,7 @@ sub fer_bitMsg_split($) {
 }
 
 # convert  array of 10bit strings to array of 10bit words
-sub fer_msgWords_from_msgBits($) {
-    my ($bitArr) = @_;
+sub fer_msgWords_from_msgBits($bitArr) {
     my @wordArr = ();
 
     foreach my $ws (@$bitArr) {
@@ -454,8 +356,7 @@ sub fer_msgWords_from_msgBits($) {
 }
 
 # convert array of 10bit words into array of 8bit bytes
-sub fer_msgBytes_from_msgWords($) {
-    my ($words) = @_;
+sub fer_msgBytes_from_msgWords($words) {
     my @bytes1 = ();
     my @bytes2 = ();
     my @idx2 = ();
@@ -504,8 +405,7 @@ sub fer_msgBytes_from_msgWords($) {
 }
 
 # convert decoded message from SIGNALduino dispatch to Fernotron byte message
-sub fer_msgBytes_from_dmsg($) {
-    my ($dmsg) = @_;
+sub fer_msgBytes_from_dmsg($dmsg) {
     dbprint('new bit string dmsg');
     return fer_msgBytes_from_msgWords(fer_msgWords_from_msgBits(fer_msgBits_from_dmsg($dmsg)));
 }
@@ -534,8 +434,7 @@ sub get_last_error() { return $last_error; }
 sub fer_cmdNumbers() { return keys(%$map_fcmd); }
 sub fer_isValid_cmdName($) { my ($command) = @_; dbprint($command); return exists $map_fcmd->{$command}; }
 
-sub fer_cmdName_from_cmdNumber($) {
-    my ($cmd) = @_;
+sub fer_cmdName_from_cmdNumber($cmd) {
     my @res = grep { $map_fcmd->{$_} eq $cmd } keys(%$map_fcmd);
     return $#res >= 0 ? $res[0] : '';
 }
@@ -543,8 +442,7 @@ sub fer_cmdName_from_cmdNumber($) {
 ##
 ##
 # convert args into 5-Byte message (checksum will be added by caller)
-sub fer_msgBytes_from_args($) {
-    my ($args) = @_;
+sub fer_msgBytes_from_args($args) {
 
     my $fsb;
 
@@ -620,8 +518,7 @@ use constant {
 };
 my $msb2fdt = { '10' => FDT_PLAIN, '20' => FDT_SUN, '80' => FDT_CENTRAL,  '90' => FDT_RECV };
 
-sub makeInputKeyByFsb($) {
-    my ($fsb) = @_;
+sub makeInputKeyByFsb($fsb) {
     my $key =  sprintf('%02x%02x%02x', @$fsb);
     if (Fernotron::Protocol::FSB_MODEL_IS_CENTRAL($fsb)) {
         my $m =  Fernotron::Protocol::FSB_GET_MEMB($fsb);
@@ -635,8 +532,7 @@ sub makeInputKeyByFsb($) {
 }
 
 # returns input device hash for this fsb, or default input device, or undef if none exists
-sub ff_inputDevice_findBy_fsb($) {
-    my ($fsb) = @_;
+sub ff_inputDevice_findBy_fsb($fsb) {
     my $key = makeInputKeyByFsb($fsb);
     my $hash = $main::modules{+MODNAME}{defptr}{$key};
     $hash =  $main::modules{+MODNAME}{defptr}{+DEF_INPUT_DEVICE} unless defined($hash);
@@ -644,8 +540,7 @@ sub ff_inputDevice_findBy_fsb($) {
 }
 
 # update Reading of default input device, if there was no matching input device
-sub defaultInputMakeReading($$) {
-    my ($fsb, $hash) = @_;
+sub defaultInputMakeReading($fsb, $hash) {
 
     ### convert message to human readable parts
     my $kind = Fernotron::Protocol::FSB_MODEL_IS_CENTRAL($fsb) ? FDT_CENTRAL
@@ -683,8 +578,7 @@ sub defaultInputMakeReading($$) {
 }
 
 # update Reading of matching input device
-sub inputMakeReading($$) {
-    my ($fsb, $hash) = @_;
+sub inputMakeReading($fsb, $hash) {
     
     return defaultInputMakeReading($fsb, $hash) if ($hash->{helper}{ferInputType} eq 'scan');
 
@@ -712,8 +606,7 @@ sub inputMakeReading($$) {
 }
 
 # create return value for _Parse for autocreate a new in or out device
-sub ff_autocreateName_by_fsb($$) {
-    my ($fsb, $is_input) = @_;
+sub ff_autocreateName_by_fsb($fsb, $is_input) {
 
     ### convert message to human readable parts
     my $kind = Fernotron::Protocol::FSB_MODEL_IS_CENTRAL($fsb) ? FDT_CENTRAL
@@ -793,15 +686,13 @@ sub X_Parse {
     return $hash->{NAME}; # message was handled by this device
 }
 
-sub ff_fdType_from_ferId($) {
-    my ($ad) = @_;
+sub ff_fdType_from_ferId($ad) {
     my $msb = sprintf('%x', ($ad >> 16));
     my $fdt = $msb2fdt->{"$msb"};
     return $fdt;
 }
 
-sub X_Define($$) {
-    my ($hash, $def) = @_;
+sub X_Define($hash, $def) {
     my @args       = split("[ \t][ \t]*", $def);
     my $name    = $args[0];
     my $address = $args[1];
@@ -869,8 +760,7 @@ sub X_Define($$) {
     return undef;
 }
 
-sub X_Undef($$) {
-    my ($hash, $name) = @_;
+sub X_Undef($hash, $name) {
 
     # remove deleted input devices from defptr
     my $key = $hash->{helper}{inputKey};
@@ -879,8 +769,7 @@ sub X_Undef($$) {
     return undef;
 }
 
-sub transmit($$$) {
-    my ($hash, $command, $c) = @_;
+sub transmit($hash, $command, $c) {
     my $name = $hash->{NAME};
     my $io   = $hash->{IODev};
 
@@ -909,8 +798,7 @@ sub transmit($$$) {
 
 my $cmd2pos = { up => 100, down => 0, 'sun-down' => 50  };
 
-sub X_Set($$@) {
-    my ($hash, $name, $cmd, @args) = @_;
+sub X_Set($hash, $name, $cmd = undef, @args) {
     return "\"set $name\" needs at least one argument" unless (defined($cmd));
     my $u = "unknown argument $cmd choose one of ";
 
@@ -989,8 +877,7 @@ sub X_Set($$@) {
     return undef;
 }
 
-sub X_Attr(@) {
-    my ($cmd, $name, $attrName, $attrValue) = @_;
+sub X_Attr($cmd, $name, $attrName, $attrValue) {
 
     # $cmd  - Vorgangsart - kann die Werte "del" (löschen) oder "set" (setzen) annehmen
     # $name - Gerätename
@@ -1010,8 +897,7 @@ sub X_Attr(@) {
 
 package main;
 
-sub Fernotron_Initialize($) {
-    my ($hash) = @_;
+sub Fernotron_Initialize($hash) {
     $hash->{Match}    = '^P82#.+';
     $hash->{AttrList} = 'IODev repeats:0,1,2,3,4,5 create:default,out,in';
 

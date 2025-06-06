@@ -8,18 +8,27 @@
 ## Project: https://github.com/zwiebert/tronferno-fhem
 ## Related Hardware-Project: https://github.com/zwiebert/tronferno-mcu
 ################################################################################
+#  \([$;@]+\)\s*\{\s*\n\s+my\s*(\(.+\))\s*=\s*@_;
+#  \1 {
+
+
 
 package TronfernoMCU;
 use strict;
 use warnings;
-use 5.14.0;
+use v5.20;
+use feature qw(signatures);
+no warnings qw(experimental::signatures);
 
-require JSON;
+package main;
+
 require DevIo;
 require HttpUtils;
-require File::Path;
-require File::Basename;
+use JSON;
+use File::Path;
+use File::Basename;
 
+=begin
 sub main::DevIo_CloseDev($@);
 sub main::DevIo_IsOpen($);
 sub main::DevIo_OpenDev($$$;$);
@@ -35,54 +44,22 @@ sub main::gettimeofday();
 sub main::ReadingsVal($$$);
 sub main::readingsSingleUpdate($$$$;$);
 sub main::Debug($);
-sub main::TronfernoMCU_Initialize($);
-sub JSON::to_json($@);
-sub JSON::from_json($@);
+=cut
+ 
+use subs qw(DevIo_CloseDev DevIo_IsOpen DevIo_OpenDev DevIo_SimpleRead DevIo_SimpleWrite
+Dispatch HttpUtils_NonblockingGet InternalTimer RemoveInternalTimer Log3
+asyncOutput gettimeofday ReadingsVal readingsSingleUpdate Debug);
+
+
 sub File::Path::make_path;
 
-sub X_Define($$);
-sub X_Read($$);
-sub X_Ready($);
-sub X_Set($$@);
-sub X_Undef($$);
-sub X_Write ($$);
-sub cb_async_system_cmd($);
-sub devio_at_connect($);
-sub devio_close_device($);
-sub devio_get_serial_device_name($);
-sub devio_openDev_cb($);
-sub devio_openDev_init_cb($);
-sub devio_open_device($;$);
-sub devio_reopen_device($);
-sub devio_write_line($$);
-sub devio_updateReading_connection($$;$);
-sub file_read_last_line($);
-sub file_slurp($$);
-sub fw_get($$;$);
-sub fw_get_and_write_flash($$;$$);
-sub fw_get_next_file($);
-sub fw_get_next_file_cb($$$);
-sub fw_get_updateReading($$);
-sub fw_mk_list_file($$);
-sub fw_write_flash($$);
-sub log_get_success($);
-sub mcu_config($$$);
-sub mcu_download_firmware($);
-sub run_system_cmd($$$$$$);
-sub sys_cmd_updateReading($$);
-sub sys_cmd_get_success($);
-sub sys_cmd_rm_log_internals($);
+package TronfernoMCU;
 
-sub tka_send_cmd($);
-sub tka_timer_cb($);
-sub tka_timer_init($);
 
-sub creq_timer_cb($);
-sub creq_init($);
 
-sub parse_handle_json($$);
 
-my $dbll = 6;
+
+my $dbll = 5;
 
 my $mcu_port  = 7777;
 my $mcu_baud  = 115200;
@@ -146,8 +123,7 @@ my $config_all_in_parts =
   . '{"config":{"all":"p2s2?"}};'
   . '{"config":{"all":"p3s2?"}};';
 
-sub firmware_version_compare($$) {
-	my ($hash, $ver) = @_;
+sub firmware_version_compare($hash, $ver) {
 	my @ver1 = ($hash->{ $mcu_prefix . 'firmware' } =~
 		  /tronferno-mcu-([0-9]+)\.([0-9]+)\.([0-9]+)(\.([0-9]+))?/g);
 
@@ -167,15 +143,13 @@ sub firmware_version_compare($$) {
 }
 
 ## tcp keep-alive ##
-sub tka_send_cmd($) {
-	my ($hash) = @_;
+sub tka_send_cmd($hash) {
 	main::Log3($hash->{NAME}, $dbll, "tronferno-mcu tka_send_cmd($hash)");
 	my $cmd = $hash->{helper}{tka}{cmd};
 	devio_write_line($hash, "$cmd;");
 }
 
-sub tka_timer_cb($) {
-	my ($tka_hash) = @_;
+sub tka_timer_cb($tka_hash) {
 	my $hash = $tka_hash->{hash};
 	main::Log3($hash->{NAME}, $dbll, "tronferno-mcu tka_timer_cb($hash)");
 	return
@@ -185,8 +159,7 @@ sub tka_timer_cb($) {
 		'TronfernoMCU::tka_timer_cb', $tka_hash);
 }
 
-sub tka_timer_init($) {
-	my ($hash) = @_;
+sub tka_timer_init($hash) {
 	my $interval = 60;
 	main::RemoveInternalTimer($hash->{helper}{tka})
 	  if exists $hash->{helper}{tka};
@@ -197,11 +170,9 @@ sub tka_timer_init($) {
 }
 
 ## DevIO ##
-sub devio_open_device($;$) {
-	my ($hash, $reopen) = @_;
-	$reopen = $reopen // 0;
+sub devio_open_device($hash, $reopen = 0) {
 
-	main::Log3($hash->{NAME}, $dbll, "tronferno-mcu devio_open_device(@_)");
+	main::Log3($hash->{NAME}, $dbll, "tronferno-mcu devio_open_device($hash, $reopen)");
 	my $dn = $hash->{DeviceName} // 'undef';
 
 	$hash->{helper}{reconnect_counter} = 0 unless $reopen;
@@ -219,15 +190,13 @@ sub devio_open_device($;$) {
 	);
 }
 
-sub devio_reopen_device($) {
-	my ($hash) = @_;
+sub devio_reopen_device($hash) {
 	my $counter = $hash->{helper}{reconnect_counter} // 0;
 	$hash->{helper}{reconnect_counter} = $counter + 1;
 	return devio_open_device($hash, 1);
 }
 
-sub devio_close_device($) {
-	my ($hash) = @_;
+sub devio_close_device($hash) {
 	my $dn = $hash->{DeviceName} // 'undef';
 
 	# close connection if maybe open (on definition modify)
@@ -237,30 +206,26 @@ sub devio_close_device($) {
 	return main::DevIo_CloseDev($hash);    # if(main::DevIo_IsOpen($hash));
 }
 
-sub devio_get_serial_device_name($) {
-	my ($hash) = @_;
+sub devio_get_serial_device_name($hash) {
 	my $devname = $hash->{DeviceName} // '';
 	return undef unless index($devname, '@') > 0;
 	my ($dev, $baud) = split('@', $devname);
 	return $dev;
 }
 
-sub devio_updateReading_connection($$;$) {
-	my ($hash, $state, $no_trigger) = @_;
+sub devio_updateReading_connection($hash, $state, $no_trigger = 0) {
 	my $rec_ct     = $hash->{helper}{reconnect_counter} // 0;
 	my $do_trigger = $no_trigger ? 0 : 1;
 	main::readingsSingleUpdate($hash, 'mcu.connection', $state, $do_trigger);
 }
 
-sub devio_at_connect($) {
-	my ($hash) = @_;
+sub devio_at_connect($hash) {
 	devio_write_line($hash, "xxx;xxx;");    # get rid of any garbage in the pipe
 	devio_write_line($hash, '{"mcu":{"version":"full"}};');
 	main::Dispatch($hash, 'TFMCU#JSON:{"reload":1}');
 }
 
-sub devio_openDev_init_cb($) {
-	my ($hash) = @_;
+sub devio_openDev_init_cb($hash) {
 	my $conn_type = $hash->{helper}{connection_type};
 	main::Log3($hash->{NAME}, 5, "tronferno-mcu devio_openDev_init_cb(@_)");
 
@@ -274,8 +239,7 @@ sub devio_openDev_init_cb($) {
 	return undef;
 }
 
-sub devio_openDev_cb($) {
-	my ($hash, $error) = @_;
+sub devio_openDev_cb($hash, $error) {
 	my $name = $hash->{NAME};
 	main::Log3($hash->{NAME}, 5, "tronferno-mcu devio_openDev_cb()");
 	main::Log3($name, 5,
@@ -285,23 +249,21 @@ sub devio_openDev_cb($) {
 	return undef;
 }
 
-sub devio_write_line($$) {
-	my ($hash, $line) = @_;
+sub devio_write_line($hash, $line) {
 	my $name = $hash->{NAME};
 	return unless main::DevIo_IsOpen($hash);
 	main::Log3($name, 5, "TronfernoMCU ($name) - write line: <$line>");
 	main::DevIo_SimpleWrite($hash, $line, 2);
 }
 
-sub creq_init($) {
-	my ($hash) = @_;
+sub creq_init($hash) {
 	$hash->{helper}{commonRequests} = { cmds => [] };
 	my $len = scalar(@{ $hash->{helper}{commonRequests}{cmds} });
 }
 
 ### Note: using defmod, X_Define can be called multiple times without any call to X_Undef
-sub X_Define($$) {
-	my ($hash, $def) = @_;
+sub X_Define($hash, $def) {
+	main::Log3($hash->{NAME}, 5, "tronferno-mcu X_Define(@_)");
 	my @args = split("[ \t]+", $def);
 	my ($name, $mod_name, $dev) = @args;
 
@@ -331,9 +293,8 @@ sub X_Define($$) {
 
 # called when definition is undefined
 # (config reload, shutdown or delete of definition)
-sub X_Undef($$) {
-	my ($hash, $name) = @_;
-	main::Log3($hash->{NAME}, 5, "tronferno-mcu X_Undef()");
+sub X_Undef($hash, $name) {
+	main::Log3($hash->{NAME}, 5, "tronferno-mcu X_Undef(@_)");
 
 	# close the connection
 	devio_close_device($hash);
@@ -342,8 +303,7 @@ sub X_Undef($$) {
 }
 
 # called repeatedly if device disappeared
-sub X_Ready($) {
-	my ($hash) = @_;
+sub X_Ready($hash) {
 	main::Log3($hash->{NAME}, 5, "tronferno-mcu X_Ready(@_)");
 
 	return devio_reopen_device($hash) if ($hash->{STATE} eq "disconnected");
@@ -356,8 +316,7 @@ sub X_Ready($) {
 	}
 }
 
-sub parse_handle_config($$) {
-	my ($hash, $config) = @_;
+sub parse_handle_config($hash, $config) {
 	while (my ($key, $val) = each(%$config)) {
 		if (exists $mcor->{$key}) {
 			$hash->{ $mcor->{$key} } = $val;
@@ -367,16 +326,14 @@ sub parse_handle_config($$) {
 	}
 }
 
-sub parse_handle_mcu($$) {
-	my ($hash, $mcu) = @_;
+sub parse_handle_mcu($hash, $mcu) {
 	while (my ($key, $val) = each(%$mcu)) {
 		$hash->{"$mcu_prefix$key"} = $val;	
 		fetch_config_all($hash) if ($key eq 'firmware'); # XXX
 	}
 }
 
-sub parse_handle_json($$) {
-	my ($hash, $json) = @_;
+sub parse_handle_json($hash, $json) {
 	my $all = eval { JSON::from_json($json) };
 
 	unless ($all) {
@@ -406,14 +363,13 @@ sub parse_handle_json($$) {
 	return scalar(%$all) ? JSON::to_json($all) : '';
 }
 
-sub parse_msg_to_json($) {
-	my ($msg) = @_;
+sub parse_msg_to_json($msg) {
 
 }
 
 # called when data was received
-sub X_Read($$) {
-	my ($hash, $data) = @_;
+sub X_Read($hash, $data = undef) {
+	main::Log3($hash->{NAME}, $dbll, "tronferno-mcu X_Read($hash, $data)");
 	my $name = $hash->{NAME};
 
 	#main::Log3 ($hash->{NAME}, 5, "tronferno-mcu X_Read()");
@@ -458,10 +414,10 @@ sub X_Read($$) {
 	$hash->{PARTIAL} = $remain;
 }
 
-sub fetch_config_all($) {
-	my ($hash) = @_;
+sub fetch_config_all($hash) {
 
-	if (firmware_version_compare($hash, [ 0, 11, 2, 30 ]) >= 0) {
+	if (firmware_version_compare($hash, [ 0, 11, 2, 30 ]) >= 0
+	&& firmware_version_compare($hash, [ 1, 12, 4, 4 ]) <= 0) {
 		devio_write_line($hash, $config_all_in_parts);
 	} else {
 		devio_write_line($hash, '{"config":{"all":"?"}};');
@@ -469,8 +425,7 @@ sub fetch_config_all($) {
 
 }
 
-sub mcu_config($$$) {
-	my ($hash, $opt, $arg) = @_;
+sub mcu_config($hash, $opt, $arg) {
 
 	if ($opt eq 'all' && $arg eq '?') {
 		fetch_config_all($hash);
@@ -486,8 +441,7 @@ sub mcu_config($$$) {
 	devio_write_line($hash, JSON::to_json($msg) . ';');
 }
 
-sub mcu_download_firmware($) {
-	my ($hash) = @_;
+sub mcu_download_firmware($hash) {
 }
 
 my $firmware;
@@ -523,14 +477,12 @@ while (my ($k, $v) = each %$firmware) {
 	$usage .= " $k" . $v->{args};
 }
 
-sub fw_get_updateReading($$) {
-	my ($hash, $value) = @_;
+sub fw_get_updateReading($hash, $value) {
 	my $fwg = $hash->{helper}{fw_get};
 	main::readingsSingleUpdate($hash, $fwg->{id}, $value, 1);
 }
 
-sub fw_get_next_file_cb($$$) {
-	my ($param, $err, $data) = @_;
+sub fw_get_next_file_cb($param, $err, $data) {
 	my $hash = $param->{hash};
 	my $name = $hash->{NAME};
 	my $fwg  = $hash->{helper}{fw_get};
@@ -549,8 +501,7 @@ sub fw_get_next_file_cb($$$) {
 	}
 }
 
-sub fw_get_next_file($) {
-	my ($hash) = @_;
+sub fw_get_next_file($hash) {
 	my $fwg    = $hash->{helper}{fw_get};
 	my $count  = $fwg->{file_count};
 	my $files  = $fwg->{files};
@@ -579,8 +530,7 @@ sub fw_get_next_file($) {
 	main::HttpUtils_NonblockingGet($param);
 }
 
-sub fw_get_and_write_flash($$;$$) {
-	my ($hash, $fw, $write_flash, $uri) = @_;
+sub fw_get_and_write_flash($hash, $fw, $write_flash = 0, $uri = "") {
 	$uri = $fw->{uri} unless $uri;
 	my $dst_base = $fw->{tgtdir};
 
@@ -612,8 +562,7 @@ sub fw_get_and_write_flash($$;$$) {
 	fw_get_next_file($hash);
 }
 
-sub fw_get($$;$) {
-	my ($hash, $fw, $uri) = @_;
+sub fw_get($hash, $fw, $uri = "") {
 	return fw_get_and_write_flash($hash, $fw, undef, $uri);
 }
 
@@ -623,8 +572,7 @@ my $tag_succ        = $tag_status . '0';
 my $done_file       = 'done.txt';
 my $cmd_status      = "echo $tag_status\$? | tee $done_file";
 
-sub file_slurp($$) {
-	my ($filename, $dst) = @_;
+sub file_slurp($filename, $dst) {
 	open(my $fh, '<', $filename) or return 0;
 	$$dst = do { local $/; <$fh> };
 	close($fh);
@@ -648,24 +596,20 @@ sub log_get_success($) {
 	return undef;    # no status line. command still running?
 }
 
-sub sys_cmd_get_success($) {
-	my ($hash) = @_;
+sub sys_cmd_get_success($hash) {
 	return log_get_success($hash->{helper}{sys_cmd}{status_file});
 }
 
-sub sys_cmd_rm_log_internals($) {
-	my ($hash) = @_;
+sub sys_cmd_rm_log_internals($hash) {
 	delete($hash->{"$FW_WRT_ID.log"});
 }
 
-sub sys_cmd_updateReading($$) {
-	my ($hash, $value) = @_;
+sub sys_cmd_updateReading($hash, $value) {
 	my $sys_cmd = $hash->{helper}{sys_cmd};
 	main::readingsSingleUpdate($hash, $sys_cmd->{id}, $value, 1);
 }
 
-sub cb_async_system_cmd($) {
-	my ($hash)     = @_;
+sub cb_async_system_cmd($hash) {
 	my $start_time = $hash->{helper}{sys_cmd}{start_time};
 	my $id         = $hash->{helper}{sys_cmd}{id};
 	my $timeout    = 90;
@@ -701,8 +645,7 @@ sub cb_async_system_cmd($) {
 	$hash->{helper}{sys_cmd} = undef;
 }
 
-sub run_system_cmd($$$$$$) {
-	my ($hash, $tgtdir, $log, $sc, $id, $close_device) = @_;
+sub run_system_cmd($hash, $tgtdir, $log, $sc, $id, $close_device) {
 	my $status_file = "$tgtdir$done_file";
 	my $command     = "(cd $tgtdir && $sc; $cmd_status) 1>$log 2>&1 &";
 
@@ -724,8 +667,7 @@ sub run_system_cmd($$$$$$) {
 	$hash->{"shell-command-$id"} = $command;
 }
 
-sub fw_write_flash($$) {
-	my ($hash, $fw) = @_;
+sub fw_write_flash($hash, $fw) {
 	my $tgtdir      = $fw->{tgtdir};
 	my $log         = "$tgtdir$write_flash_log";
 	my $ser_dev     = devio_get_serial_device_name($hash);
@@ -752,9 +694,8 @@ sub fw_write_flash($$) {
 }
 
 # called if set command is executed
-sub X_Set($$@) {
-	my ($hash, $name, $cmd, @args) = @_;
-	my ($a1,   $a2,   $a3,  $a4)   = @args;
+sub X_Set($hash, $name, $cmd = undef, $a1 = "",   $a2 = "",   $a3 = "",  $a4 = "", @) {
+	main::Log3($hash->{NAME}, $dbll, "tronferno-mcu X_Set($hash, $name, $cmd, $a1, $a2, $a3, $a4)");
 
 	return "\"set $name\" needs at least one argument" unless (defined($cmd));
 
@@ -791,8 +732,7 @@ sub X_Set($$@) {
 	return undef;
 }
 
-sub creq_timer_cb($) {
-	my ($hash) = @_;
+sub creq_timer_cb($hash) {
 	my $cmds   = $hash->{helper}{commonRequests}{cmds};
 	my $len    = scalar(@$cmds);
 	if ($len == 1) {
@@ -803,8 +743,8 @@ sub creq_timer_cb($) {
 	creq_init($hash);
 }
 
-sub X_Write ($$) {
-	my ($hash, $addr, $msg) = @_;
+sub X_Write ($hash, $addr, $msg) {
+	main::Log3($hash->{NAME}, $dbll, "tronferno-mcu X_Write($hash, $addr, $msg)");
 	if ($msg =~ /"p":"\?"/) {
 		my $cmds = $hash->{helper}{commonRequests}{cmds};
 		push(@$cmds, $msg);
