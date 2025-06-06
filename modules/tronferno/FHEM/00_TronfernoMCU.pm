@@ -28,28 +28,9 @@ use JSON;
 use File::Path;
 use File::Basename;
 
-=begin
-sub main::DevIo_CloseDev($@);
-sub main::DevIo_IsOpen($);
-sub main::DevIo_OpenDev($$$;$);
-sub main::DevIo_SimpleRead($);
-sub main::DevIo_SimpleWrite($$$;$);
-sub main::Dispatch($$;$$);
-sub main::HttpUtils_NonblockingGet($);
-sub main::InternalTimer($$$;$);
-sub main::RemoveInternalTimer($;$);
-sub main::Log3($$$);
-sub main::asyncOutput($$);
-sub main::gettimeofday();
-sub main::ReadingsVal($$$);
-sub main::readingsSingleUpdate($$$$;$);
-sub main::Debug($);
-=cut
- 
 use subs qw(DevIo_CloseDev DevIo_IsOpen DevIo_OpenDev DevIo_SimpleRead DevIo_SimpleWrite
 Dispatch HttpUtils_NonblockingGet InternalTimer RemoveInternalTimer Log3
-asyncOutput gettimeofday ReadingsVal readingsSingleUpdate Debug);
-
+asyncOutput gettimeofday ReadingsVal readingsSingleUpdate readingsBeginUpdate readingsBulkUpdateIfChanged readingsEndUpdate  Debug);
 
 sub File::Path::make_path;
 
@@ -59,7 +40,7 @@ package TronfernoMCU;
 
 
 
-my $dbll = 5;
+my $dbll = 6; # set to 6 in releases
 
 my $mcu_port  = 7777;
 my $mcu_baud  = 115200;
@@ -252,7 +233,7 @@ sub devio_openDev_cb($hash, $error) {
 sub devio_write_line($hash, $line) {
 	my $name = $hash->{NAME};
 	return unless main::DevIo_IsOpen($hash);
-	main::Log3($name, 5, "TronfernoMCU ($name) - write line: <$line>");
+	main::Log3($name, 4, "TronfernoMCU ($name) - write line: <$line>");
 	main::DevIo_SimpleWrite($hash, $line, 2);
 }
 
@@ -317,13 +298,15 @@ sub X_Ready($hash) {
 }
 
 sub parse_handle_config($hash, $config) {
+  main::readingsBeginUpdate($hash);
 	while (my ($key, $val) = each(%$config)) {
 		if (exists $mcor->{$key}) {
-			$hash->{ $mcor->{$key} } = $val;
+      main::readingsBulkUpdateIfChanged($hash, $mcor->{$key}, $val, 1);
 		} else {
-			$hash->{"$mcfg_prefix$key"} = $val;
+      main::readingsBulkUpdateIfChanged($hash, "$mcfg_prefix$key", $val, 1);
 		}
 	}
+   main::readingsEndUpdate($hash, 1);
 }
 
 sub parse_handle_mcu($hash, $mcu) {
@@ -369,7 +352,7 @@ sub parse_msg_to_json($msg) {
 
 # called when data was received
 sub X_Read($hash, $data = undef) {
-	main::Log3($hash->{NAME}, $dbll, "tronferno-mcu X_Read($hash, $data)");
+	main::Log3($hash->{NAME}, $dbll, "tronferno-mcu X_Read(@_)");
 	my $name = $hash->{NAME};
 
 	#main::Log3 ($hash->{NAME}, 5, "tronferno-mcu X_Read()");
@@ -439,6 +422,7 @@ sub mcu_config($hash, $opt, $arg) {
 	  || ($opt eq 'network');    # do restart after changing any network option
 
 	devio_write_line($hash, JSON::to_json($msg) . ';');
+  fetch_config_all($hash);
 }
 
 sub mcu_download_firmware($hash) {

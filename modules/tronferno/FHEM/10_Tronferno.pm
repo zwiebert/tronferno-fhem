@@ -358,7 +358,6 @@ sub X_Set($hash, $name, $cmd = undef, $a1 = "", @) {
         return
             $res
             . ' pct:slider,0,5,100'
-            . ' position:slider,0,5,100'
             . ' manual:on,off'
             . ' sun-auto:on,off'
             . ' random:on,off'
@@ -374,7 +373,7 @@ sub X_Set($hash, $name, $cmd = undef, $a1 = "", @) {
         my $req = req_build_cmd($hash, 'pair', $map_pair_cmds->{$cmd});
         my $res = req_tx_msg($hash, $req);
         return $res if ($res);
-    } elsif ($cmd eq 'position' || $cmd eq 'pct') {
+    } elsif ($cmd eq 'pct') {
         return "\"set $name $cmd\" needs one argument" unless (defined($a1));
         my $percent = pctTransform($hash, $a1);
         my $c = $percent;
@@ -418,7 +417,7 @@ sub X_Set($hash, $name, $cmd = undef, $a1 = "", @) {
         return
             "unknown argument $cmd choose one of "
             . join(' ', mod_commands_of_set())
-            . ' position manual sun-auto random astro rtc-sync daily weekly';
+            . ' pct manual sun-auto random astro rtc-sync daily weekly';
     }
 
     return undef;
@@ -1091,9 +1090,6 @@ sub Tronferno_Initialize($) {
   <a name=sun-inst></a>
   <li>sun-inst - Speichere aktuelle Position als neue Sonnenposition</li>
 
-  <a name=position></a>
-  <li>position - Veraltet: Bitte stattdessen 'pct' verwenden</li>
-
   <a name=pct></a>
   <li>pct - Bewege den Rollladen zur angegebenen Position in Prozent. (100% ist offen. Sprachsteuerung: 1% ist stop, 2% ist sun-down)</li>
 
@@ -1170,7 +1166,6 @@ sub Tronferno_Initialize($) {
 <code>attr &lt;name&gt; room Homekit</code><br>
 <code>attr &lt;name&gt; genericDeviceType blind</code><br>
 <code>attr &lt;name&gt; webCmd down:stop:up</code><br>
-<code>attr &lt;name&gt; userReadings position { ReadingsVal($NAME,"state",0) }</code><br>
 </li>
 </ul>
 

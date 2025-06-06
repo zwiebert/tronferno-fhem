@@ -135,9 +135,6 @@
   <a name=sun-inst></a>
   <li>sun-inst - Speichere aktuelle Position als neue Sonnenposition</li>
 
-  <a name=position></a>
-  <li>position - Veraltet: Bitte stattdessen 'pct' verwenden</li>
-
   <a name=pct></a>
   <li>pct - Bewege den Rollladen zur angegebenen Position in Prozent. (100% ist offen. Sprachsteuerung: 1% ist stop, 2% ist sun-down)</li>
 
@@ -214,7 +211,6 @@
 <code>attr &lt;name&gt; room Homekit</code><br>
 <code>attr &lt;name&gt; genericDeviceType blind</code><br>
 <code>attr &lt;name&gt; webCmd down:stop:up</code><br>
-<code>attr &lt;name&gt; userReadings position { ReadingsVal($NAME,"state",0) }</code><br>
 </li>
 </ul>
 
